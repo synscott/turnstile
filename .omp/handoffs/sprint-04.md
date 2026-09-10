@@ -10,15 +10,18 @@ This supersedes `BLOCKED_PENDING_USER_DEPLOYMENT_DECISION`; the prior
 research-only restriction is historical, not a current prohibition. Project-local
 runtime source acquisition, toolchain and dependency builds are now authorized.
 Leave global OMP, reference repositories, and global safety settings untouched;
-no publication. No prerequisite is claimed complete.
+no publication. The director has accepted the unmodified local OMP baseline;
+native veto and complete staged Cargo-context prerequisites remain outstanding.
 
 ## Native boundary and evidence
 
 The inspected installed agent and native packages are `18.1.16`. The upstream tag
 and npm provenance payloads identify source commit
 `61b1b8aef634334eaf1412afd003a763e1d1b9c1`; seven relevant installed source/binding
-files match that commit's Git blob identities. Provenance signatures and a
-reproducible native build have not been independently verified.
+files match that commit's Git blob identities. Provenance signatures and
+bit-reproducible native output have not been independently verified. The later
+unmodified local build and runtime proof are accepted; see the
+[baseline handoff](omp-local-baseline.md).
 
 The actual `EditTool` owns its native `EditSession`, policy, and shared `EditStore`.
 Supported extension context can invoke the same native tool but cannot inspect its
@@ -66,8 +69,9 @@ metadata.
 
 The user's approval authorizes fresh bounded implementation scopes for:
 
-1. Proving and freezing an unmodified, pinned project-local OMP baseline build,
-   without changing the global installation or reference repositories.
+1. **Accepted:** unmodified, pinned project-local OMP baseline build, actual source
+   CLI launch with normal FCC/plugin context, and ordinary native `EditSession`
+   behavior. See the [baseline handoff](omp-local-baseline.md).
 2. Implementing a same-owner complete native-edit veto boundary before canonical
    mutation, preserving native reconstruction and execution semantics.
 3. Extending the existing Rust candidate owner to analyze one complete staged Cargo
@@ -79,12 +83,13 @@ The user's approval authorizes fresh bounded implementation scopes for:
 Keep the change bounded: no new parser, duplicate `EditStore`, generic policy
 framework, speculative configurability, or unrelated fixes.
 
-The local build remains **unproved**. At the recorded source/build inspection,
-the source provided a Windows Cargo/N-API host build route and local
-C++/CMake/Ninja tools were found, but the project-private `nightly-2026-08-08`
-toolchain, N-API CLI `3.7.2`, and dependency closure were not installed. Those
-historical observations are not a green build result; current approval does not
-establish a successful build.
+The director accepted the baseline after reviewing its build, native edit, actual
+source CLI and cache-isolation evidence. Project-private `nightly-2026-08-08`,
+N-API CLI `3.7.2`, and the frozen dependency closure were obtained, and the existing
+Windows Cargo/N-API host route succeeded. The actual local addon identity and
+pristine Rust/TypeScript manifest are recorded in the baseline receipt. Historical
+source/build research remains unchanged; its missing-tool observations no longer
+describe the accepted baseline. No native veto or Turnstile gate is proved by it.
 
 ## Unchanged acceptance and continuation
 
@@ -98,9 +103,10 @@ from scope.
 
 Write-tool integration and the remaining retry, disclosure, exception, commit,
 PR, and final installed-test work remain in their existing later sprints. This
-handoff records approval and prerequisites in progress, not prerequisite
-completion, Sprint 4 implementation or acceptance. The current user approval
-receipt and all three historical prerequisite receipts are reachable through the
-existing private material index; their earlier approval-pending restrictions are
-superseded, while observations and hashes remain preserved. Notify the user when
-the prerequisites are verified and original Sprint 4 can resume under `/vibe`.
+handoff records an accepted baseline with the native veto and complete staged
+Cargo-context prerequisites still outstanding, not Sprint 4 implementation or
+acceptance. The current user approval, accepted baseline, and three historical
+prerequisite receipts are reachable through the private material index; historical
+approval-pending restrictions are superseded while observations and hashes remain
+preserved. Notify the user when the remaining prerequisites are verified and
+original Sprint 4 can resume under `/vibe`.
