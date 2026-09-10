@@ -1,6 +1,6 @@
 # Turnstile initial-testing build
 
-Status: owner-approved build direction and sprint plan, 2026-09-10. Implementation is authorized in this project. The first execution session is Sprint 1 only.
+Status: owner-approved product contract and sprint sequence. Execution uses native OMP `/vibe`, not LoopX. Sprint 1 is complete at commit `530b791`, independently reproduced; continue with Sprint 2.
 
 ## Product contract
 
@@ -18,11 +18,13 @@ Turnstile (Harness Contradictionary) is a source-quality gate for proposed codin
 
 ## Session execution contract
 
-One sprint must fit investigation, implementation, verification, review, commit, and concise handoff in one fresh bounded OMP session. A sprint that takes multiple sessions was not decomposed sufficiently. Assess fit before edits; split oversized work rather than dropping acceptance criteria. Do not execute the next sprint in the same OMP session.
+The native `/vibe` director owns the todo list, sequencing, acceptance decisions, and worker lifecycle. Each sprint must fit investigation, implementation, verification, review, commit, and concise handoff in one fresh bounded implementation-worker session. A sprint that needs multiple implementation sessions was not decomposed sufficiently. Assess fit before edits; split oversized work rather than dropping acceptance criteria. Retire completed sprint workers and create fresh workers for the next sprint; do not carry implementation context across sprint boundaries.
 
 Compaction is an exceptional recovery boundary, not the normal continuation plan. If compaction is imminent or occurs, preserve exact unfinished work and verification state, end the session, and re-decompose the remaining work before starting a fresh session. Never mark interrupted work complete.
 
-LoopX owns goal/task/evidence continuity. Each task session reads this brief and its selected sprint. Later sprint entries are a roadmap, not permission to execute all of them in one session. Every sprint has its own verification; the final rehearsal does not defer earlier checks.
+The parent OMP todo list owns live progress; this brief and the exact-name `.omp/handoffs/index.json` own durable plan/evidence navigation. The director supplies each worker a self-contained brief with the selected sprint, source pointers, file ownership, acceptance criteria, and boundaries. Complete a parent todo only after inspecting the delivered artifacts and concrete verification evidence, not merely because a worker turn settled. Continue to the next eligible sprint in a fresh worker scope without waiting for manual task bookkeeping. Keep all operator-facing interactions in English.
+
+Use `/vibe`'s `good` tier for design, implementation judgment, integration, and review; it resolves through `@task`, configured to the same quality model as `@slow`. Use the `fast` tier (`@smol`) for mechanical work when there is a genuinely independent slice. Establish interfaces and non-overlapping ownership before parallel work; serialize shared-file mutations and final integration. Workers apply the FCC foundation and relevant skills and report the exact changes, commands, outcomes, and limitations. No LoopX scheduler, quota call, task completion helper, or registry writeback is part of this execution path.
 
 Execution sessions inherit the normal configured OMP context and available skills, including plugin-provided skills. The FCC foundation and skill-routing instructions must be present at startup; load the applicable FCC design, change, verification, collaboration, and durable-state skills when their activities arise. Availability is not blanket activation: do not enable every optional persona or load unrelated skills. A missing required skill is a visible configuration failure, not permission to skip it. Private launch/runtime receipts are indexed under `.loopx/materials/`.
 
@@ -44,25 +46,25 @@ Execution sessions inherit the normal configured OMP context and available skill
 
 The smallest usable hold/revise loop is Sprint 4. Later sprints complete the agreed safeguards; a larger policy catalog is not in this build.
 
-## Sprint 1 boundary
+## Completed Sprint 1 boundary
 
 Read the private material index at `.loopx/materials/index.json`, then the Rust example seed. The original workshop is historical context and is superseded by this brief wherever it suggests Bash policy is the analysis target. The Prodagent checkout is read-only prior art, not this project's implementation or selected parser foundation.
 
-Own only the first analyzer-fit result: inspect candidate existing Rust diagnostics, select one that genuinely distinguishes a relevant bad/good pair, create minimal runnable fixtures/probe as needed, run it, and report outcomes. Explicitly distinguish constructed examples from actual defects. Prefer installed Rust tooling where it fits; do not invent a universal regex for tiny functions, ignored results, or abstraction quality. Do not start the OMP gate, retry controller, journal, or PR integration in this session.
+Sprint 1 owned only the first analyzer-fit result: inspect candidate existing Rust diagnostics, select one that genuinely distinguishes a relevant bad/good pair, create minimal runnable fixtures/probe as needed, run it, and report outcomes. Its retained probe uses `clippy::await_holding_lock`; it distinguishes a constructed bad/good pair, compilation failure, and an unavailable checker. These are constructed examples, not reported production defects. Do not rerun Sprint 1 as new implementation work; use its handoff and reproduce the probe when a subsequent change affects its contract.
 
-The finish line is an executable quality-check demonstration, exact analyzer/rule/version and invocation, evidence for bad/good/failure outcomes, a local commit, and a concise handoff to Sprint 2. If no candidate meets the contract in a bounded investigation, record the discriminating failed attempts and a concrete blocker; do not substitute a syntax-error test or claim completion.
+Its finish line was an executable quality-check demonstration, exact analyzer/rule/version and invocation, evidence for bad/good/failure outcomes, a local commit, and a concise handoff to Sprint 2. The committed report is `docs/sprint-01-results.json`; the independent reproduction is retained privately at `.loopx/materials/sprint1-independent-verification.json`.
 
 ## Authority, scope, and privacy
 
 This owner-approved brief is the current product authority. Supplied workshop/example packets are attributed research, not blanket adopted rules or independently verified Dione defects. Preserve their provenance and caveats.
 
-Allowed: project-local implementation, fixtures, tests, documentation, build artifacts, dependency research/downloads needed for the selected analyzer, local commits, and LoopX state/evidence writeback for this goal. Keep source packets, private links, and personal filesystem locations out of tracked/public files.
+Allowed: project-local implementation, fixtures, tests, documentation, build artifacts, dependency research/downloads needed for the selected analyzer, local commits, native OMP worker execution, parent todo updates, and project-local handoffs/evidence. Keep source packets, private links, and personal filesystem locations out of tracked/public files.
 
 Not authorized: modifying the read-only Prodagent/Dione/LoopX reference checkouts; disabling global safety settings; production operations; remote publication/push/PR creation; unrelated filesystem changes. Later native-hook testing should use explicit workspace opt-in, not a global harness install. Escalate genuine missing external prerequisites without silently narrowing a sprint.
 
 ## Navigation
 
-- Current task and durable evidence: LoopX goal `turnstile`.
+- Live progress: parent OMP todo list; durable acceptance evidence: `.omp/handoffs/index.json`. LoopX launch records are historical, not an active execution contract.
 - Local-private material index: `.loopx/materials/index.json`.
 - Historical Prodagent investigation: `prodagent-source/graphify-out/source-provenance.json` and `prior-art-probes.json` (read-only, not tracked here).
 - Handoff convention: project-local `.omp/handoffs/` with an exact-name index, keeping summaries public-safe when committed.
