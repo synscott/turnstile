@@ -66,3 +66,4 @@ Not authorized: modifying the read-only Prodagent/Dione/LoopX reference checkout
 - Local-private material index: `.loopx/materials/index.json`.
 - Historical Prodagent investigation: `prodagent-source/graphify-out/source-provenance.json` and `prior-art-probes.json` (read-only, not tracked here).
 - Handoff convention: project-local `.omp/handoffs/` with an exact-name index, keeping summaries public-safe when committed.
+- Sprint 1 analyzer-fit handoff: [exact-name index](../.omp/handoffs/index.json), [result and Sprint 2 context](../.omp/handoffs/sprint-01.md), and [dated execution evidence](sprint-01-results.json).

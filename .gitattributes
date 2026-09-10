@@ -1,0 +1,2 @@
+/tools/probe_rust_quality.py text eol=lf
+/fixtures/await-holding-lock/* text eol=lf

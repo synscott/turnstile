@@ -1,0 +1,7 @@
+{
+  "sprint-01": {
+    "handoff": ".omp/handoffs/sprint-01.md",
+    "evidence": "docs/sprint-01-results.json",
+    "reproduce_from_project_root": "python tools/probe_rust_quality.py"
+  }
+}
