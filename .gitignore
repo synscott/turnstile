@@ -3,3 +3,4 @@
 /prodagent-source/
 /target/
 /node_modules/
+/tools/__pycache__/

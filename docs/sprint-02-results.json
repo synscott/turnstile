@@ -1,0 +1,3954 @@
+{
+  "observed_at_utc": "2026-09-10T18:14:58.263549+00:00",
+  "rule": "clippy::await_holding_lock",
+  "python": "3.11.15",
+  "platform": "Windows",
+  "timeout_seconds_per_process": 60,
+  "cases": {
+    "edit_bad": {
+      "outcome": "findings",
+      "findings": [
+        {
+          "rendered": "warning: this `MutexGuard` is held across an await point\n --> app\\src\\existing.rs:7:9\n  |\n7 |     let guard = state.lock().map_err(|_| \"state lock poisoned\")?;\n  |         ^^^^^\n  |\n  = help: consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`\nnote: these are all the await points this lock is held through\n --> app\\src\\existing.rs:9:14\n  |\n9 |     delivery.await;\n  |              ^^^^^\n  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock\n  = note: requested on the command line with `--force-warn clippy::await-holding-lock`\n\n",
+          "$message_type": "diagnostic",
+          "children": [
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "these are all the await points this lock is held through",
+              "rendered": null,
+              "spans": [
+                {
+                  "byte_end": 284,
+                  "byte_start": 279,
+                  "column_end": 19,
+                  "column_start": 14,
+                  "expansion": {
+                    "def_site_span": {
+                      "byte_end": 0,
+                      "byte_start": 0,
+                      "column_end": 1,
+                      "column_start": 1,
+                      "expansion": null,
+                      "file_name": "app\\src\\lib.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 1,
+                      "line_start": 1,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": []
+                    },
+                    "macro_decl_name": "desugaring of `await` expression",
+                    "span": {
+                      "byte_end": 284,
+                      "byte_start": 279,
+                      "column_end": 19,
+                      "column_start": 14,
+                      "expansion": null,
+                      "file_name": "app\\src\\existing.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 9,
+                      "line_start": 9,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": [
+                        {
+                          "highlight_end": 19,
+                          "highlight_start": 14,
+                          "text": "    delivery.await;"
+                        }
+                      ]
+                    }
+                  },
+                  "file_name": "app\\src\\existing.rs",
+                  "is_primary": true,
+                  "label": null,
+                  "line_end": 9,
+                  "line_start": 9,
+                  "suggested_replacement": null,
+                  "suggestion_applicability": null,
+                  "text": [
+                    {
+                      "highlight_end": 19,
+                      "highlight_start": 14,
+                      "text": "    delivery.await;"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "requested on the command line with `--force-warn clippy::await-holding-lock`",
+              "rendered": null,
+              "spans": []
+            }
+          ],
+          "level": "warning",
+          "message": "this `MutexGuard` is held across an await point",
+          "spans": [
+            {
+              "byte_end": 186,
+              "byte_start": 181,
+              "column_end": 14,
+              "column_start": 9,
+              "expansion": null,
+              "file_name": "app\\src\\existing.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 7,
+              "line_start": 7,
+              "suggested_replacement": null,
+              "suggestion_applicability": null,
+              "text": [
+                {
+                  "highlight_end": 14,
+                  "highlight_start": 9,
+                  "text": "    let guard = state.lock().map_err(|_| \"state lock poisoned\")?;"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "code": "clippy::await_holding_lock",
+            "explanation": null
+          }
+        },
+        {
+          "rendered": "warning: this `MutexGuard` is held across an await point\n --> app\\src\\existing.rs:7:9\n  |\n7 |     let guard = state.lock().map_err(|_| \"state lock poisoned\")?;\n  |         ^^^^^\n  |\n  = help: consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`\nnote: these are all the await points this lock is held through\n --> app\\src\\existing.rs:9:14\n  |\n9 |     delivery.await;\n  |              ^^^^^\n  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock\n  = note: requested on the command line with `--force-warn clippy::await-holding-lock`\n\n",
+          "$message_type": "diagnostic",
+          "children": [
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "these are all the await points this lock is held through",
+              "rendered": null,
+              "spans": [
+                {
+                  "byte_end": 284,
+                  "byte_start": 279,
+                  "column_end": 19,
+                  "column_start": 14,
+                  "expansion": {
+                    "def_site_span": {
+                      "byte_end": 0,
+                      "byte_start": 0,
+                      "column_end": 1,
+                      "column_start": 1,
+                      "expansion": null,
+                      "file_name": "app\\src\\lib.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 1,
+                      "line_start": 1,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": []
+                    },
+                    "macro_decl_name": "desugaring of `await` expression",
+                    "span": {
+                      "byte_end": 284,
+                      "byte_start": 279,
+                      "column_end": 19,
+                      "column_start": 14,
+                      "expansion": null,
+                      "file_name": "app\\src\\existing.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 9,
+                      "line_start": 9,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": [
+                        {
+                          "highlight_end": 19,
+                          "highlight_start": 14,
+                          "text": "    delivery.await;"
+                        }
+                      ]
+                    }
+                  },
+                  "file_name": "app\\src\\existing.rs",
+                  "is_primary": true,
+                  "label": null,
+                  "line_end": 9,
+                  "line_start": 9,
+                  "suggested_replacement": null,
+                  "suggestion_applicability": null,
+                  "text": [
+                    {
+                      "highlight_end": 19,
+                      "highlight_start": 14,
+                      "text": "    delivery.await;"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "requested on the command line with `--force-warn clippy::await-holding-lock`",
+              "rendered": null,
+              "spans": []
+            }
+          ],
+          "level": "warning",
+          "message": "this `MutexGuard` is held across an await point",
+          "spans": [
+            {
+              "byte_end": 186,
+              "byte_start": 181,
+              "column_end": 14,
+              "column_start": 9,
+              "expansion": null,
+              "file_name": "app\\src\\existing.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 7,
+              "line_start": 7,
+              "suggested_replacement": null,
+              "suggestion_applicability": null,
+              "text": [
+                {
+                  "highlight_end": 14,
+                  "highlight_start": 9,
+                  "text": "    let guard = state.lock().map_err(|_| \"state lock poisoned\")?;"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "code": "clippy::await_holding_lock",
+            "explanation": null
+          }
+        }
+      ],
+      "target": "app/src/existing.rs",
+      "operation": "edit",
+      "original_sha256": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa",
+      "candidate_sha256": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9",
+      "command": [
+        "cargo",
+        "clippy",
+        "--offline",
+        "--manifest-path",
+        "<candidate>\\app\\Cargo.toml",
+        "--target-dir",
+        "<scratch>\\build",
+        "--all-targets",
+        "--message-format=json",
+        "--features",
+        "existing",
+        "--",
+        "-A",
+        "clippy::all",
+        "--force-warn",
+        "clippy::await_holding_lock"
+      ],
+      "exit_code": 0,
+      "stderr": "    Checking candidate-support v0.0.0 (<candidate>\\support)\n    Checking candidate-app v0.0.0 (<candidate>\\app)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.26s\n",
+      "diagnostics": [
+        {
+          "rendered": "warning: this `MutexGuard` is held across an await point\n --> app\\src\\existing.rs:7:9\n  |\n7 |     let guard = state.lock().map_err(|_| \"state lock poisoned\")?;\n  |         ^^^^^\n  |\n  = help: consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`\nnote: these are all the await points this lock is held through\n --> app\\src\\existing.rs:9:14\n  |\n9 |     delivery.await;\n  |              ^^^^^\n  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock\n  = note: requested on the command line with `--force-warn clippy::await-holding-lock`\n\n",
+          "$message_type": "diagnostic",
+          "children": [
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "these are all the await points this lock is held through",
+              "rendered": null,
+              "spans": [
+                {
+                  "byte_end": 284,
+                  "byte_start": 279,
+                  "column_end": 19,
+                  "column_start": 14,
+                  "expansion": {
+                    "def_site_span": {
+                      "byte_end": 0,
+                      "byte_start": 0,
+                      "column_end": 1,
+                      "column_start": 1,
+                      "expansion": null,
+                      "file_name": "app\\src\\lib.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 1,
+                      "line_start": 1,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": []
+                    },
+                    "macro_decl_name": "desugaring of `await` expression",
+                    "span": {
+                      "byte_end": 284,
+                      "byte_start": 279,
+                      "column_end": 19,
+                      "column_start": 14,
+                      "expansion": null,
+                      "file_name": "app\\src\\existing.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 9,
+                      "line_start": 9,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": [
+                        {
+                          "highlight_end": 19,
+                          "highlight_start": 14,
+                          "text": "    delivery.await;"
+                        }
+                      ]
+                    }
+                  },
+                  "file_name": "app\\src\\existing.rs",
+                  "is_primary": true,
+                  "label": null,
+                  "line_end": 9,
+                  "line_start": 9,
+                  "suggested_replacement": null,
+                  "suggestion_applicability": null,
+                  "text": [
+                    {
+                      "highlight_end": 19,
+                      "highlight_start": 14,
+                      "text": "    delivery.await;"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "requested on the command line with `--force-warn clippy::await-holding-lock`",
+              "rendered": null,
+              "spans": []
+            }
+          ],
+          "level": "warning",
+          "message": "this `MutexGuard` is held across an await point",
+          "spans": [
+            {
+              "byte_end": 186,
+              "byte_start": 181,
+              "column_end": 14,
+              "column_start": 9,
+              "expansion": null,
+              "file_name": "app\\src\\existing.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 7,
+              "line_start": 7,
+              "suggested_replacement": null,
+              "suggestion_applicability": null,
+              "text": [
+                {
+                  "highlight_end": 14,
+                  "highlight_start": 9,
+                  "text": "    let guard = state.lock().map_err(|_| \"state lock poisoned\")?;"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "code": "clippy::await_holding_lock",
+            "explanation": null
+          }
+        },
+        {
+          "rendered": "warning: this `MutexGuard` is held across an await point\n --> app\\src\\existing.rs:7:9\n  |\n7 |     let guard = state.lock().map_err(|_| \"state lock poisoned\")?;\n  |         ^^^^^\n  |\n  = help: consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`\nnote: these are all the await points this lock is held through\n --> app\\src\\existing.rs:9:14\n  |\n9 |     delivery.await;\n  |              ^^^^^\n  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock\n  = note: requested on the command line with `--force-warn clippy::await-holding-lock`\n\n",
+          "$message_type": "diagnostic",
+          "children": [
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "these are all the await points this lock is held through",
+              "rendered": null,
+              "spans": [
+                {
+                  "byte_end": 284,
+                  "byte_start": 279,
+                  "column_end": 19,
+                  "column_start": 14,
+                  "expansion": {
+                    "def_site_span": {
+                      "byte_end": 0,
+                      "byte_start": 0,
+                      "column_end": 1,
+                      "column_start": 1,
+                      "expansion": null,
+                      "file_name": "app\\src\\lib.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 1,
+                      "line_start": 1,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": []
+                    },
+                    "macro_decl_name": "desugaring of `await` expression",
+                    "span": {
+                      "byte_end": 284,
+                      "byte_start": 279,
+                      "column_end": 19,
+                      "column_start": 14,
+                      "expansion": null,
+                      "file_name": "app\\src\\existing.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 9,
+                      "line_start": 9,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": [
+                        {
+                          "highlight_end": 19,
+                          "highlight_start": 14,
+                          "text": "    delivery.await;"
+                        }
+                      ]
+                    }
+                  },
+                  "file_name": "app\\src\\existing.rs",
+                  "is_primary": true,
+                  "label": null,
+                  "line_end": 9,
+                  "line_start": 9,
+                  "suggested_replacement": null,
+                  "suggestion_applicability": null,
+                  "text": [
+                    {
+                      "highlight_end": 19,
+                      "highlight_start": 14,
+                      "text": "    delivery.await;"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "requested on the command line with `--force-warn clippy::await-holding-lock`",
+              "rendered": null,
+              "spans": []
+            }
+          ],
+          "level": "warning",
+          "message": "this `MutexGuard` is held across an await point",
+          "spans": [
+            {
+              "byte_end": 186,
+              "byte_start": 181,
+              "column_end": 14,
+              "column_start": 9,
+              "expansion": null,
+              "file_name": "app\\src\\existing.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 7,
+              "line_start": 7,
+              "suggested_replacement": null,
+              "suggestion_applicability": null,
+              "text": [
+                {
+                  "highlight_end": 14,
+                  "highlight_start": 9,
+                  "text": "    let guard = state.lock().map_err(|_| \"state lock poisoned\")?;"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "code": "clippy::await_holding_lock",
+            "explanation": null
+          }
+        }
+      ],
+      "build_finished": [
+        true
+      ],
+      "diagnostic_root": "<candidate>",
+      "candidate_compiled": true,
+      "reachability_control": {
+        "reached_as_rust": true,
+        "exit_code": 101,
+        "error": "unsuccessful_or_incomplete_check"
+      },
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "f5ab4a2626baffe994ca551ce040f32f0a32053d50e5fae64f38bffbfd678354"
+    },
+    "edit_good": {
+      "outcome": "no_findings",
+      "findings": [],
+      "target": "app/src/existing.rs",
+      "operation": "edit",
+      "original_sha256": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa",
+      "candidate_sha256": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa",
+      "command": [
+        "cargo",
+        "clippy",
+        "--offline",
+        "--manifest-path",
+        "<candidate>\\app\\Cargo.toml",
+        "--target-dir",
+        "<scratch>\\build",
+        "--all-targets",
+        "--message-format=json",
+        "--features",
+        "existing",
+        "--",
+        "-A",
+        "clippy::all",
+        "--force-warn",
+        "clippy::await_holding_lock"
+      ],
+      "exit_code": 0,
+      "stderr": "    Checking candidate-support v0.0.0 (<candidate>\\support)\n    Checking candidate-app v0.0.0 (<candidate>\\app)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.27s\n",
+      "diagnostics": [],
+      "build_finished": [
+        true
+      ],
+      "diagnostic_root": "<candidate>",
+      "candidate_compiled": true,
+      "reachability_control": {
+        "reached_as_rust": true,
+        "exit_code": 101,
+        "error": "unsuccessful_or_incomplete_check"
+      },
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "f5ab4a2626baffe994ca551ce040f32f0a32053d50e5fae64f38bffbfd678354"
+    },
+    "edit_bad_again": {
+      "outcome": "findings",
+      "findings": [
+        {
+          "rendered": "warning: this `MutexGuard` is held across an await point\n --> app\\src\\existing.rs:7:9\n  |\n7 |     let guard = state.lock().map_err(|_| \"state lock poisoned\")?;\n  |         ^^^^^\n  |\n  = help: consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`\nnote: these are all the await points this lock is held through\n --> app\\src\\existing.rs:9:14\n  |\n9 |     delivery.await;\n  |              ^^^^^\n  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock\n  = note: requested on the command line with `--force-warn clippy::await-holding-lock`\n\n",
+          "$message_type": "diagnostic",
+          "children": [
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "these are all the await points this lock is held through",
+              "rendered": null,
+              "spans": [
+                {
+                  "byte_end": 284,
+                  "byte_start": 279,
+                  "column_end": 19,
+                  "column_start": 14,
+                  "expansion": {
+                    "def_site_span": {
+                      "byte_end": 0,
+                      "byte_start": 0,
+                      "column_end": 1,
+                      "column_start": 1,
+                      "expansion": null,
+                      "file_name": "app\\src\\lib.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 1,
+                      "line_start": 1,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": []
+                    },
+                    "macro_decl_name": "desugaring of `await` expression",
+                    "span": {
+                      "byte_end": 284,
+                      "byte_start": 279,
+                      "column_end": 19,
+                      "column_start": 14,
+                      "expansion": null,
+                      "file_name": "app\\src\\existing.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 9,
+                      "line_start": 9,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": [
+                        {
+                          "highlight_end": 19,
+                          "highlight_start": 14,
+                          "text": "    delivery.await;"
+                        }
+                      ]
+                    }
+                  },
+                  "file_name": "app\\src\\existing.rs",
+                  "is_primary": true,
+                  "label": null,
+                  "line_end": 9,
+                  "line_start": 9,
+                  "suggested_replacement": null,
+                  "suggestion_applicability": null,
+                  "text": [
+                    {
+                      "highlight_end": 19,
+                      "highlight_start": 14,
+                      "text": "    delivery.await;"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "requested on the command line with `--force-warn clippy::await-holding-lock`",
+              "rendered": null,
+              "spans": []
+            }
+          ],
+          "level": "warning",
+          "message": "this `MutexGuard` is held across an await point",
+          "spans": [
+            {
+              "byte_end": 186,
+              "byte_start": 181,
+              "column_end": 14,
+              "column_start": 9,
+              "expansion": null,
+              "file_name": "app\\src\\existing.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 7,
+              "line_start": 7,
+              "suggested_replacement": null,
+              "suggestion_applicability": null,
+              "text": [
+                {
+                  "highlight_end": 14,
+                  "highlight_start": 9,
+                  "text": "    let guard = state.lock().map_err(|_| \"state lock poisoned\")?;"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "code": "clippy::await_holding_lock",
+            "explanation": null
+          }
+        },
+        {
+          "rendered": "warning: this `MutexGuard` is held across an await point\n --> app\\src\\existing.rs:7:9\n  |\n7 |     let guard = state.lock().map_err(|_| \"state lock poisoned\")?;\n  |         ^^^^^\n  |\n  = help: consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`\nnote: these are all the await points this lock is held through\n --> app\\src\\existing.rs:9:14\n  |\n9 |     delivery.await;\n  |              ^^^^^\n  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock\n  = note: requested on the command line with `--force-warn clippy::await-holding-lock`\n\n",
+          "$message_type": "diagnostic",
+          "children": [
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "these are all the await points this lock is held through",
+              "rendered": null,
+              "spans": [
+                {
+                  "byte_end": 284,
+                  "byte_start": 279,
+                  "column_end": 19,
+                  "column_start": 14,
+                  "expansion": {
+                    "def_site_span": {
+                      "byte_end": 0,
+                      "byte_start": 0,
+                      "column_end": 1,
+                      "column_start": 1,
+                      "expansion": null,
+                      "file_name": "app\\src\\lib.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 1,
+                      "line_start": 1,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": []
+                    },
+                    "macro_decl_name": "desugaring of `await` expression",
+                    "span": {
+                      "byte_end": 284,
+                      "byte_start": 279,
+                      "column_end": 19,
+                      "column_start": 14,
+                      "expansion": null,
+                      "file_name": "app\\src\\existing.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 9,
+                      "line_start": 9,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": [
+                        {
+                          "highlight_end": 19,
+                          "highlight_start": 14,
+                          "text": "    delivery.await;"
+                        }
+                      ]
+                    }
+                  },
+                  "file_name": "app\\src\\existing.rs",
+                  "is_primary": true,
+                  "label": null,
+                  "line_end": 9,
+                  "line_start": 9,
+                  "suggested_replacement": null,
+                  "suggestion_applicability": null,
+                  "text": [
+                    {
+                      "highlight_end": 19,
+                      "highlight_start": 14,
+                      "text": "    delivery.await;"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "requested on the command line with `--force-warn clippy::await-holding-lock`",
+              "rendered": null,
+              "spans": []
+            }
+          ],
+          "level": "warning",
+          "message": "this `MutexGuard` is held across an await point",
+          "spans": [
+            {
+              "byte_end": 186,
+              "byte_start": 181,
+              "column_end": 14,
+              "column_start": 9,
+              "expansion": null,
+              "file_name": "app\\src\\existing.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 7,
+              "line_start": 7,
+              "suggested_replacement": null,
+              "suggestion_applicability": null,
+              "text": [
+                {
+                  "highlight_end": 14,
+                  "highlight_start": 9,
+                  "text": "    let guard = state.lock().map_err(|_| \"state lock poisoned\")?;"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "code": "clippy::await_holding_lock",
+            "explanation": null
+          }
+        }
+      ],
+      "target": "app/src/existing.rs",
+      "operation": "edit",
+      "original_sha256": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa",
+      "candidate_sha256": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9",
+      "command": [
+        "cargo",
+        "clippy",
+        "--offline",
+        "--manifest-path",
+        "<candidate>\\app\\Cargo.toml",
+        "--target-dir",
+        "<scratch>\\build",
+        "--all-targets",
+        "--message-format=json",
+        "--features",
+        "existing",
+        "--",
+        "-A",
+        "clippy::all",
+        "--force-warn",
+        "clippy::await_holding_lock"
+      ],
+      "exit_code": 0,
+      "stderr": "    Checking candidate-support v0.0.0 (<candidate>\\support)\n    Checking candidate-app v0.0.0 (<candidate>\\app)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.27s\n",
+      "diagnostics": [
+        {
+          "rendered": "warning: this `MutexGuard` is held across an await point\n --> app\\src\\existing.rs:7:9\n  |\n7 |     let guard = state.lock().map_err(|_| \"state lock poisoned\")?;\n  |         ^^^^^\n  |\n  = help: consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`\nnote: these are all the await points this lock is held through\n --> app\\src\\existing.rs:9:14\n  |\n9 |     delivery.await;\n  |              ^^^^^\n  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock\n  = note: requested on the command line with `--force-warn clippy::await-holding-lock`\n\n",
+          "$message_type": "diagnostic",
+          "children": [
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "these are all the await points this lock is held through",
+              "rendered": null,
+              "spans": [
+                {
+                  "byte_end": 284,
+                  "byte_start": 279,
+                  "column_end": 19,
+                  "column_start": 14,
+                  "expansion": {
+                    "def_site_span": {
+                      "byte_end": 0,
+                      "byte_start": 0,
+                      "column_end": 1,
+                      "column_start": 1,
+                      "expansion": null,
+                      "file_name": "app\\src\\lib.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 1,
+                      "line_start": 1,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": []
+                    },
+                    "macro_decl_name": "desugaring of `await` expression",
+                    "span": {
+                      "byte_end": 284,
+                      "byte_start": 279,
+                      "column_end": 19,
+                      "column_start": 14,
+                      "expansion": null,
+                      "file_name": "app\\src\\existing.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 9,
+                      "line_start": 9,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": [
+                        {
+                          "highlight_end": 19,
+                          "highlight_start": 14,
+                          "text": "    delivery.await;"
+                        }
+                      ]
+                    }
+                  },
+                  "file_name": "app\\src\\existing.rs",
+                  "is_primary": true,
+                  "label": null,
+                  "line_end": 9,
+                  "line_start": 9,
+                  "suggested_replacement": null,
+                  "suggestion_applicability": null,
+                  "text": [
+                    {
+                      "highlight_end": 19,
+                      "highlight_start": 14,
+                      "text": "    delivery.await;"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "requested on the command line with `--force-warn clippy::await-holding-lock`",
+              "rendered": null,
+              "spans": []
+            }
+          ],
+          "level": "warning",
+          "message": "this `MutexGuard` is held across an await point",
+          "spans": [
+            {
+              "byte_end": 186,
+              "byte_start": 181,
+              "column_end": 14,
+              "column_start": 9,
+              "expansion": null,
+              "file_name": "app\\src\\existing.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 7,
+              "line_start": 7,
+              "suggested_replacement": null,
+              "suggestion_applicability": null,
+              "text": [
+                {
+                  "highlight_end": 14,
+                  "highlight_start": 9,
+                  "text": "    let guard = state.lock().map_err(|_| \"state lock poisoned\")?;"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "code": "clippy::await_holding_lock",
+            "explanation": null
+          }
+        },
+        {
+          "rendered": "warning: this `MutexGuard` is held across an await point\n --> app\\src\\existing.rs:7:9\n  |\n7 |     let guard = state.lock().map_err(|_| \"state lock poisoned\")?;\n  |         ^^^^^\n  |\n  = help: consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`\nnote: these are all the await points this lock is held through\n --> app\\src\\existing.rs:9:14\n  |\n9 |     delivery.await;\n  |              ^^^^^\n  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock\n  = note: requested on the command line with `--force-warn clippy::await-holding-lock`\n\n",
+          "$message_type": "diagnostic",
+          "children": [
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "these are all the await points this lock is held through",
+              "rendered": null,
+              "spans": [
+                {
+                  "byte_end": 284,
+                  "byte_start": 279,
+                  "column_end": 19,
+                  "column_start": 14,
+                  "expansion": {
+                    "def_site_span": {
+                      "byte_end": 0,
+                      "byte_start": 0,
+                      "column_end": 1,
+                      "column_start": 1,
+                      "expansion": null,
+                      "file_name": "app\\src\\lib.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 1,
+                      "line_start": 1,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": []
+                    },
+                    "macro_decl_name": "desugaring of `await` expression",
+                    "span": {
+                      "byte_end": 284,
+                      "byte_start": 279,
+                      "column_end": 19,
+                      "column_start": 14,
+                      "expansion": null,
+                      "file_name": "app\\src\\existing.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 9,
+                      "line_start": 9,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": [
+                        {
+                          "highlight_end": 19,
+                          "highlight_start": 14,
+                          "text": "    delivery.await;"
+                        }
+                      ]
+                    }
+                  },
+                  "file_name": "app\\src\\existing.rs",
+                  "is_primary": true,
+                  "label": null,
+                  "line_end": 9,
+                  "line_start": 9,
+                  "suggested_replacement": null,
+                  "suggestion_applicability": null,
+                  "text": [
+                    {
+                      "highlight_end": 19,
+                      "highlight_start": 14,
+                      "text": "    delivery.await;"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "requested on the command line with `--force-warn clippy::await-holding-lock`",
+              "rendered": null,
+              "spans": []
+            }
+          ],
+          "level": "warning",
+          "message": "this `MutexGuard` is held across an await point",
+          "spans": [
+            {
+              "byte_end": 186,
+              "byte_start": 181,
+              "column_end": 14,
+              "column_start": 9,
+              "expansion": null,
+              "file_name": "app\\src\\existing.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 7,
+              "line_start": 7,
+              "suggested_replacement": null,
+              "suggestion_applicability": null,
+              "text": [
+                {
+                  "highlight_end": 14,
+                  "highlight_start": 9,
+                  "text": "    let guard = state.lock().map_err(|_| \"state lock poisoned\")?;"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "code": "clippy::await_holding_lock",
+            "explanation": null
+          }
+        }
+      ],
+      "build_finished": [
+        true
+      ],
+      "diagnostic_root": "<candidate>",
+      "candidate_compiled": true,
+      "reachability_control": {
+        "reached_as_rust": true,
+        "exit_code": 101,
+        "error": "unsuccessful_or_incomplete_check"
+      },
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "f5ab4a2626baffe994ca551ce040f32f0a32053d50e5fae64f38bffbfd678354"
+    },
+    "new_bad": {
+      "outcome": "findings",
+      "findings": [
+        {
+          "rendered": "warning: this `MutexGuard` is held across an await point\n --> app\\src\\created.rs:7:9\n  |\n7 |     let guard = state.lock().map_err(|_| \"state lock poisoned\")?;\n  |         ^^^^^\n  |\n  = help: consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`\nnote: these are all the await points this lock is held through\n --> app\\src\\created.rs:9:14\n  |\n9 |     delivery.await;\n  |              ^^^^^\n  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock\n  = note: requested on the command line with `--force-warn clippy::await-holding-lock`\n\n",
+          "$message_type": "diagnostic",
+          "children": [
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "these are all the await points this lock is held through",
+              "rendered": null,
+              "spans": [
+                {
+                  "byte_end": 284,
+                  "byte_start": 279,
+                  "column_end": 19,
+                  "column_start": 14,
+                  "expansion": {
+                    "def_site_span": {
+                      "byte_end": 0,
+                      "byte_start": 0,
+                      "column_end": 1,
+                      "column_start": 1,
+                      "expansion": null,
+                      "file_name": "app\\src\\lib.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 1,
+                      "line_start": 1,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": []
+                    },
+                    "macro_decl_name": "desugaring of `await` expression",
+                    "span": {
+                      "byte_end": 284,
+                      "byte_start": 279,
+                      "column_end": 19,
+                      "column_start": 14,
+                      "expansion": null,
+                      "file_name": "app\\src\\created.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 9,
+                      "line_start": 9,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": [
+                        {
+                          "highlight_end": 19,
+                          "highlight_start": 14,
+                          "text": "    delivery.await;"
+                        }
+                      ]
+                    }
+                  },
+                  "file_name": "app\\src\\created.rs",
+                  "is_primary": true,
+                  "label": null,
+                  "line_end": 9,
+                  "line_start": 9,
+                  "suggested_replacement": null,
+                  "suggestion_applicability": null,
+                  "text": [
+                    {
+                      "highlight_end": 19,
+                      "highlight_start": 14,
+                      "text": "    delivery.await;"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "requested on the command line with `--force-warn clippy::await-holding-lock`",
+              "rendered": null,
+              "spans": []
+            }
+          ],
+          "level": "warning",
+          "message": "this `MutexGuard` is held across an await point",
+          "spans": [
+            {
+              "byte_end": 186,
+              "byte_start": 181,
+              "column_end": 14,
+              "column_start": 9,
+              "expansion": null,
+              "file_name": "app\\src\\created.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 7,
+              "line_start": 7,
+              "suggested_replacement": null,
+              "suggestion_applicability": null,
+              "text": [
+                {
+                  "highlight_end": 14,
+                  "highlight_start": 9,
+                  "text": "    let guard = state.lock().map_err(|_| \"state lock poisoned\")?;"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "code": "clippy::await_holding_lock",
+            "explanation": null
+          }
+        },
+        {
+          "rendered": "warning: this `MutexGuard` is held across an await point\n --> app\\src\\created.rs:7:9\n  |\n7 |     let guard = state.lock().map_err(|_| \"state lock poisoned\")?;\n  |         ^^^^^\n  |\n  = help: consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`\nnote: these are all the await points this lock is held through\n --> app\\src\\created.rs:9:14\n  |\n9 |     delivery.await;\n  |              ^^^^^\n  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock\n  = note: requested on the command line with `--force-warn clippy::await-holding-lock`\n\n",
+          "$message_type": "diagnostic",
+          "children": [
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "these are all the await points this lock is held through",
+              "rendered": null,
+              "spans": [
+                {
+                  "byte_end": 284,
+                  "byte_start": 279,
+                  "column_end": 19,
+                  "column_start": 14,
+                  "expansion": {
+                    "def_site_span": {
+                      "byte_end": 0,
+                      "byte_start": 0,
+                      "column_end": 1,
+                      "column_start": 1,
+                      "expansion": null,
+                      "file_name": "app\\src\\lib.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 1,
+                      "line_start": 1,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": []
+                    },
+                    "macro_decl_name": "desugaring of `await` expression",
+                    "span": {
+                      "byte_end": 284,
+                      "byte_start": 279,
+                      "column_end": 19,
+                      "column_start": 14,
+                      "expansion": null,
+                      "file_name": "app\\src\\created.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 9,
+                      "line_start": 9,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": [
+                        {
+                          "highlight_end": 19,
+                          "highlight_start": 14,
+                          "text": "    delivery.await;"
+                        }
+                      ]
+                    }
+                  },
+                  "file_name": "app\\src\\created.rs",
+                  "is_primary": true,
+                  "label": null,
+                  "line_end": 9,
+                  "line_start": 9,
+                  "suggested_replacement": null,
+                  "suggestion_applicability": null,
+                  "text": [
+                    {
+                      "highlight_end": 19,
+                      "highlight_start": 14,
+                      "text": "    delivery.await;"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "requested on the command line with `--force-warn clippy::await-holding-lock`",
+              "rendered": null,
+              "spans": []
+            }
+          ],
+          "level": "warning",
+          "message": "this `MutexGuard` is held across an await point",
+          "spans": [
+            {
+              "byte_end": 186,
+              "byte_start": 181,
+              "column_end": 14,
+              "column_start": 9,
+              "expansion": null,
+              "file_name": "app\\src\\created.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 7,
+              "line_start": 7,
+              "suggested_replacement": null,
+              "suggestion_applicability": null,
+              "text": [
+                {
+                  "highlight_end": 14,
+                  "highlight_start": 9,
+                  "text": "    let guard = state.lock().map_err(|_| \"state lock poisoned\")?;"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "code": "clippy::await_holding_lock",
+            "explanation": null
+          }
+        }
+      ],
+      "target": "app/src/created.rs",
+      "operation": "write",
+      "original_sha256": null,
+      "candidate_sha256": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9",
+      "command": [
+        "cargo",
+        "clippy",
+        "--offline",
+        "--manifest-path",
+        "<candidate>\\app\\Cargo.toml",
+        "--target-dir",
+        "<scratch>\\build",
+        "--all-targets",
+        "--message-format=json",
+        "--features",
+        "created",
+        "--",
+        "-A",
+        "clippy::all",
+        "--force-warn",
+        "clippy::await_holding_lock"
+      ],
+      "exit_code": 0,
+      "stderr": "    Checking candidate-support v0.0.0 (<candidate>\\support)\n    Checking candidate-app v0.0.0 (<candidate>\\app)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.28s\n",
+      "diagnostics": [
+        {
+          "rendered": "warning: this `MutexGuard` is held across an await point\n --> app\\src\\created.rs:7:9\n  |\n7 |     let guard = state.lock().map_err(|_| \"state lock poisoned\")?;\n  |         ^^^^^\n  |\n  = help: consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`\nnote: these are all the await points this lock is held through\n --> app\\src\\created.rs:9:14\n  |\n9 |     delivery.await;\n  |              ^^^^^\n  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock\n  = note: requested on the command line with `--force-warn clippy::await-holding-lock`\n\n",
+          "$message_type": "diagnostic",
+          "children": [
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "these are all the await points this lock is held through",
+              "rendered": null,
+              "spans": [
+                {
+                  "byte_end": 284,
+                  "byte_start": 279,
+                  "column_end": 19,
+                  "column_start": 14,
+                  "expansion": {
+                    "def_site_span": {
+                      "byte_end": 0,
+                      "byte_start": 0,
+                      "column_end": 1,
+                      "column_start": 1,
+                      "expansion": null,
+                      "file_name": "app\\src\\lib.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 1,
+                      "line_start": 1,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": []
+                    },
+                    "macro_decl_name": "desugaring of `await` expression",
+                    "span": {
+                      "byte_end": 284,
+                      "byte_start": 279,
+                      "column_end": 19,
+                      "column_start": 14,
+                      "expansion": null,
+                      "file_name": "app\\src\\created.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 9,
+                      "line_start": 9,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": [
+                        {
+                          "highlight_end": 19,
+                          "highlight_start": 14,
+                          "text": "    delivery.await;"
+                        }
+                      ]
+                    }
+                  },
+                  "file_name": "app\\src\\created.rs",
+                  "is_primary": true,
+                  "label": null,
+                  "line_end": 9,
+                  "line_start": 9,
+                  "suggested_replacement": null,
+                  "suggestion_applicability": null,
+                  "text": [
+                    {
+                      "highlight_end": 19,
+                      "highlight_start": 14,
+                      "text": "    delivery.await;"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "requested on the command line with `--force-warn clippy::await-holding-lock`",
+              "rendered": null,
+              "spans": []
+            }
+          ],
+          "level": "warning",
+          "message": "this `MutexGuard` is held across an await point",
+          "spans": [
+            {
+              "byte_end": 186,
+              "byte_start": 181,
+              "column_end": 14,
+              "column_start": 9,
+              "expansion": null,
+              "file_name": "app\\src\\created.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 7,
+              "line_start": 7,
+              "suggested_replacement": null,
+              "suggestion_applicability": null,
+              "text": [
+                {
+                  "highlight_end": 14,
+                  "highlight_start": 9,
+                  "text": "    let guard = state.lock().map_err(|_| \"state lock poisoned\")?;"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "code": "clippy::await_holding_lock",
+            "explanation": null
+          }
+        },
+        {
+          "rendered": "warning: this `MutexGuard` is held across an await point\n --> app\\src\\created.rs:7:9\n  |\n7 |     let guard = state.lock().map_err(|_| \"state lock poisoned\")?;\n  |         ^^^^^\n  |\n  = help: consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`\nnote: these are all the await points this lock is held through\n --> app\\src\\created.rs:9:14\n  |\n9 |     delivery.await;\n  |              ^^^^^\n  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock\n  = note: requested on the command line with `--force-warn clippy::await-holding-lock`\n\n",
+          "$message_type": "diagnostic",
+          "children": [
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "these are all the await points this lock is held through",
+              "rendered": null,
+              "spans": [
+                {
+                  "byte_end": 284,
+                  "byte_start": 279,
+                  "column_end": 19,
+                  "column_start": 14,
+                  "expansion": {
+                    "def_site_span": {
+                      "byte_end": 0,
+                      "byte_start": 0,
+                      "column_end": 1,
+                      "column_start": 1,
+                      "expansion": null,
+                      "file_name": "app\\src\\lib.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 1,
+                      "line_start": 1,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": []
+                    },
+                    "macro_decl_name": "desugaring of `await` expression",
+                    "span": {
+                      "byte_end": 284,
+                      "byte_start": 279,
+                      "column_end": 19,
+                      "column_start": 14,
+                      "expansion": null,
+                      "file_name": "app\\src\\created.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 9,
+                      "line_start": 9,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": [
+                        {
+                          "highlight_end": 19,
+                          "highlight_start": 14,
+                          "text": "    delivery.await;"
+                        }
+                      ]
+                    }
+                  },
+                  "file_name": "app\\src\\created.rs",
+                  "is_primary": true,
+                  "label": null,
+                  "line_end": 9,
+                  "line_start": 9,
+                  "suggested_replacement": null,
+                  "suggestion_applicability": null,
+                  "text": [
+                    {
+                      "highlight_end": 19,
+                      "highlight_start": 14,
+                      "text": "    delivery.await;"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "requested on the command line with `--force-warn clippy::await-holding-lock`",
+              "rendered": null,
+              "spans": []
+            }
+          ],
+          "level": "warning",
+          "message": "this `MutexGuard` is held across an await point",
+          "spans": [
+            {
+              "byte_end": 186,
+              "byte_start": 181,
+              "column_end": 14,
+              "column_start": 9,
+              "expansion": null,
+              "file_name": "app\\src\\created.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 7,
+              "line_start": 7,
+              "suggested_replacement": null,
+              "suggestion_applicability": null,
+              "text": [
+                {
+                  "highlight_end": 14,
+                  "highlight_start": 9,
+                  "text": "    let guard = state.lock().map_err(|_| \"state lock poisoned\")?;"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "code": "clippy::await_holding_lock",
+            "explanation": null
+          }
+        }
+      ],
+      "build_finished": [
+        true
+      ],
+      "diagnostic_root": "<candidate>",
+      "candidate_compiled": true,
+      "reachability_control": {
+        "reached_as_rust": true,
+        "exit_code": 101,
+        "error": "unsuccessful_or_incomplete_check"
+      },
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "f5ab4a2626baffe994ca551ce040f32f0a32053d50e5fae64f38bffbfd678354"
+    },
+    "new_good": {
+      "outcome": "no_findings",
+      "findings": [],
+      "target": "app/src/created.rs",
+      "operation": "write",
+      "original_sha256": null,
+      "candidate_sha256": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa",
+      "command": [
+        "cargo",
+        "clippy",
+        "--offline",
+        "--manifest-path",
+        "<candidate>\\app\\Cargo.toml",
+        "--target-dir",
+        "<scratch>\\build",
+        "--all-targets",
+        "--message-format=json",
+        "--features",
+        "created",
+        "--",
+        "-A",
+        "clippy::all",
+        "--force-warn",
+        "clippy::await_holding_lock"
+      ],
+      "exit_code": 0,
+      "stderr": "    Checking candidate-support v0.0.0 (<candidate>\\support)\n    Checking candidate-app v0.0.0 (<candidate>\\app)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.28s\n",
+      "diagnostics": [],
+      "build_finished": [
+        true
+      ],
+      "diagnostic_root": "<candidate>",
+      "candidate_compiled": true,
+      "reachability_control": {
+        "reached_as_rust": true,
+        "exit_code": 101,
+        "error": "unsuccessful_or_incomplete_check"
+      },
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "f5ab4a2626baffe994ca551ce040f32f0a32053d50e5fae64f38bffbfd678354"
+    },
+    "new_bad_again": {
+      "outcome": "findings",
+      "findings": [
+        {
+          "rendered": "warning: this `MutexGuard` is held across an await point\n --> app\\src\\created.rs:7:9\n  |\n7 |     let guard = state.lock().map_err(|_| \"state lock poisoned\")?;\n  |         ^^^^^\n  |\n  = help: consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`\nnote: these are all the await points this lock is held through\n --> app\\src\\created.rs:9:14\n  |\n9 |     delivery.await;\n  |              ^^^^^\n  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock\n  = note: requested on the command line with `--force-warn clippy::await-holding-lock`\n\n",
+          "$message_type": "diagnostic",
+          "children": [
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "these are all the await points this lock is held through",
+              "rendered": null,
+              "spans": [
+                {
+                  "byte_end": 284,
+                  "byte_start": 279,
+                  "column_end": 19,
+                  "column_start": 14,
+                  "expansion": {
+                    "def_site_span": {
+                      "byte_end": 0,
+                      "byte_start": 0,
+                      "column_end": 1,
+                      "column_start": 1,
+                      "expansion": null,
+                      "file_name": "app\\src\\lib.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 1,
+                      "line_start": 1,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": []
+                    },
+                    "macro_decl_name": "desugaring of `await` expression",
+                    "span": {
+                      "byte_end": 284,
+                      "byte_start": 279,
+                      "column_end": 19,
+                      "column_start": 14,
+                      "expansion": null,
+                      "file_name": "app\\src\\created.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 9,
+                      "line_start": 9,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": [
+                        {
+                          "highlight_end": 19,
+                          "highlight_start": 14,
+                          "text": "    delivery.await;"
+                        }
+                      ]
+                    }
+                  },
+                  "file_name": "app\\src\\created.rs",
+                  "is_primary": true,
+                  "label": null,
+                  "line_end": 9,
+                  "line_start": 9,
+                  "suggested_replacement": null,
+                  "suggestion_applicability": null,
+                  "text": [
+                    {
+                      "highlight_end": 19,
+                      "highlight_start": 14,
+                      "text": "    delivery.await;"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "requested on the command line with `--force-warn clippy::await-holding-lock`",
+              "rendered": null,
+              "spans": []
+            }
+          ],
+          "level": "warning",
+          "message": "this `MutexGuard` is held across an await point",
+          "spans": [
+            {
+              "byte_end": 186,
+              "byte_start": 181,
+              "column_end": 14,
+              "column_start": 9,
+              "expansion": null,
+              "file_name": "app\\src\\created.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 7,
+              "line_start": 7,
+              "suggested_replacement": null,
+              "suggestion_applicability": null,
+              "text": [
+                {
+                  "highlight_end": 14,
+                  "highlight_start": 9,
+                  "text": "    let guard = state.lock().map_err(|_| \"state lock poisoned\")?;"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "code": "clippy::await_holding_lock",
+            "explanation": null
+          }
+        },
+        {
+          "rendered": "warning: this `MutexGuard` is held across an await point\n --> app\\src\\created.rs:7:9\n  |\n7 |     let guard = state.lock().map_err(|_| \"state lock poisoned\")?;\n  |         ^^^^^\n  |\n  = help: consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`\nnote: these are all the await points this lock is held through\n --> app\\src\\created.rs:9:14\n  |\n9 |     delivery.await;\n  |              ^^^^^\n  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock\n  = note: requested on the command line with `--force-warn clippy::await-holding-lock`\n\n",
+          "$message_type": "diagnostic",
+          "children": [
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "these are all the await points this lock is held through",
+              "rendered": null,
+              "spans": [
+                {
+                  "byte_end": 284,
+                  "byte_start": 279,
+                  "column_end": 19,
+                  "column_start": 14,
+                  "expansion": {
+                    "def_site_span": {
+                      "byte_end": 0,
+                      "byte_start": 0,
+                      "column_end": 1,
+                      "column_start": 1,
+                      "expansion": null,
+                      "file_name": "app\\src\\lib.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 1,
+                      "line_start": 1,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": []
+                    },
+                    "macro_decl_name": "desugaring of `await` expression",
+                    "span": {
+                      "byte_end": 284,
+                      "byte_start": 279,
+                      "column_end": 19,
+                      "column_start": 14,
+                      "expansion": null,
+                      "file_name": "app\\src\\created.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 9,
+                      "line_start": 9,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": [
+                        {
+                          "highlight_end": 19,
+                          "highlight_start": 14,
+                          "text": "    delivery.await;"
+                        }
+                      ]
+                    }
+                  },
+                  "file_name": "app\\src\\created.rs",
+                  "is_primary": true,
+                  "label": null,
+                  "line_end": 9,
+                  "line_start": 9,
+                  "suggested_replacement": null,
+                  "suggestion_applicability": null,
+                  "text": [
+                    {
+                      "highlight_end": 19,
+                      "highlight_start": 14,
+                      "text": "    delivery.await;"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "requested on the command line with `--force-warn clippy::await-holding-lock`",
+              "rendered": null,
+              "spans": []
+            }
+          ],
+          "level": "warning",
+          "message": "this `MutexGuard` is held across an await point",
+          "spans": [
+            {
+              "byte_end": 186,
+              "byte_start": 181,
+              "column_end": 14,
+              "column_start": 9,
+              "expansion": null,
+              "file_name": "app\\src\\created.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 7,
+              "line_start": 7,
+              "suggested_replacement": null,
+              "suggestion_applicability": null,
+              "text": [
+                {
+                  "highlight_end": 14,
+                  "highlight_start": 9,
+                  "text": "    let guard = state.lock().map_err(|_| \"state lock poisoned\")?;"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "code": "clippy::await_holding_lock",
+            "explanation": null
+          }
+        }
+      ],
+      "target": "app/src/created.rs",
+      "operation": "write",
+      "original_sha256": null,
+      "candidate_sha256": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9",
+      "command": [
+        "cargo",
+        "clippy",
+        "--offline",
+        "--manifest-path",
+        "<candidate>\\app\\Cargo.toml",
+        "--target-dir",
+        "<scratch>\\build",
+        "--all-targets",
+        "--message-format=json",
+        "--features",
+        "created",
+        "--",
+        "-A",
+        "clippy::all",
+        "--force-warn",
+        "clippy::await_holding_lock"
+      ],
+      "exit_code": 0,
+      "stderr": "    Checking candidate-support v0.0.0 (<candidate>\\support)\n    Checking candidate-app v0.0.0 (<candidate>\\app)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.28s\n",
+      "diagnostics": [
+        {
+          "rendered": "warning: this `MutexGuard` is held across an await point\n --> app\\src\\created.rs:7:9\n  |\n7 |     let guard = state.lock().map_err(|_| \"state lock poisoned\")?;\n  |         ^^^^^\n  |\n  = help: consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`\nnote: these are all the await points this lock is held through\n --> app\\src\\created.rs:9:14\n  |\n9 |     delivery.await;\n  |              ^^^^^\n  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock\n  = note: requested on the command line with `--force-warn clippy::await-holding-lock`\n\n",
+          "$message_type": "diagnostic",
+          "children": [
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "these are all the await points this lock is held through",
+              "rendered": null,
+              "spans": [
+                {
+                  "byte_end": 284,
+                  "byte_start": 279,
+                  "column_end": 19,
+                  "column_start": 14,
+                  "expansion": {
+                    "def_site_span": {
+                      "byte_end": 0,
+                      "byte_start": 0,
+                      "column_end": 1,
+                      "column_start": 1,
+                      "expansion": null,
+                      "file_name": "app\\src\\lib.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 1,
+                      "line_start": 1,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": []
+                    },
+                    "macro_decl_name": "desugaring of `await` expression",
+                    "span": {
+                      "byte_end": 284,
+                      "byte_start": 279,
+                      "column_end": 19,
+                      "column_start": 14,
+                      "expansion": null,
+                      "file_name": "app\\src\\created.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 9,
+                      "line_start": 9,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": [
+                        {
+                          "highlight_end": 19,
+                          "highlight_start": 14,
+                          "text": "    delivery.await;"
+                        }
+                      ]
+                    }
+                  },
+                  "file_name": "app\\src\\created.rs",
+                  "is_primary": true,
+                  "label": null,
+                  "line_end": 9,
+                  "line_start": 9,
+                  "suggested_replacement": null,
+                  "suggestion_applicability": null,
+                  "text": [
+                    {
+                      "highlight_end": 19,
+                      "highlight_start": 14,
+                      "text": "    delivery.await;"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "requested on the command line with `--force-warn clippy::await-holding-lock`",
+              "rendered": null,
+              "spans": []
+            }
+          ],
+          "level": "warning",
+          "message": "this `MutexGuard` is held across an await point",
+          "spans": [
+            {
+              "byte_end": 186,
+              "byte_start": 181,
+              "column_end": 14,
+              "column_start": 9,
+              "expansion": null,
+              "file_name": "app\\src\\created.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 7,
+              "line_start": 7,
+              "suggested_replacement": null,
+              "suggestion_applicability": null,
+              "text": [
+                {
+                  "highlight_end": 14,
+                  "highlight_start": 9,
+                  "text": "    let guard = state.lock().map_err(|_| \"state lock poisoned\")?;"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "code": "clippy::await_holding_lock",
+            "explanation": null
+          }
+        },
+        {
+          "rendered": "warning: this `MutexGuard` is held across an await point\n --> app\\src\\created.rs:7:9\n  |\n7 |     let guard = state.lock().map_err(|_| \"state lock poisoned\")?;\n  |         ^^^^^\n  |\n  = help: consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`\nnote: these are all the await points this lock is held through\n --> app\\src\\created.rs:9:14\n  |\n9 |     delivery.await;\n  |              ^^^^^\n  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock\n  = note: requested on the command line with `--force-warn clippy::await-holding-lock`\n\n",
+          "$message_type": "diagnostic",
+          "children": [
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "these are all the await points this lock is held through",
+              "rendered": null,
+              "spans": [
+                {
+                  "byte_end": 284,
+                  "byte_start": 279,
+                  "column_end": 19,
+                  "column_start": 14,
+                  "expansion": {
+                    "def_site_span": {
+                      "byte_end": 0,
+                      "byte_start": 0,
+                      "column_end": 1,
+                      "column_start": 1,
+                      "expansion": null,
+                      "file_name": "app\\src\\lib.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 1,
+                      "line_start": 1,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": []
+                    },
+                    "macro_decl_name": "desugaring of `await` expression",
+                    "span": {
+                      "byte_end": 284,
+                      "byte_start": 279,
+                      "column_end": 19,
+                      "column_start": 14,
+                      "expansion": null,
+                      "file_name": "app\\src\\created.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 9,
+                      "line_start": 9,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": [
+                        {
+                          "highlight_end": 19,
+                          "highlight_start": 14,
+                          "text": "    delivery.await;"
+                        }
+                      ]
+                    }
+                  },
+                  "file_name": "app\\src\\created.rs",
+                  "is_primary": true,
+                  "label": null,
+                  "line_end": 9,
+                  "line_start": 9,
+                  "suggested_replacement": null,
+                  "suggestion_applicability": null,
+                  "text": [
+                    {
+                      "highlight_end": 19,
+                      "highlight_start": 14,
+                      "text": "    delivery.await;"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "requested on the command line with `--force-warn clippy::await-holding-lock`",
+              "rendered": null,
+              "spans": []
+            }
+          ],
+          "level": "warning",
+          "message": "this `MutexGuard` is held across an await point",
+          "spans": [
+            {
+              "byte_end": 186,
+              "byte_start": 181,
+              "column_end": 14,
+              "column_start": 9,
+              "expansion": null,
+              "file_name": "app\\src\\created.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 7,
+              "line_start": 7,
+              "suggested_replacement": null,
+              "suggestion_applicability": null,
+              "text": [
+                {
+                  "highlight_end": 14,
+                  "highlight_start": 9,
+                  "text": "    let guard = state.lock().map_err(|_| \"state lock poisoned\")?;"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "code": "clippy::await_holding_lock",
+            "explanation": null
+          }
+        }
+      ],
+      "build_finished": [
+        true
+      ],
+      "diagnostic_root": "<candidate>",
+      "candidate_compiled": true,
+      "reachability_control": {
+        "reached_as_rust": true,
+        "exit_code": 101,
+        "error": "unsuccessful_or_incomplete_check"
+      },
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "f5ab4a2626baffe994ca551ce040f32f0a32053d50e5fae64f38bffbfd678354"
+    },
+    "replacement_bad": {
+      "outcome": "findings",
+      "findings": [
+        {
+          "rendered": "warning: this `MutexGuard` is held across an await point\n --> app\\src\\existing.rs:7:9\n  |\n7 |     let guard = state.lock().map_err(|_| \"state lock poisoned\")?;\n  |         ^^^^^\n  |\n  = help: consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`\nnote: these are all the await points this lock is held through\n --> app\\src\\existing.rs:9:14\n  |\n9 |     delivery.await;\n  |              ^^^^^\n  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock\n  = note: requested on the command line with `--force-warn clippy::await-holding-lock`\n\n",
+          "$message_type": "diagnostic",
+          "children": [
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "these are all the await points this lock is held through",
+              "rendered": null,
+              "spans": [
+                {
+                  "byte_end": 284,
+                  "byte_start": 279,
+                  "column_end": 19,
+                  "column_start": 14,
+                  "expansion": {
+                    "def_site_span": {
+                      "byte_end": 0,
+                      "byte_start": 0,
+                      "column_end": 1,
+                      "column_start": 1,
+                      "expansion": null,
+                      "file_name": "app\\src\\lib.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 1,
+                      "line_start": 1,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": []
+                    },
+                    "macro_decl_name": "desugaring of `await` expression",
+                    "span": {
+                      "byte_end": 284,
+                      "byte_start": 279,
+                      "column_end": 19,
+                      "column_start": 14,
+                      "expansion": null,
+                      "file_name": "app\\src\\existing.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 9,
+                      "line_start": 9,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": [
+                        {
+                          "highlight_end": 19,
+                          "highlight_start": 14,
+                          "text": "    delivery.await;"
+                        }
+                      ]
+                    }
+                  },
+                  "file_name": "app\\src\\existing.rs",
+                  "is_primary": true,
+                  "label": null,
+                  "line_end": 9,
+                  "line_start": 9,
+                  "suggested_replacement": null,
+                  "suggestion_applicability": null,
+                  "text": [
+                    {
+                      "highlight_end": 19,
+                      "highlight_start": 14,
+                      "text": "    delivery.await;"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "requested on the command line with `--force-warn clippy::await-holding-lock`",
+              "rendered": null,
+              "spans": []
+            }
+          ],
+          "level": "warning",
+          "message": "this `MutexGuard` is held across an await point",
+          "spans": [
+            {
+              "byte_end": 186,
+              "byte_start": 181,
+              "column_end": 14,
+              "column_start": 9,
+              "expansion": null,
+              "file_name": "app\\src\\existing.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 7,
+              "line_start": 7,
+              "suggested_replacement": null,
+              "suggestion_applicability": null,
+              "text": [
+                {
+                  "highlight_end": 14,
+                  "highlight_start": 9,
+                  "text": "    let guard = state.lock().map_err(|_| \"state lock poisoned\")?;"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "code": "clippy::await_holding_lock",
+            "explanation": null
+          }
+        },
+        {
+          "rendered": "warning: this `MutexGuard` is held across an await point\n --> app\\src\\existing.rs:7:9\n  |\n7 |     let guard = state.lock().map_err(|_| \"state lock poisoned\")?;\n  |         ^^^^^\n  |\n  = help: consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`\nnote: these are all the await points this lock is held through\n --> app\\src\\existing.rs:9:14\n  |\n9 |     delivery.await;\n  |              ^^^^^\n  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock\n  = note: requested on the command line with `--force-warn clippy::await-holding-lock`\n\n",
+          "$message_type": "diagnostic",
+          "children": [
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "these are all the await points this lock is held through",
+              "rendered": null,
+              "spans": [
+                {
+                  "byte_end": 284,
+                  "byte_start": 279,
+                  "column_end": 19,
+                  "column_start": 14,
+                  "expansion": {
+                    "def_site_span": {
+                      "byte_end": 0,
+                      "byte_start": 0,
+                      "column_end": 1,
+                      "column_start": 1,
+                      "expansion": null,
+                      "file_name": "app\\src\\lib.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 1,
+                      "line_start": 1,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": []
+                    },
+                    "macro_decl_name": "desugaring of `await` expression",
+                    "span": {
+                      "byte_end": 284,
+                      "byte_start": 279,
+                      "column_end": 19,
+                      "column_start": 14,
+                      "expansion": null,
+                      "file_name": "app\\src\\existing.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 9,
+                      "line_start": 9,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": [
+                        {
+                          "highlight_end": 19,
+                          "highlight_start": 14,
+                          "text": "    delivery.await;"
+                        }
+                      ]
+                    }
+                  },
+                  "file_name": "app\\src\\existing.rs",
+                  "is_primary": true,
+                  "label": null,
+                  "line_end": 9,
+                  "line_start": 9,
+                  "suggested_replacement": null,
+                  "suggestion_applicability": null,
+                  "text": [
+                    {
+                      "highlight_end": 19,
+                      "highlight_start": 14,
+                      "text": "    delivery.await;"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "requested on the command line with `--force-warn clippy::await-holding-lock`",
+              "rendered": null,
+              "spans": []
+            }
+          ],
+          "level": "warning",
+          "message": "this `MutexGuard` is held across an await point",
+          "spans": [
+            {
+              "byte_end": 186,
+              "byte_start": 181,
+              "column_end": 14,
+              "column_start": 9,
+              "expansion": null,
+              "file_name": "app\\src\\existing.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 7,
+              "line_start": 7,
+              "suggested_replacement": null,
+              "suggestion_applicability": null,
+              "text": [
+                {
+                  "highlight_end": 14,
+                  "highlight_start": 9,
+                  "text": "    let guard = state.lock().map_err(|_| \"state lock poisoned\")?;"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "code": "clippy::await_holding_lock",
+            "explanation": null
+          }
+        }
+      ],
+      "target": "app/src/existing.rs",
+      "operation": "write",
+      "original_sha256": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa",
+      "candidate_sha256": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9",
+      "command": [
+        "cargo",
+        "clippy",
+        "--offline",
+        "--manifest-path",
+        "<candidate>\\app\\Cargo.toml",
+        "--target-dir",
+        "<scratch>\\build",
+        "--all-targets",
+        "--message-format=json",
+        "--features",
+        "existing",
+        "--",
+        "-A",
+        "clippy::all",
+        "--force-warn",
+        "clippy::await_holding_lock"
+      ],
+      "exit_code": 0,
+      "stderr": "    Checking candidate-support v0.0.0 (<candidate>\\support)\n    Checking candidate-app v0.0.0 (<candidate>\\app)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.27s\n",
+      "diagnostics": [
+        {
+          "rendered": "warning: this `MutexGuard` is held across an await point\n --> app\\src\\existing.rs:7:9\n  |\n7 |     let guard = state.lock().map_err(|_| \"state lock poisoned\")?;\n  |         ^^^^^\n  |\n  = help: consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`\nnote: these are all the await points this lock is held through\n --> app\\src\\existing.rs:9:14\n  |\n9 |     delivery.await;\n  |              ^^^^^\n  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock\n  = note: requested on the command line with `--force-warn clippy::await-holding-lock`\n\n",
+          "$message_type": "diagnostic",
+          "children": [
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "these are all the await points this lock is held through",
+              "rendered": null,
+              "spans": [
+                {
+                  "byte_end": 284,
+                  "byte_start": 279,
+                  "column_end": 19,
+                  "column_start": 14,
+                  "expansion": {
+                    "def_site_span": {
+                      "byte_end": 0,
+                      "byte_start": 0,
+                      "column_end": 1,
+                      "column_start": 1,
+                      "expansion": null,
+                      "file_name": "app\\src\\lib.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 1,
+                      "line_start": 1,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": []
+                    },
+                    "macro_decl_name": "desugaring of `await` expression",
+                    "span": {
+                      "byte_end": 284,
+                      "byte_start": 279,
+                      "column_end": 19,
+                      "column_start": 14,
+                      "expansion": null,
+                      "file_name": "app\\src\\existing.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 9,
+                      "line_start": 9,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": [
+                        {
+                          "highlight_end": 19,
+                          "highlight_start": 14,
+                          "text": "    delivery.await;"
+                        }
+                      ]
+                    }
+                  },
+                  "file_name": "app\\src\\existing.rs",
+                  "is_primary": true,
+                  "label": null,
+                  "line_end": 9,
+                  "line_start": 9,
+                  "suggested_replacement": null,
+                  "suggestion_applicability": null,
+                  "text": [
+                    {
+                      "highlight_end": 19,
+                      "highlight_start": 14,
+                      "text": "    delivery.await;"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "requested on the command line with `--force-warn clippy::await-holding-lock`",
+              "rendered": null,
+              "spans": []
+            }
+          ],
+          "level": "warning",
+          "message": "this `MutexGuard` is held across an await point",
+          "spans": [
+            {
+              "byte_end": 186,
+              "byte_start": 181,
+              "column_end": 14,
+              "column_start": 9,
+              "expansion": null,
+              "file_name": "app\\src\\existing.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 7,
+              "line_start": 7,
+              "suggested_replacement": null,
+              "suggestion_applicability": null,
+              "text": [
+                {
+                  "highlight_end": 14,
+                  "highlight_start": 9,
+                  "text": "    let guard = state.lock().map_err(|_| \"state lock poisoned\")?;"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "code": "clippy::await_holding_lock",
+            "explanation": null
+          }
+        },
+        {
+          "rendered": "warning: this `MutexGuard` is held across an await point\n --> app\\src\\existing.rs:7:9\n  |\n7 |     let guard = state.lock().map_err(|_| \"state lock poisoned\")?;\n  |         ^^^^^\n  |\n  = help: consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`\nnote: these are all the await points this lock is held through\n --> app\\src\\existing.rs:9:14\n  |\n9 |     delivery.await;\n  |              ^^^^^\n  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock\n  = note: requested on the command line with `--force-warn clippy::await-holding-lock`\n\n",
+          "$message_type": "diagnostic",
+          "children": [
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "consider using an async-aware `Mutex` type or ensuring the `MutexGuard` is dropped before calling `await`",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "these are all the await points this lock is held through",
+              "rendered": null,
+              "spans": [
+                {
+                  "byte_end": 284,
+                  "byte_start": 279,
+                  "column_end": 19,
+                  "column_start": 14,
+                  "expansion": {
+                    "def_site_span": {
+                      "byte_end": 0,
+                      "byte_start": 0,
+                      "column_end": 1,
+                      "column_start": 1,
+                      "expansion": null,
+                      "file_name": "app\\src\\lib.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 1,
+                      "line_start": 1,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": []
+                    },
+                    "macro_decl_name": "desugaring of `await` expression",
+                    "span": {
+                      "byte_end": 284,
+                      "byte_start": 279,
+                      "column_end": 19,
+                      "column_start": 14,
+                      "expansion": null,
+                      "file_name": "app\\src\\existing.rs",
+                      "is_primary": false,
+                      "label": null,
+                      "line_end": 9,
+                      "line_start": 9,
+                      "suggested_replacement": null,
+                      "suggestion_applicability": null,
+                      "text": [
+                        {
+                          "highlight_end": 19,
+                          "highlight_start": 14,
+                          "text": "    delivery.await;"
+                        }
+                      ]
+                    }
+                  },
+                  "file_name": "app\\src\\existing.rs",
+                  "is_primary": true,
+                  "label": null,
+                  "line_end": 9,
+                  "line_start": 9,
+                  "suggested_replacement": null,
+                  "suggestion_applicability": null,
+                  "text": [
+                    {
+                      "highlight_end": 19,
+                      "highlight_start": 14,
+                      "text": "    delivery.await;"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "help",
+              "message": "for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#await_holding_lock",
+              "rendered": null,
+              "spans": []
+            },
+            {
+              "children": [],
+              "code": null,
+              "level": "note",
+              "message": "requested on the command line with `--force-warn clippy::await-holding-lock`",
+              "rendered": null,
+              "spans": []
+            }
+          ],
+          "level": "warning",
+          "message": "this `MutexGuard` is held across an await point",
+          "spans": [
+            {
+              "byte_end": 186,
+              "byte_start": 181,
+              "column_end": 14,
+              "column_start": 9,
+              "expansion": null,
+              "file_name": "app\\src\\existing.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 7,
+              "line_start": 7,
+              "suggested_replacement": null,
+              "suggestion_applicability": null,
+              "text": [
+                {
+                  "highlight_end": 14,
+                  "highlight_start": 9,
+                  "text": "    let guard = state.lock().map_err(|_| \"state lock poisoned\")?;"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "code": "clippy::await_holding_lock",
+            "explanation": null
+          }
+        }
+      ],
+      "build_finished": [
+        true
+      ],
+      "diagnostic_root": "<candidate>",
+      "candidate_compiled": true,
+      "reachability_control": {
+        "reached_as_rust": true,
+        "exit_code": 101,
+        "error": "unsuccessful_or_incomplete_check"
+      },
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "f5ab4a2626baffe994ca551ce040f32f0a32053d50e5fae64f38bffbfd678354"
+    },
+    "nested_cwd_good": {
+      "outcome": "no_findings",
+      "findings": [],
+      "target": "app/src/existing.rs",
+      "operation": "write",
+      "original_sha256": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa",
+      "candidate_sha256": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa",
+      "command": [
+        "cargo",
+        "clippy",
+        "--offline",
+        "--manifest-path",
+        "<candidate>\\app\\Cargo.toml",
+        "--target-dir",
+        "<scratch>\\build",
+        "--all-targets",
+        "--message-format=json",
+        "--features",
+        "existing",
+        "--",
+        "-A",
+        "clippy::all",
+        "--force-warn",
+        "clippy::await_holding_lock"
+      ],
+      "exit_code": 0,
+      "stderr": "    Checking candidate-support v0.0.0 (<candidate>\\support)\n    Checking candidate-app v0.0.0 (<candidate>\\app)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.31s\n",
+      "diagnostics": [],
+      "build_finished": [
+        true
+      ],
+      "diagnostic_root": "<candidate>",
+      "candidate_compiled": true,
+      "reachability_control": {
+        "reached_as_rust": true,
+        "exit_code": 101,
+        "error": "unsuccessful_or_incomplete_check"
+      },
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "f5ab4a2626baffe994ca551ce040f32f0a32053d50e5fae64f38bffbfd678354"
+    },
+    "vcs_absent": {
+      "outcome": "no_findings",
+      "findings": [],
+      "target": "app/src/existing.rs",
+      "operation": "write",
+      "original_sha256": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa",
+      "candidate_sha256": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa",
+      "command": [
+        "cargo",
+        "clippy",
+        "--offline",
+        "--manifest-path",
+        "<candidate>\\app\\Cargo.toml",
+        "--target-dir",
+        "<scratch>\\build",
+        "--all-targets",
+        "--message-format=json",
+        "--features",
+        "existing",
+        "--",
+        "-A",
+        "clippy::all",
+        "--force-warn",
+        "clippy::await_holding_lock"
+      ],
+      "exit_code": 0,
+      "stderr": "   Compiling candidate-app v0.0.0 (<candidate>\\app)\n    Checking candidate-support v0.0.0 (<candidate>\\support)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.50s\n",
+      "diagnostics": [],
+      "build_finished": [
+        true
+      ],
+      "diagnostic_root": "<candidate>",
+      "candidate_compiled": true,
+      "reachability_control": {
+        "reached_as_rust": true,
+        "exit_code": 101,
+        "error": "unsuccessful_or_incomplete_check"
+      },
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "7ec72392215b286f9a93de953989de5b73a2f0ecbc5d38a7afb726523bfab6aa"
+    },
+    "vcs_file": {
+      "outcome": "no_findings",
+      "findings": [],
+      "target": "app/src/existing.rs",
+      "operation": "write",
+      "original_sha256": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa",
+      "candidate_sha256": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa",
+      "command": [
+        "cargo",
+        "clippy",
+        "--offline",
+        "--manifest-path",
+        "<candidate>\\app\\Cargo.toml",
+        "--target-dir",
+        "<scratch>\\build",
+        "--all-targets",
+        "--message-format=json",
+        "--features",
+        "existing",
+        "--",
+        "-A",
+        "clippy::all",
+        "--force-warn",
+        "clippy::await_holding_lock"
+      ],
+      "exit_code": 0,
+      "stderr": "   Compiling candidate-app v0.0.0 (<candidate>\\app)\n    Checking candidate-support v0.0.0 (<candidate>\\support)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.51s\n",
+      "diagnostics": [],
+      "build_finished": [
+        true
+      ],
+      "diagnostic_root": "<candidate>",
+      "candidate_compiled": true,
+      "reachability_control": {
+        "reached_as_rust": true,
+        "exit_code": 101,
+        "error": "unsuccessful_or_incomplete_check"
+      },
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "7ec72392215b286f9a93de953989de5b73a2f0ecbc5d38a7afb726523bfab6aa"
+    },
+    "vcs_directory": {
+      "outcome": "no_findings",
+      "findings": [],
+      "target": "app/src/existing.rs",
+      "operation": "write",
+      "original_sha256": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa",
+      "candidate_sha256": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa",
+      "command": [
+        "cargo",
+        "clippy",
+        "--offline",
+        "--manifest-path",
+        "<candidate>\\app\\Cargo.toml",
+        "--target-dir",
+        "<scratch>\\build",
+        "--all-targets",
+        "--message-format=json",
+        "--features",
+        "existing",
+        "--",
+        "-A",
+        "clippy::all",
+        "--force-warn",
+        "clippy::await_holding_lock"
+      ],
+      "exit_code": 0,
+      "stderr": "   Compiling candidate-app v0.0.0 (<candidate>\\app)\n    Checking candidate-support v0.0.0 (<candidate>\\support)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.48s\n",
+      "diagnostics": [],
+      "build_finished": [
+        true
+      ],
+      "diagnostic_root": "<candidate>",
+      "candidate_compiled": true,
+      "reachability_control": {
+        "reached_as_rust": true,
+        "exit_code": 101,
+        "error": "unsuccessful_or_incomplete_check"
+      },
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "7ec72392215b286f9a93de953989de5b73a2f0ecbc5d38a7afb726523bfab6aa"
+    },
+    "edit_compile_failure": {
+      "outcome": "checker_failure",
+      "findings": [],
+      "target": "app/src/existing.rs",
+      "operation": "edit",
+      "original_sha256": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa",
+      "candidate_sha256": "49636a950be0d8f4c72c6f4b8d0784599aa7810f58f415b62762d0e7f42ee11b",
+      "command": [
+        "cargo",
+        "clippy",
+        "--offline",
+        "--manifest-path",
+        "<candidate>\\app\\Cargo.toml",
+        "--target-dir",
+        "<scratch>\\build",
+        "--all-targets",
+        "--message-format=json",
+        "--features",
+        "existing",
+        "--",
+        "-A",
+        "clippy::all",
+        "--force-warn",
+        "clippy::await_holding_lock"
+      ],
+      "exit_code": 101,
+      "stderr": "    Checking candidate-support v0.0.0 (<candidate>\\support)\n    Checking candidate-app v0.0.0 (<candidate>\\app)\nerror: could not compile `candidate-app` (lib) due to 1 previous error\nwarning: build failed, waiting for other jobs to finish...\nerror: could not compile `candidate-app` (lib test) due to 1 previous error\n",
+      "diagnostics": [
+        {
+          "rendered": "error[E0308]: mismatched types\n --> app\\src\\existing.rs:1:26\n  |\n1 | pub fn broken() -> u64 { \"bad\" }\n  |                    ---   ^^^^^ expected `u64`, found `&str`\n  |                    |\n  |                    expected `u64` because of return type\n\n",
+          "$message_type": "diagnostic",
+          "children": [],
+          "level": "error",
+          "message": "mismatched types",
+          "spans": [
+            {
+              "byte_end": 30,
+              "byte_start": 25,
+              "column_end": 31,
+              "column_start": 26,
+              "expansion": null,
+              "file_name": "app\\src\\existing.rs",
+              "is_primary": true,
+              "label": "expected `u64`, found `&str`",
+              "line_end": 1,
+              "line_start": 1,
+              "suggested_replacement": null,
+              "suggestion_applicability": null,
+              "text": [
+                {
+                  "highlight_end": 31,
+                  "highlight_start": 26,
+                  "text": "pub fn broken() -> u64 { \"bad\" }"
+                }
+              ]
+            },
+            {
+              "byte_end": 22,
+              "byte_start": 19,
+              "column_end": 23,
+              "column_start": 20,
+              "expansion": null,
+              "file_name": "app\\src\\existing.rs",
+              "is_primary": false,
+              "label": "expected `u64` because of return type",
+              "line_end": 1,
+              "line_start": 1,
+              "suggested_replacement": null,
+              "suggestion_applicability": null,
+              "text": [
+                {
+                  "highlight_end": 23,
+                  "highlight_start": 20,
+                  "text": "pub fn broken() -> u64 { \"bad\" }"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "code": "E0308",
+            "explanation": "Expected type did not match the received type.\n\nErroneous code examples:\n\n```compile_fail,E0308\nfn plus_one(x: i32) -> i32 {\n    x + 1\n}\n\nplus_one(\"Not a number\");\n//       ^^^^^^^^^^^^^^ expected `i32`, found `&str`\n\nif \"Not a bool\" {\n// ^^^^^^^^^^^^ expected `bool`, found `&str`\n}\n\nlet x: f32 = \"Not a float\";\n//     ---   ^^^^^^^^^^^^^ expected `f32`, found `&str`\n//     |\n//     expected due to this\n```\n\nThis error occurs when an expression was used in a place where the compiler\nexpected an expression of a different type. It can occur in several cases, the\nmost common being when calling a function and passing an argument which has a\ndifferent type than the matching type in the function declaration.\n"
+          }
+        },
+        {
+          "rendered": "error[E0308]: mismatched types\n --> app\\src\\existing.rs:1:26\n  |\n1 | pub fn broken() -> u64 { \"bad\" }\n  |                    ---   ^^^^^ expected `u64`, found `&str`\n  |                    |\n  |                    expected `u64` because of return type\n\n",
+          "$message_type": "diagnostic",
+          "children": [],
+          "level": "error",
+          "message": "mismatched types",
+          "spans": [
+            {
+              "byte_end": 30,
+              "byte_start": 25,
+              "column_end": 31,
+              "column_start": 26,
+              "expansion": null,
+              "file_name": "app\\src\\existing.rs",
+              "is_primary": true,
+              "label": "expected `u64`, found `&str`",
+              "line_end": 1,
+              "line_start": 1,
+              "suggested_replacement": null,
+              "suggestion_applicability": null,
+              "text": [
+                {
+                  "highlight_end": 31,
+                  "highlight_start": 26,
+                  "text": "pub fn broken() -> u64 { \"bad\" }"
+                }
+              ]
+            },
+            {
+              "byte_end": 22,
+              "byte_start": 19,
+              "column_end": 23,
+              "column_start": 20,
+              "expansion": null,
+              "file_name": "app\\src\\existing.rs",
+              "is_primary": false,
+              "label": "expected `u64` because of return type",
+              "line_end": 1,
+              "line_start": 1,
+              "suggested_replacement": null,
+              "suggestion_applicability": null,
+              "text": [
+                {
+                  "highlight_end": 23,
+                  "highlight_start": 20,
+                  "text": "pub fn broken() -> u64 { \"bad\" }"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "code": "E0308",
+            "explanation": "Expected type did not match the received type.\n\nErroneous code examples:\n\n```compile_fail,E0308\nfn plus_one(x: i32) -> i32 {\n    x + 1\n}\n\nplus_one(\"Not a number\");\n//       ^^^^^^^^^^^^^^ expected `i32`, found `&str`\n\nif \"Not a bool\" {\n// ^^^^^^^^^^^^ expected `bool`, found `&str`\n}\n\nlet x: f32 = \"Not a float\";\n//     ---   ^^^^^^^^^^^^^ expected `f32`, found `&str`\n//     |\n//     expected due to this\n```\n\nThis error occurs when an expression was used in a place where the compiler\nexpected an expression of a different type. It can occur in several cases, the\nmost common being when calling a function and passing an argument which has a\ndifferent type than the matching type in the function declaration.\n"
+          }
+        },
+        {
+          "rendered": "For more information about this error, try `rustc --explain E0308`.\n",
+          "$message_type": "diagnostic",
+          "children": [],
+          "level": "failure-note",
+          "message": "For more information about this error, try `rustc --explain E0308`.",
+          "spans": [],
+          "code": null
+        },
+        {
+          "rendered": "For more information about this error, try `rustc --explain E0308`.\n",
+          "$message_type": "diagnostic",
+          "children": [],
+          "level": "failure-note",
+          "message": "For more information about this error, try `rustc --explain E0308`.",
+          "spans": [],
+          "code": null
+        }
+      ],
+      "build_finished": [
+        false
+      ],
+      "error": "unsuccessful_or_incomplete_check",
+      "diagnostic_root": "<candidate>",
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "f5ab4a2626baffe994ca551ce040f32f0a32053d50e5fae64f38bffbfd678354"
+    },
+    "new_compile_failure": {
+      "outcome": "checker_failure",
+      "findings": [],
+      "target": "app/src/created.rs",
+      "operation": "write",
+      "original_sha256": null,
+      "candidate_sha256": "49636a950be0d8f4c72c6f4b8d0784599aa7810f58f415b62762d0e7f42ee11b",
+      "command": [
+        "cargo",
+        "clippy",
+        "--offline",
+        "--manifest-path",
+        "<candidate>\\app\\Cargo.toml",
+        "--target-dir",
+        "<scratch>\\build",
+        "--all-targets",
+        "--message-format=json",
+        "--features",
+        "created",
+        "--",
+        "-A",
+        "clippy::all",
+        "--force-warn",
+        "clippy::await_holding_lock"
+      ],
+      "exit_code": 101,
+      "stderr": "    Checking candidate-support v0.0.0 (<candidate>\\support)\n    Checking candidate-app v0.0.0 (<candidate>\\app)\nerror: could not compile `candidate-app` (lib test) due to 1 previous error\nwarning: build failed, waiting for other jobs to finish...\nerror: could not compile `candidate-app` (lib) due to 1 previous error\n",
+      "diagnostics": [
+        {
+          "rendered": "error[E0308]: mismatched types\n --> app\\src\\created.rs:1:26\n  |\n1 | pub fn broken() -> u64 { \"bad\" }\n  |                    ---   ^^^^^ expected `u64`, found `&str`\n  |                    |\n  |                    expected `u64` because of return type\n\n",
+          "$message_type": "diagnostic",
+          "children": [],
+          "level": "error",
+          "message": "mismatched types",
+          "spans": [
+            {
+              "byte_end": 30,
+              "byte_start": 25,
+              "column_end": 31,
+              "column_start": 26,
+              "expansion": null,
+              "file_name": "app\\src\\created.rs",
+              "is_primary": true,
+              "label": "expected `u64`, found `&str`",
+              "line_end": 1,
+              "line_start": 1,
+              "suggested_replacement": null,
+              "suggestion_applicability": null,
+              "text": [
+                {
+                  "highlight_end": 31,
+                  "highlight_start": 26,
+                  "text": "pub fn broken() -> u64 { \"bad\" }"
+                }
+              ]
+            },
+            {
+              "byte_end": 22,
+              "byte_start": 19,
+              "column_end": 23,
+              "column_start": 20,
+              "expansion": null,
+              "file_name": "app\\src\\created.rs",
+              "is_primary": false,
+              "label": "expected `u64` because of return type",
+              "line_end": 1,
+              "line_start": 1,
+              "suggested_replacement": null,
+              "suggestion_applicability": null,
+              "text": [
+                {
+                  "highlight_end": 23,
+                  "highlight_start": 20,
+                  "text": "pub fn broken() -> u64 { \"bad\" }"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "code": "E0308",
+            "explanation": "Expected type did not match the received type.\n\nErroneous code examples:\n\n```compile_fail,E0308\nfn plus_one(x: i32) -> i32 {\n    x + 1\n}\n\nplus_one(\"Not a number\");\n//       ^^^^^^^^^^^^^^ expected `i32`, found `&str`\n\nif \"Not a bool\" {\n// ^^^^^^^^^^^^ expected `bool`, found `&str`\n}\n\nlet x: f32 = \"Not a float\";\n//     ---   ^^^^^^^^^^^^^ expected `f32`, found `&str`\n//     |\n//     expected due to this\n```\n\nThis error occurs when an expression was used in a place where the compiler\nexpected an expression of a different type. It can occur in several cases, the\nmost common being when calling a function and passing an argument which has a\ndifferent type than the matching type in the function declaration.\n"
+          }
+        },
+        {
+          "rendered": "error[E0308]: mismatched types\n --> app\\src\\created.rs:1:26\n  |\n1 | pub fn broken() -> u64 { \"bad\" }\n  |                    ---   ^^^^^ expected `u64`, found `&str`\n  |                    |\n  |                    expected `u64` because of return type\n\n",
+          "$message_type": "diagnostic",
+          "children": [],
+          "level": "error",
+          "message": "mismatched types",
+          "spans": [
+            {
+              "byte_end": 30,
+              "byte_start": 25,
+              "column_end": 31,
+              "column_start": 26,
+              "expansion": null,
+              "file_name": "app\\src\\created.rs",
+              "is_primary": true,
+              "label": "expected `u64`, found `&str`",
+              "line_end": 1,
+              "line_start": 1,
+              "suggested_replacement": null,
+              "suggestion_applicability": null,
+              "text": [
+                {
+                  "highlight_end": 31,
+                  "highlight_start": 26,
+                  "text": "pub fn broken() -> u64 { \"bad\" }"
+                }
+              ]
+            },
+            {
+              "byte_end": 22,
+              "byte_start": 19,
+              "column_end": 23,
+              "column_start": 20,
+              "expansion": null,
+              "file_name": "app\\src\\created.rs",
+              "is_primary": false,
+              "label": "expected `u64` because of return type",
+              "line_end": 1,
+              "line_start": 1,
+              "suggested_replacement": null,
+              "suggestion_applicability": null,
+              "text": [
+                {
+                  "highlight_end": 23,
+                  "highlight_start": 20,
+                  "text": "pub fn broken() -> u64 { \"bad\" }"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "code": "E0308",
+            "explanation": "Expected type did not match the received type.\n\nErroneous code examples:\n\n```compile_fail,E0308\nfn plus_one(x: i32) -> i32 {\n    x + 1\n}\n\nplus_one(\"Not a number\");\n//       ^^^^^^^^^^^^^^ expected `i32`, found `&str`\n\nif \"Not a bool\" {\n// ^^^^^^^^^^^^ expected `bool`, found `&str`\n}\n\nlet x: f32 = \"Not a float\";\n//     ---   ^^^^^^^^^^^^^ expected `f32`, found `&str`\n//     |\n//     expected due to this\n```\n\nThis error occurs when an expression was used in a place where the compiler\nexpected an expression of a different type. It can occur in several cases, the\nmost common being when calling a function and passing an argument which has a\ndifferent type than the matching type in the function declaration.\n"
+          }
+        },
+        {
+          "rendered": "For more information about this error, try `rustc --explain E0308`.\n",
+          "$message_type": "diagnostic",
+          "children": [],
+          "level": "failure-note",
+          "message": "For more information about this error, try `rustc --explain E0308`.",
+          "spans": [],
+          "code": null
+        },
+        {
+          "rendered": "For more information about this error, try `rustc --explain E0308`.\n",
+          "$message_type": "diagnostic",
+          "children": [],
+          "level": "failure-note",
+          "message": "For more information about this error, try `rustc --explain E0308`.",
+          "spans": [],
+          "code": null
+        }
+      ],
+      "build_finished": [
+        false
+      ],
+      "error": "unsuccessful_or_incomplete_check",
+      "diagnostic_root": "<candidate>",
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "f5ab4a2626baffe994ca551ce040f32f0a32053d50e5fae64f38bffbfd678354"
+    },
+    "unavailable": {
+      "outcome": "checker_failure",
+      "findings": [],
+      "target": "app/src/created.rs",
+      "operation": "write",
+      "original_sha256": null,
+      "candidate_sha256": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa",
+      "error": "FileNotFoundError: [WinError 2] The system cannot find the file specified",
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "f5ab4a2626baffe994ca551ce040f32f0a32053d50e5fae64f38bffbfd678354"
+    },
+    "orphan": {
+      "outcome": "checker_failure",
+      "findings": [],
+      "target": "app/src/orphan.rs",
+      "operation": "write",
+      "original_sha256": null,
+      "candidate_sha256": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9",
+      "command": [
+        "cargo",
+        "clippy",
+        "--offline",
+        "--manifest-path",
+        "<candidate>\\app\\Cargo.toml",
+        "--target-dir",
+        "<scratch>\\build",
+        "--all-targets",
+        "--message-format=json",
+        "--features",
+        "existing",
+        "--",
+        "-A",
+        "clippy::all",
+        "--force-warn",
+        "clippy::await_holding_lock"
+      ],
+      "exit_code": 0,
+      "stderr": "    Checking candidate-support v0.0.0 (<candidate>\\support)\n    Checking candidate-app v0.0.0 (<candidate>\\app)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.22s\n",
+      "diagnostics": [],
+      "build_finished": [
+        true
+      ],
+      "diagnostic_root": "<candidate>",
+      "candidate_compiled": false,
+      "reachability_control": {
+        "reached_as_rust": false,
+        "exit_code": 0,
+        "error": null
+      },
+      "error": "candidate_not_compiled",
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "f5ab4a2626baffe994ca551ce040f32f0a32053d50e5fae64f38bffbfd678354"
+    },
+    "feature_excluded": {
+      "outcome": "checker_failure",
+      "findings": [],
+      "target": "app/src/existing.rs",
+      "operation": "write",
+      "original_sha256": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa",
+      "candidate_sha256": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9",
+      "command": [
+        "cargo",
+        "clippy",
+        "--offline",
+        "--manifest-path",
+        "<candidate>\\app\\Cargo.toml",
+        "--target-dir",
+        "<scratch>\\build",
+        "--all-targets",
+        "--message-format=json",
+        "--",
+        "-A",
+        "clippy::all",
+        "--force-warn",
+        "clippy::await_holding_lock"
+      ],
+      "exit_code": 0,
+      "stderr": "    Checking candidate-support v0.0.0 (<candidate>\\support)\n    Checking candidate-app v0.0.0 (<candidate>\\app)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.23s\n",
+      "diagnostics": [],
+      "build_finished": [
+        true
+      ],
+      "diagnostic_root": "<candidate>",
+      "candidate_compiled": false,
+      "reachability_control": {
+        "reached_as_rust": false,
+        "exit_code": 0,
+        "error": null
+      },
+      "error": "candidate_not_compiled",
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "f5ab4a2626baffe994ca551ce040f32f0a32053d50e5fae64f38bffbfd678354"
+    },
+    "inner_cfg_excluded": {
+      "outcome": "checker_failure",
+      "findings": [],
+      "target": "app/src/existing.rs",
+      "operation": "write",
+      "original_sha256": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa",
+      "candidate_sha256": "66067ecce64c1ca7d1beadbc55884e085163964b5c7e22c1a9cac730ceb1d6b0",
+      "command": [
+        "cargo",
+        "clippy",
+        "--offline",
+        "--manifest-path",
+        "<candidate>\\app\\Cargo.toml",
+        "--target-dir",
+        "<scratch>\\build",
+        "--all-targets",
+        "--message-format=json",
+        "--features",
+        "existing",
+        "--",
+        "-A",
+        "clippy::all",
+        "--force-warn",
+        "clippy::await_holding_lock"
+      ],
+      "exit_code": 0,
+      "stderr": "    Checking candidate-support v0.0.0 (<candidate>\\support)\n    Checking candidate-app v0.0.0 (<candidate>\\app)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.22s\n",
+      "diagnostics": [],
+      "build_finished": [
+        true
+      ],
+      "diagnostic_root": "<candidate>",
+      "candidate_compiled": false,
+      "reachability_control": {
+        "reached_as_rust": false,
+        "exit_code": 0,
+        "error": null
+      },
+      "error": "candidate_not_compiled",
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "f5ab4a2626baffe994ca551ce040f32f0a32053d50e5fae64f38bffbfd678354"
+    },
+    "embedded_not_rust": {
+      "outcome": "checker_failure",
+      "findings": [],
+      "target": "app/src/embedded.rs",
+      "operation": "write",
+      "original_sha256": null,
+      "candidate_sha256": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9",
+      "command": [
+        "cargo",
+        "clippy",
+        "--offline",
+        "--manifest-path",
+        "<candidate>\\app\\Cargo.toml",
+        "--target-dir",
+        "<scratch>\\build",
+        "--all-targets",
+        "--message-format=json",
+        "--features",
+        "embedded",
+        "--",
+        "-A",
+        "clippy::all",
+        "--force-warn",
+        "clippy::await_holding_lock"
+      ],
+      "exit_code": 0,
+      "stderr": "    Checking candidate-support v0.0.0 (<candidate>\\support)\n    Checking candidate-app v0.0.0 (<candidate>\\app)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.23s\n",
+      "diagnostics": [],
+      "build_finished": [
+        true
+      ],
+      "diagnostic_root": "<candidate>",
+      "candidate_compiled": false,
+      "reachability_control": {
+        "reached_as_rust": false,
+        "exit_code": 0,
+        "error": null
+      },
+      "error": "candidate_not_compiled",
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "f5ab4a2626baffe994ca551ce040f32f0a32053d50e5fae64f38bffbfd678354"
+    },
+    "traversal": {
+      "outcome": "checker_failure",
+      "findings": [],
+      "error": "CandidateError: path must remain relative to context: ../escaped.rs"
+    },
+    "ambiguous_edit": {
+      "outcome": "checker_failure",
+      "findings": [],
+      "error": "CandidateError: each edit must match exactly once in the current candidate",
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "f5ab4a2626baffe994ca551ce040f32f0a32053d50e5fae64f38bffbfd678354"
+    },
+    "missing_edit": {
+      "outcome": "checker_failure",
+      "findings": [],
+      "error": "CandidateError: each edit must match exactly once in the current candidate",
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "f5ab4a2626baffe994ca551ce040f32f0a32053d50e5fae64f38bffbfd678354"
+    },
+    "missing_target": {
+      "outcome": "checker_failure",
+      "findings": [],
+      "error": "CandidateError: edit target does not exist",
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "f5ab4a2626baffe994ca551ce040f32f0a32053d50e5fae64f38bffbfd678354"
+    },
+    "sequential_unicode_crlf": {
+      "outcome": "no_findings",
+      "findings": [],
+      "target": "app/src/existing.rs",
+      "operation": "edit",
+      "original_sha256": "b7b6386c4e2d770e7195066e1d7a1ceedff6c59c8e02bfe1dd489ca85f77599a",
+      "candidate_sha256": "acf87be0d02ddeebbabe9da5f658be5ec017105e282ff847004320c807b82e93",
+      "command": [
+        "cargo",
+        "clippy",
+        "--offline",
+        "--manifest-path",
+        "<candidate>\\app\\Cargo.toml",
+        "--target-dir",
+        "<scratch>\\build",
+        "--all-targets",
+        "--message-format=json",
+        "--features",
+        "existing",
+        "--",
+        "-A",
+        "clippy::all",
+        "--force-warn",
+        "clippy::await_holding_lock"
+      ],
+      "exit_code": 0,
+      "stderr": "    Checking candidate-support v0.0.0 (<candidate>\\support)\n    Checking candidate-app v0.0.0 (<candidate>\\app)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.26s\n",
+      "diagnostics": [],
+      "build_finished": [
+        true
+      ],
+      "diagnostic_root": "<candidate>",
+      "candidate_compiled": true,
+      "reachability_control": {
+        "reached_as_rust": true,
+        "exit_code": 101,
+        "error": "unsuccessful_or_incomplete_check"
+      },
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "8776982cc7c586564b116e00e93f0770573ccaf346978c1e31d94f9e0fd2fc3a"
+    },
+    "external_dependency": {
+      "outcome": "checker_failure",
+      "findings": [],
+      "target": "app/src/existing.rs",
+      "operation": "write",
+      "original_sha256": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa",
+      "candidate_sha256": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9",
+      "error": "CandidateError: Cargo path escapes context: app\\Cargo.toml",
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "ffa2fe8872ce607acba5443350f156692d5fbfd40edafa2751ea14cc4438829c"
+    },
+    "linked_context": {
+      "outcome": "checker_failure",
+      "findings": [],
+      "error": "CandidateError: linked/reparse-point context entry: linked"
+    }
+  },
+  "expectations": {
+    "edit_bad_originals_unchanged": true,
+    "edit_good_originals_unchanged": true,
+    "edit_bad_again_originals_unchanged": true,
+    "new_bad_originals_unchanged": true,
+    "new_good_originals_unchanged": true,
+    "new_bad_again_originals_unchanged": true,
+    "replacement_bad_originals_unchanged": true,
+    "nested_cwd_good_originals_unchanged": true,
+    "vcs_absent_originals_unchanged": true,
+    "vcs_absent_excluded": true,
+    "vcs_file_originals_unchanged": true,
+    "vcs_file_excluded": true,
+    "vcs_directory_originals_unchanged": true,
+    "vcs_directory_excluded": true,
+    "edit_compile_failure_originals_unchanged": true,
+    "new_compile_failure_originals_unchanged": true,
+    "unavailable_originals_unchanged": true,
+    "orphan_originals_unchanged": true,
+    "feature_excluded_originals_unchanged": true,
+    "inner_cfg_excluded_originals_unchanged": true,
+    "embedded_not_rust_originals_unchanged": true,
+    "traversal_originals_unchanged": true,
+    "ambiguous_edit_originals_unchanged": true,
+    "missing_edit_originals_unchanged": true,
+    "missing_target_originals_unchanged": true,
+    "sequential_unicode_crlf_originals_unchanged": true,
+    "sequential_edit_preserves_bytes": true,
+    "external_dependency_originals_unchanged": true,
+    "external_dependency_unchanged": true,
+    "linked_context_rejected": true,
+    "linked_destination_unchanged": true,
+    "edit_bad_selected_diagnostic": true,
+    "edit_bad_again_selected_diagnostic": true,
+    "new_bad_selected_diagnostic": true,
+    "new_bad_again_selected_diagnostic": true,
+    "replacement_bad_selected_diagnostic": true,
+    "edit_good_clean_and_compiled": true,
+    "new_good_clean_and_compiled": true,
+    "nested_cwd_good_clean_and_compiled": true,
+    "edit_compile_failure_visible": true,
+    "new_compile_failure_visible": true,
+    "unavailable_rejected": true,
+    "traversal_rejected": true,
+    "ambiguous_edit_rejected": true,
+    "missing_edit_rejected": true,
+    "missing_target_rejected": true,
+    "external_dependency_rejected": true,
+    "orphan_not_claimed_analyzed": true,
+    "feature_excluded_not_claimed_analyzed": true,
+    "inner_cfg_excluded_not_claimed_analyzed": true,
+    "embedded_not_rust_not_claimed_analyzed": true
+  },
+  "versions": {
+    "rustc": "rustc 1.96.1 (31fca3adb 2026-06-26)\nbinary: rustc\ncommit-hash: 31fca3adb283cc9dfd56b49cdee9a96eb9c96ffd\ncommit-date: 2026-06-26\nhost: x86_64-pc-windows-msvc\nrelease: 1.96.1\nLLVM version: 22.1.2",
+    "cargo": "cargo 1.96.1 (356927216 2026-06-26)",
+    "clippy": "clippy 0.1.96 (31fca3adb2 2026-06-26)"
+  },
+  "original_input_sha256": {
+    "Cargo.lock": "20e694c712ce513724f0b91c4043363ab6fea526ef7674b426c17479345fe658",
+    "Cargo.toml": "7e0b91d422c8d2f156815d82ab054559be23abc39695d97613c4a863d14490dc",
+    ".cargo/config.toml": "2339eaae25d43a7067cc93b8224f5cfa978e95b5720166f80ddff49c79512053",
+    "app/Cargo.toml": "71e3ed7c68f8c60d501b544f2da859c39654aaabe2cc0f9193e0963e8d50986d",
+    "app/src/existing.rs": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa",
+    "app/src/lib.rs": "c455ee8eda392c76df57aa094319315af1877b216b30752c2f88ec2f50cea351",
+    "app/src/sibling.rs": "4b5f1a3f54a2a333a61bcc0fc10155ba57f104b51b5277590dad6a57e9f1bd73",
+    "support/Cargo.toml": "8b4564632fbaa7006260e7c66f5276827e3bfaa9c139280cc9d56331c255290f",
+    "support/src/lib.rs": "e8bdc6f525e57caac9e6a7fb66e497359fb34715ffb3d73f491c38abcee4c80b"
+  },
+  "link_case": "junction",
+  "input_sha256": {
+    "tools/rust_candidates.py": "fd4591b3727fec148add0f4c338b095ac8ab42bf4e0b1270269d102f63d49163",
+    "tools/probe_rust_candidates.py": "1f80a4eb493df2516dc2f99275c602d4c5ae92645bde2cafa5f2cc1eb9a295ef",
+    "tools/rust_checker.py": "fd955f68290d0fa288fde9c22b0358123502cb22a17c1807ed747372b51a794c",
+    "fixtures/await-holding-lock/bad.rs": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9",
+    "fixtures/await-holding-lock/good.rs": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa"
+  },
+  "passed": true,
+  "verification_commands": [
+    {
+      "command": "python tools/probe_rust_candidates.py",
+      "exit_code": 0
+    },
+    {
+      "command": "python tools/probe_rust_quality.py",
+      "exit_code": 0
+    }
+  ],
+  "sprint1_regression": {
+    "passed": true,
+    "expectations": {
+      "bad_reports_lock": true,
+      "near_match_passes": true,
+      "compiler_failure_is_not_clean": true,
+      "unavailable_is_not_clean": true
+    },
+    "versions": {
+      "rustc": "rustc 1.96.1 (31fca3adb 2026-06-26)\nbinary: rustc\ncommit-hash: 31fca3adb283cc9dfd56b49cdee9a96eb9c96ffd\ncommit-date: 2026-06-26\nhost: x86_64-pc-windows-msvc\nrelease: 1.96.1\nLLVM version: 22.1.2",
+      "cargo": "cargo 1.96.1 (356927216 2026-06-26)",
+      "clippy": "clippy 0.1.96 (31fca3adb2 2026-06-26)"
+    },
+    "input_sha256": {
+      "fixtures/await-holding-lock/Cargo.toml": "b6daabebe3ded20fc7e0803346d221ef9e5d1ea4d5a6292b5d38f8276d6a4775",
+      "fixtures/await-holding-lock/bad.rs": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9",
+      "fixtures/await-holding-lock/good.rs": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa",
+      "tools/probe_rust_quality.py": "3e28affd2523a77d64b85d5e1cf8c503be08c4cebecd7c6835acb4cb5ddfbe7f",
+      "tools/rust_checker.py": "fd955f68290d0fa288fde9c22b0358123502cb22a17c1807ed747372b51a794c"
+    },
+    "observed_at_utc": "2026-09-10T18:15:17.115291+00:00"
+  },
+  "review_revision": {
+    "prior_snapshot_id": "bce8a7b6c5815694edc0fa2f8aebdb1378b13c45b8cbd4daf6185cf78c00eb4f",
+    "provenance": "Independent review of that immutable snapshot reported regular .git file leakage; director also requested shared checker ownership and test-quality cleanup. This evidence records author verification of the revised implementation, not renewed review approval.",
+    "vcs_regression": {
+      "command": "python tools/probe_rust_candidates.py",
+      "before_fix": {
+        "exit_code": 1,
+        "observed_at_utc": "2026-09-10T18:13:06.799823+00:00",
+        "input_sha256": {
+          "tools/rust_candidates.py": "676472e0c55089defc4ba7edcb7cae69081c28f4d7f32b51d00b4ef5c3aadc6b",
+          "tools/probe_rust_candidates.py": "5ea8171b92c53d38b3960d43721c0373aa8ad9cfbb2acb763bd0657f707367aa",
+          "tools/probe_rust_quality.py": "ab00c3b4fc23228203b3308765be6e8c4870314d72e44cb88d39409cdedebb12"
+        },
+        "failed_expectations": [
+          "vcs_file_excluded"
+        ],
+        "cases": {
+          "vcs_absent": {
+            "outcome": "no_findings",
+            "findings": [],
+            "target": "app/src/existing.rs",
+            "operation": "write",
+            "original_sha256": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa",
+            "candidate_sha256": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<candidate>\\app\\Cargo.toml",
+              "--target-dir",
+              "<scratch>\\build",
+              "--all-targets",
+              "--message-format=json",
+              "--features",
+              "existing",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 0,
+            "stderr": "   Compiling candidate-app v0.0.0 (<candidate>\\app)\n    Checking candidate-support v0.0.0 (<candidate>\\support)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.54s\n",
+            "diagnostics": [],
+            "build_finished": [
+              true
+            ],
+            "diagnostic_root": "<candidate>",
+            "candidate_compiled": true,
+            "reachability_control": {
+              "reached_as_rust": true,
+              "exit_code": 101,
+              "error": "unsuccessful_or_incomplete_check"
+            },
+            "originals_unchanged": true,
+            "original_snapshot_sha256": "7ec72392215b286f9a93de953989de5b73a2f0ecbc5d38a7afb726523bfab6aa"
+          },
+          "vcs_file": {
+            "outcome": "checker_failure",
+            "findings": [],
+            "target": "app/src/existing.rs",
+            "operation": "write",
+            "original_sha256": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa",
+            "candidate_sha256": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<candidate>\\app\\Cargo.toml",
+              "--target-dir",
+              "<scratch>\\build",
+              "--all-targets",
+              "--message-format=json",
+              "--features",
+              "existing",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 101,
+            "stderr": "   Compiling candidate-app v0.0.0 (<candidate>\\app)\n    Checking candidate-support v0.0.0 (<candidate>\\support)\nerror: could not compile `candidate-app` (lib) due to 1 previous error\nwarning: build failed, waiting for other jobs to finish...\nerror: could not compile `candidate-app` (lib test) due to 1 previous error\n",
+            "diagnostics": [
+              {
+                "rendered": "error: VCS metadata reached candidate build\n  --> app\\src\\lib.rs:14:1\n   |\n14 | compile_error!(\"VCS metadata reached candidate build\");\n   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\n",
+                "$message_type": "diagnostic",
+                "children": [],
+                "level": "error",
+                "message": "VCS metadata reached candidate build",
+                "spans": [
+                  {
+                    "byte_end": 425,
+                    "byte_start": 371,
+                    "column_end": 55,
+                    "column_start": 1,
+                    "expansion": null,
+                    "file_name": "app\\src\\lib.rs",
+                    "is_primary": true,
+                    "label": null,
+                    "line_end": 14,
+                    "line_start": 14,
+                    "suggested_replacement": null,
+                    "suggestion_applicability": null,
+                    "text": [
+                      {
+                        "highlight_end": 55,
+                        "highlight_start": 1,
+                        "text": "compile_error!(\"VCS metadata reached candidate build\");"
+                      }
+                    ]
+                  }
+                ],
+                "code": null
+              },
+              {
+                "rendered": "error: VCS metadata reached candidate build\n  --> app\\src\\lib.rs:14:1\n   |\n14 | compile_error!(\"VCS metadata reached candidate build\");\n   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\n",
+                "$message_type": "diagnostic",
+                "children": [],
+                "level": "error",
+                "message": "VCS metadata reached candidate build",
+                "spans": [
+                  {
+                    "byte_end": 425,
+                    "byte_start": 371,
+                    "column_end": 55,
+                    "column_start": 1,
+                    "expansion": null,
+                    "file_name": "app\\src\\lib.rs",
+                    "is_primary": true,
+                    "label": null,
+                    "line_end": 14,
+                    "line_start": 14,
+                    "suggested_replacement": null,
+                    "suggestion_applicability": null,
+                    "text": [
+                      {
+                        "highlight_end": 55,
+                        "highlight_start": 1,
+                        "text": "compile_error!(\"VCS metadata reached candidate build\");"
+                      }
+                    ]
+                  }
+                ],
+                "code": null
+              }
+            ],
+            "build_finished": [
+              false
+            ],
+            "error": "unsuccessful_or_incomplete_check",
+            "diagnostic_root": "<candidate>",
+            "originals_unchanged": true,
+            "original_snapshot_sha256": "7732b994195c55736b785040dc8b452956602d07c85acab5bdba683df4589ecb"
+          },
+          "vcs_directory": {
+            "outcome": "no_findings",
+            "findings": [],
+            "target": "app/src/existing.rs",
+            "operation": "write",
+            "original_sha256": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa",
+            "candidate_sha256": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<candidate>\\app\\Cargo.toml",
+              "--target-dir",
+              "<scratch>\\build",
+              "--all-targets",
+              "--message-format=json",
+              "--features",
+              "existing",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 0,
+            "stderr": "   Compiling candidate-app v0.0.0 (<candidate>\\app)\n    Checking candidate-support v0.0.0 (<candidate>\\support)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.49s\n",
+            "diagnostics": [],
+            "build_finished": [
+              true
+            ],
+            "diagnostic_root": "<candidate>",
+            "candidate_compiled": true,
+            "reachability_control": {
+              "reached_as_rust": true,
+              "exit_code": 101,
+              "error": "unsuccessful_or_incomplete_check"
+            },
+            "originals_unchanged": true,
+            "original_snapshot_sha256": "7ec72392215b286f9a93de953989de5b73a2f0ecbc5d38a7afb726523bfab6aa"
+          }
+        }
+      },
+      "after_fix_cases": [
+        "vcs_absent",
+        "vcs_file",
+        "vcs_directory"
+      ]
+    },
+    "unrelated_warning_experiment": {
+      "method": "Inject pub fn warning_control() { let unused_variable = 1; } only into the good case of old frozen and current probe source in memory. Run real Cargo/Clippy; no tracked source mutation.",
+      "before_source_snapshot": "bce8a7b6c5815694edc0fa2f8aebdb1378b13c45b8cbd4daf6185cf78c00eb4f",
+      "after_input_sha256": {
+        "fixtures/await-holding-lock/Cargo.toml": "b6daabebe3ded20fc7e0803346d221ef9e5d1ea4d5a6292b5d38f8276d6a4775",
+        "fixtures/await-holding-lock/bad.rs": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9",
+        "fixtures/await-holding-lock/good.rs": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa",
+        "tools/probe_rust_quality.py": "3e28affd2523a77d64b85d5e1cf8c503be08c4cebecd7c6835acb4cb5ddfbe7f",
+        "tools/rust_checker.py": "fd955f68290d0fa288fde9c22b0358123502cb22a17c1807ed747372b51a794c"
+      },
+      "observed": {
+        "before": {
+          "exit_code": 1,
+          "near_match_passes": false,
+          "selected_outcome": "no_findings",
+          "warning_codes": [
+            "unused_variables"
+          ]
+        },
+        "after": {
+          "exit_code": 0,
+          "near_match_passes": true,
+          "selected_outcome": "no_findings",
+          "warning_codes": [
+            "unused_variables"
+          ]
+        }
+      }
+    },
+    "historical_supplementary_evidence": {
+      "retained_in_prior_snapshot": "docs/sprint-02-results.json",
+      "records": [
+        "supplementary_reachability_mutation",
+        "nested_cwd_regression"
+      ],
+      "scope": "Historical observations tied to the prior snapshot, not claimed rerun against this revised source. Current normal behavior is covered by the current probe cases."
+    }
+  }
+}

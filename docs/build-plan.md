@@ -1,6 +1,6 @@
 # Turnstile initial-testing build
 
-Status: owner-approved product contract and sprint sequence. Execution uses native OMP `/vibe`, not LoopX. Sprint 1 is complete at commit `530b791`, independently reproduced; continue with Sprint 2.
+Status: owner-approved product contract and sprint sequence. Execution uses native OMP `/vibe`, not LoopX. Current implementation evidence and continuation boundaries are discoverable through the exact-name [handoff index](../.omp/handoffs/index.json); the director owns acceptance and live sequencing.
 
 ## Product contract
 

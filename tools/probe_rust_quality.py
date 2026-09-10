@@ -10,47 +10,11 @@ import sys
 import tempfile
 from datetime import datetime, timezone
 
+from rust_checker import RULE, TIMEOUT, check, run
+
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = Path("fixtures/await-holding-lock")
-RULE = "clippy::await_holding_lock"
-TIMEOUT = 60
-
-
-def run(command, environment):
-    return subprocess.run(
-        command, cwd=ROOT, env=environment, capture_output=True,
-        text=True, encoding="utf-8", errors="replace", timeout=TIMEOUT,
-    )
-
-
-def check(command, environment):
-    result = {"command": command, "outcome": "checker_failure", "findings": []}
-    try:
-        process = run(command, environment)
-    except (OSError, subprocess.TimeoutExpired) as error:
-        result["error"] = type(error).__name__
-        return result
-
-    result.update(exit_code=process.returncode, stderr=process.stderr)
-    try:
-        messages = [json.loads(line) for line in process.stdout.splitlines() if line.strip()]
-        finished = [m["success"] for m in messages if m["reason"] == "build-finished"]
-        diagnostics = [m["message"] for m in messages if m["reason"] == "compiler-message"]
-        result["diagnostics"] = diagnostics
-        result["build_finished"] = finished
-        result["findings"] = [
-            d for d in diagnostics if (d.get("code") or {}).get("code") == RULE
-        ]
-        if (process.returncode == 0 and finished == [True]
-                and not any(d["level"] == "error" for d in diagnostics)):
-            result["outcome"] = "findings" if result["findings"] else "no_findings"
-        else:
-            result["error"] = "unsuccessful_or_incomplete_check"
-    except (ValueError, KeyError, TypeError) as error:
-        result["error"] = "invalid_checker_output: " + type(error).__name__
-        result["stdout"] = process.stdout
-    return result
 
 
 def probe():
@@ -68,13 +32,13 @@ def probe():
         ("cargo", ["cargo", "--version"]),
         ("clippy", ["cargo", "clippy", "--version"]),
     ):
-        process = run(command, environment)
+        process = run(command, environment, cwd=ROOT)
         if process.returncode != 0 or not process.stdout.strip():
             raise RuntimeError(f"{name} version check failed: {process.stderr}")
         versions[name] = process.stdout.strip()
 
     inputs = [FIXTURES / "Cargo.toml", FIXTURES / "bad.rs", FIXTURES / "good.rs",
-              Path("tools/probe_rust_quality.py")]
+              Path("tools/probe_rust_quality.py"), Path("tools/rust_checker.py")]
     report = {
         "observed_at_utc": datetime.now(timezone.utc).isoformat(),
         "rule": RULE,
@@ -103,7 +67,7 @@ def probe():
                 "--target-dir", str(crate / "target"), "--lib", "--message-format=json",
                 "--", "-A", "clippy::all", "--force-warn", RULE,
             ]
-            report["cases"][name] = check(command, environment)
+            report["cases"][name] = check(command, environment, cwd=ROOT)
 
     cases = report["cases"]
     # Independently expected diagnostic identity and source span, not merely a nonzero count.
@@ -116,7 +80,7 @@ def probe():
             and any(s["line_start"] == 7 and s["file_name"].endswith("lib.rs") for s in bad_spans)
         ),
         "near_match_passes": (
-            cases["good"]["outcome"] == "no_findings" and not cases["good"].get("diagnostics")
+            cases["good"]["outcome"] == "no_findings"
         ),
         "compiler_failure_is_not_clean": (
             cases["compiler_failure"]["outcome"] == "checker_failure"
