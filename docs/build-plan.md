@@ -46,6 +46,16 @@ Execution sessions inherit the normal configured OMP context and available skill
 
 The smallest usable hold/revise loop is Sprint 4. Later sprints complete the agreed safeguards; a larger policy catalog is not in this build.
 
+### Approved project-local OMP prerequisites
+
+The user's explicit approval authorizes maintaining/building a patched project-local OMP runtime, with the constraint “no overbuilding, keep to our design principles,” superseding the deployment-decision hold. Before returning to original Sprint 4 integration:
+
+1. Prove an unmodified project-local OMP baseline pinned to `61b1b8aef634334eaf1412afd003a763e1d1b9c1` / `18.1.16`.
+2. Add a same-owner complete native-edit veto boundary before canonical mutation.
+3. Extend the existing Rust candidate owner to analyze one complete staged Cargo context.
+
+Project-local runtime source acquisition, toolchain and dependency builds are authorized; leave global OMP, reference repositories, and global safety settings untouched, with no publication. Reuse existing owners: no new parser, duplicate `EditStore`, generic policy framework, speculative configurability, or unrelated fixes. Accepted Sprints 1–3 and all eleven deliverables/acceptance criteria above are unchanged. Notify the user when the prerequisites are verified and original Sprint 4 can resume under `/vibe`; follow the [handoff index](../.omp/handoffs/index.json) for current status, approval, and verification evidence.
+
 ## Completed Sprint 1 boundary
 
 Read the private material index at `.loopx/materials/index.json`, then the Rust example seed. The original workshop is historical context and is superseded by this brief wherever it suggests Bash policy is the analysis target. The Prodagent checkout is read-only prior art, not this project's implementation or selected parser foundation.

@@ -13,5 +13,13 @@
     "handoff": ".omp/handoffs/sprint-03.md",
     "evidence": "docs/sprint-03-results.json",
     "reproduce_from_project_root": "python tools/probe_rust_attribution.py"
+  },
+  "sprint-04": {
+    "status": "APPROVED_PREREQUISITES_IN_PROGRESS",
+    "handoff": ".omp/handoffs/sprint-04.md",
+    "approval": "The current user explicitly approved the patched project-local OMP runtime with no overbuilding; this supersedes the pending deployment decision.",
+    "prerequisite_materials": ".loopx/materials/index.json",
+    "next_action": "Prove the pinned unmodified project-local OMP baseline, add the same-owner complete native-edit veto boundary, and extend the existing Rust owner to complete staged Cargo context. Notify the user when verified and original Sprint 4 can resume under /vibe.",
+    "acceptance": "No prerequisite is claimed complete; builds remain unproved. Sprint 4 is not implemented or accepted; all original eleven sprint deliverables and acceptance criteria remain unchanged."
   }
 }
