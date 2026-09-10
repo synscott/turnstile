@@ -24,6 +24,8 @@ Compaction is an exceptional recovery boundary, not the normal continuation plan
 
 LoopX owns goal/task/evidence continuity. Each task session reads this brief and its selected sprint. Later sprint entries are a roadmap, not permission to execute all of them in one session. Every sprint has its own verification; the final rehearsal does not defer earlier checks.
 
+Execution sessions inherit the normal configured OMP context and available skills, including plugin-provided skills. The FCC foundation and skill-routing instructions must be present at startup; load the applicable FCC design, change, verification, collaboration, and durable-state skills when their activities arise. Availability is not blanket activation: do not enable every optional persona or load unrelated skills. A missing required skill is a visible configuration failure, not permission to skip it. Private launch/runtime receipts are indexed under `.loopx/materials/`.
+
 ## Approved sprint sequence
 
 | Sprint | Deliverable | Acceptance |
