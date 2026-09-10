@@ -1,0 +1,4766 @@
+{
+  "observed_at_utc": "2026-09-10T19:01:31.508125+00:00",
+  "rule": "clippy::await_holding_lock",
+  "python": "3.11.15",
+  "platform": "Windows",
+  "timeout_seconds_per_process": 60,
+  "versions": {
+    "rustc": "rustc 1.96.1 (31fca3adb 2026-06-26)\nbinary: rustc\ncommit-hash: 31fca3adb283cc9dfd56b49cdee9a96eb9c96ffd\ncommit-date: 2026-06-26\nhost: x86_64-pc-windows-msvc\nrelease: 1.96.1\nLLVM version: 22.1.2",
+    "cargo": "cargo 1.96.1 (356927216 2026-06-26)",
+    "clippy": "clippy 0.1.96 (31fca3adb2 2026-06-26)"
+  },
+  "input_sha256": {
+    "tools/rust_candidates.py": "784c96a24bc72cc9b272584e1632f22228adab8440316a1d763dad7c942bb512",
+    "tools/rust_attribution.py": "816c617fe55a24b592cf3ed1b9381367cf8cf4b7ff220ca81be214f31da554a2",
+    "tools/rust_checker.py": "fd955f68290d0fa288fde9c22b0358123502cb22a17c1807ed747372b51a794c",
+    "tools/probe_rust_attribution.py": "fabafdefcaad2b36956df8544b75a1b2ede8a7a0e8d09b14fba400a672ef3355",
+    "fixtures/await-holding-lock/bad.rs": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9",
+    "fixtures/await-holding-lock/good.rs": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa"
+  },
+  "expectations": {
+    "unrelated_line_shift_immutable": true,
+    "shifted_existing_does_not_block": true,
+    "crlf_line_shift_immutable": true,
+    "line_endings_do_not_create_debt": true,
+    "trailing_primary_comment_immutable": true,
+    "trailing_primary_comment_preserves_existing_debt": true,
+    "indentation_only_immutable": true,
+    "indentation_only_preserves_existing_debt": true,
+    "comment_after_raw_literal_immutable": true,
+    "raw_literal_is_not_stripped_as_comment": true,
+    "sibling_existing_immutable": true,
+    "whole_selection_existing_does_not_block": true,
+    "added_violation_immutable": true,
+    "added_lock_finding": true,
+    "unchanged_primary_new_await_immutable": true,
+    "await_addition_on_unchanged_lock": true,
+    "additional_held_await_immutable": true,
+    "secondary_await_expands_existing_finding": true,
+    "partial_repair_removes_await_immutable": true,
+    "removing_a_cause_does_not_introduce_debt": true,
+    "held_await_after_raw_literal_immutable": true,
+    "raw_literal_does_not_hide_new_await": true,
+    "repaired_violation_immutable": true,
+    "repaired_compile_error_immutable": true,
+    "repair_clean_without_baseline": true,
+    "compile_repair_clean_without_baseline": true,
+    "required_baseline_failure_immutable": true,
+    "required_baseline_failure_holds": true,
+    "candidate_compile_failure_immutable": true,
+    "candidate_failure_never_clean": true,
+    "checker_unavailable_immutable": true,
+    "unavailable_never_clean": true,
+    "new_referenced_bad_immutable": true,
+    "new_referenced_good_immutable": true,
+    "new_referenced_violation_intrinsic": true,
+    "new_referenced_good_remains_supported": true,
+    "new_auto_target_immutable": true,
+    "new_auto_target_is_intrinsic": true,
+    "new_file_with_unresolved_sibling_immutable": true,
+    "new_intrinsic_does_not_clear_unknown_sibling": true,
+    "new_file_with_known_sibling_immutable": true,
+    "new_and_existing_partitioned": true,
+    "generated_source_ambiguity_immutable": true,
+    "unavailable_source_identity_is_not_clean": true,
+    "equal_count_repair_and_add_immutable": true,
+    "equal_counts_do_not_erase_new_occurrence": true
+  },
+  "passed": true,
+  "scope": "Sprint 3 selected-rule diagnostic attribution; trusted local copied Cargo context; no native OMP gate or release.",
+  "cases": {
+    "unrelated_line_shift": {
+      "original_inputs_sha256": {
+        "Cargo.toml": "a8f2a9c1f38dc39fdcd480347e151b191bf794360c1205a9115672835d433213",
+        "src/lib.rs": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9"
+      },
+      "result": {
+        "outcome": "no_findings",
+        "target": "src/lib.rs",
+        "operation": "edit",
+        "original_sha256": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9",
+        "candidate_sha256": "efbb0e0456dcbe06b219260dafbf763bb20674c2a701a9fbca9d7d2d82709a2b",
+        "originals_unchanged": true,
+        "original_snapshot_sha256": "44337ee5c63b6523da53b59b156412f2214a7754e519b55e7d0c32abda1dba2d",
+        "candidate_compiled": true,
+        "reachability_control": {
+          "reached_as_rust": true,
+          "exit_code": 101,
+          "error": "unsuccessful_or_incomplete_check"
+        },
+        "findings": [],
+        "preexisting_findings": [
+          {
+            "rule": "clippy::await_holding_lock",
+            "message": "this `MutexGuard` is held across an await point",
+            "level": "warning",
+            "spans": [
+              {
+                "file_name": "src\\lib.rs",
+                "line_start": 9,
+                "line_end": 9,
+                "column_start": 9,
+                "column_end": 14,
+                "is_primary": true
+              }
+            ],
+            "children": [
+              {
+                "rule": null,
+                "message": "these are all the await points this lock is held through",
+                "level": "note",
+                "spans": [
+                  {
+                    "file_name": "src\\lib.rs",
+                    "line_start": 11,
+                    "line_end": 11,
+                    "column_start": 14,
+                    "column_end": 19,
+                    "is_primary": true
+                  }
+                ],
+                "children": []
+              }
+            ]
+          }
+        ],
+        "ambiguous_findings": [],
+        "baseline": {
+          "status": "required",
+          "check": {
+            "outcome": "findings",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<baseline>\\Cargo.toml",
+              "--target-dir",
+              "<baseline>-build",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 0,
+            "diagnostic_root": "<baseline>",
+            "build_finished": [
+              true
+            ],
+            "raw_selected_count": 2,
+            "findings": [
+              {
+                "rule": "clippy::await_holding_lock",
+                "message": "this `MutexGuard` is held across an await point",
+                "level": "warning",
+                "spans": [
+                  {
+                    "file_name": "src\\lib.rs",
+                    "line_start": 7,
+                    "line_end": 7,
+                    "column_start": 9,
+                    "column_end": 14,
+                    "is_primary": true
+                  }
+                ],
+                "children": [
+                  {
+                    "rule": null,
+                    "message": "these are all the await points this lock is held through",
+                    "level": "note",
+                    "spans": [
+                      {
+                        "file_name": "src\\lib.rs",
+                        "line_start": 9,
+                        "line_end": 9,
+                        "column_start": 14,
+                        "column_end": 19,
+                        "is_primary": true
+                      }
+                    ],
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "rule": "clippy::await_holding_lock",
+                "message": "this `MutexGuard` is held across an await point",
+                "level": "warning",
+                "spans": [
+                  {
+                    "file_name": "src\\lib.rs",
+                    "line_start": 7,
+                    "line_end": 7,
+                    "column_start": 9,
+                    "column_end": 14,
+                    "is_primary": true
+                  }
+                ],
+                "children": [
+                  {
+                    "rule": null,
+                    "message": "these are all the await points this lock is held through",
+                    "level": "note",
+                    "spans": [
+                      {
+                        "file_name": "src\\lib.rs",
+                        "line_start": 9,
+                        "line_end": 9,
+                        "column_start": 14,
+                        "column_end": 19,
+                        "is_primary": true
+                      }
+                    ],
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "candidate_check": {
+          "outcome": "findings",
+          "command": [
+            "cargo",
+            "clippy",
+            "--offline",
+            "--manifest-path",
+            "<candidate>\\Cargo.toml",
+            "--target-dir",
+            "<scratch>\\build",
+            "--all-targets",
+            "--message-format=json",
+            "--",
+            "-A",
+            "clippy::all",
+            "--force-warn",
+            "clippy::await_holding_lock"
+          ],
+          "exit_code": 0,
+          "diagnostic_root": "<candidate>",
+          "build_finished": [
+            true
+          ],
+          "raw_selected_count": 2,
+          "findings": [
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\lib.rs",
+                  "line_start": 9,
+                  "line_end": 9,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\lib.rs",
+                      "line_start": 11,
+                      "line_end": 11,
+                      "column_start": 14,
+                      "column_end": 19,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\lib.rs",
+                  "line_start": 9,
+                  "line_end": 9,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\lib.rs",
+                      "line_start": 11,
+                      "line_end": 11,
+                      "column_start": 14,
+                      "column_end": 19,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "crlf_line_shift": {
+      "original_inputs_sha256": {
+        "Cargo.toml": "a8f2a9c1f38dc39fdcd480347e151b191bf794360c1205a9115672835d433213",
+        "src/lib.rs": "882020f9266f9ec256b78128ac970c61ab7fb72e3080a49ac2bc9399eec6c7fa"
+      },
+      "result": {
+        "outcome": "no_findings",
+        "target": "src/lib.rs",
+        "operation": "write",
+        "original_sha256": "882020f9266f9ec256b78128ac970c61ab7fb72e3080a49ac2bc9399eec6c7fa",
+        "candidate_sha256": "25d03fa200909ae1bf0170a451ba54d4242fe1b4898ab99c13d4a9e4cec94800",
+        "originals_unchanged": true,
+        "original_snapshot_sha256": "690754c92a2452a540f8203b2f192860a66ebaa0cd36d8842ba24fc4e58eb68d",
+        "candidate_compiled": true,
+        "reachability_control": {
+          "reached_as_rust": true,
+          "exit_code": 101,
+          "error": "unsuccessful_or_incomplete_check"
+        },
+        "findings": [],
+        "preexisting_findings": [
+          {
+            "rule": "clippy::await_holding_lock",
+            "message": "this `MutexGuard` is held across an await point",
+            "level": "warning",
+            "spans": [
+              {
+                "file_name": "src\\lib.rs",
+                "line_start": 8,
+                "line_end": 8,
+                "column_start": 9,
+                "column_end": 14,
+                "is_primary": true
+              }
+            ],
+            "children": [
+              {
+                "rule": null,
+                "message": "these are all the await points this lock is held through",
+                "level": "note",
+                "spans": [
+                  {
+                    "file_name": "src\\lib.rs",
+                    "line_start": 10,
+                    "line_end": 10,
+                    "column_start": 14,
+                    "column_end": 19,
+                    "is_primary": true
+                  }
+                ],
+                "children": []
+              }
+            ]
+          }
+        ],
+        "ambiguous_findings": [],
+        "baseline": {
+          "status": "required",
+          "check": {
+            "outcome": "findings",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<baseline>\\Cargo.toml",
+              "--target-dir",
+              "<baseline>-build",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 0,
+            "diagnostic_root": "<baseline>",
+            "build_finished": [
+              true
+            ],
+            "raw_selected_count": 2,
+            "findings": [
+              {
+                "rule": "clippy::await_holding_lock",
+                "message": "this `MutexGuard` is held across an await point",
+                "level": "warning",
+                "spans": [
+                  {
+                    "file_name": "src\\lib.rs",
+                    "line_start": 7,
+                    "line_end": 7,
+                    "column_start": 9,
+                    "column_end": 14,
+                    "is_primary": true
+                  }
+                ],
+                "children": [
+                  {
+                    "rule": null,
+                    "message": "these are all the await points this lock is held through",
+                    "level": "note",
+                    "spans": [
+                      {
+                        "file_name": "src\\lib.rs",
+                        "line_start": 9,
+                        "line_end": 9,
+                        "column_start": 14,
+                        "column_end": 19,
+                        "is_primary": true
+                      }
+                    ],
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "rule": "clippy::await_holding_lock",
+                "message": "this `MutexGuard` is held across an await point",
+                "level": "warning",
+                "spans": [
+                  {
+                    "file_name": "src\\lib.rs",
+                    "line_start": 7,
+                    "line_end": 7,
+                    "column_start": 9,
+                    "column_end": 14,
+                    "is_primary": true
+                  }
+                ],
+                "children": [
+                  {
+                    "rule": null,
+                    "message": "these are all the await points this lock is held through",
+                    "level": "note",
+                    "spans": [
+                      {
+                        "file_name": "src\\lib.rs",
+                        "line_start": 9,
+                        "line_end": 9,
+                        "column_start": 14,
+                        "column_end": 19,
+                        "is_primary": true
+                      }
+                    ],
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "candidate_check": {
+          "outcome": "findings",
+          "command": [
+            "cargo",
+            "clippy",
+            "--offline",
+            "--manifest-path",
+            "<candidate>\\Cargo.toml",
+            "--target-dir",
+            "<scratch>\\build",
+            "--all-targets",
+            "--message-format=json",
+            "--",
+            "-A",
+            "clippy::all",
+            "--force-warn",
+            "clippy::await_holding_lock"
+          ],
+          "exit_code": 0,
+          "diagnostic_root": "<candidate>",
+          "build_finished": [
+            true
+          ],
+          "raw_selected_count": 2,
+          "findings": [
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\lib.rs",
+                  "line_start": 8,
+                  "line_end": 8,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\lib.rs",
+                      "line_start": 10,
+                      "line_end": 10,
+                      "column_start": 14,
+                      "column_end": 19,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\lib.rs",
+                  "line_start": 8,
+                  "line_end": 8,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\lib.rs",
+                      "line_start": 10,
+                      "line_end": 10,
+                      "column_start": 14,
+                      "column_end": 19,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "trailing_primary_comment": {
+      "original_inputs_sha256": {
+        "Cargo.toml": "a8f2a9c1f38dc39fdcd480347e151b191bf794360c1205a9115672835d433213",
+        "src/lib.rs": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9"
+      },
+      "result": {
+        "outcome": "no_findings",
+        "target": "src/lib.rs",
+        "operation": "write",
+        "original_sha256": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9",
+        "candidate_sha256": "eb0d7f27ad0ca38fa52a507b90a14cfd4c5ea03b30893790794638e0ebae975f",
+        "originals_unchanged": true,
+        "original_snapshot_sha256": "44337ee5c63b6523da53b59b156412f2214a7754e519b55e7d0c32abda1dba2d",
+        "candidate_compiled": true,
+        "reachability_control": {
+          "reached_as_rust": true,
+          "exit_code": 101,
+          "error": "unsuccessful_or_incomplete_check"
+        },
+        "findings": [],
+        "preexisting_findings": [
+          {
+            "rule": "clippy::await_holding_lock",
+            "message": "this `MutexGuard` is held across an await point",
+            "level": "warning",
+            "spans": [
+              {
+                "file_name": "src\\lib.rs",
+                "line_start": 7,
+                "line_end": 7,
+                "column_start": 9,
+                "column_end": 14,
+                "is_primary": true
+              }
+            ],
+            "children": [
+              {
+                "rule": null,
+                "message": "these are all the await points this lock is held through",
+                "level": "note",
+                "spans": [
+                  {
+                    "file_name": "src\\lib.rs",
+                    "line_start": 9,
+                    "line_end": 9,
+                    "column_start": 14,
+                    "column_end": 19,
+                    "is_primary": true
+                  }
+                ],
+                "children": []
+              }
+            ]
+          }
+        ],
+        "ambiguous_findings": [],
+        "baseline": {
+          "status": "required",
+          "check": {
+            "outcome": "findings",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<baseline>\\Cargo.toml",
+              "--target-dir",
+              "<baseline>-build",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 0,
+            "diagnostic_root": "<baseline>",
+            "build_finished": [
+              true
+            ],
+            "raw_selected_count": 2,
+            "findings": [
+              {
+                "rule": "clippy::await_holding_lock",
+                "message": "this `MutexGuard` is held across an await point",
+                "level": "warning",
+                "spans": [
+                  {
+                    "file_name": "src\\lib.rs",
+                    "line_start": 7,
+                    "line_end": 7,
+                    "column_start": 9,
+                    "column_end": 14,
+                    "is_primary": true
+                  }
+                ],
+                "children": [
+                  {
+                    "rule": null,
+                    "message": "these are all the await points this lock is held through",
+                    "level": "note",
+                    "spans": [
+                      {
+                        "file_name": "src\\lib.rs",
+                        "line_start": 9,
+                        "line_end": 9,
+                        "column_start": 14,
+                        "column_end": 19,
+                        "is_primary": true
+                      }
+                    ],
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "rule": "clippy::await_holding_lock",
+                "message": "this `MutexGuard` is held across an await point",
+                "level": "warning",
+                "spans": [
+                  {
+                    "file_name": "src\\lib.rs",
+                    "line_start": 7,
+                    "line_end": 7,
+                    "column_start": 9,
+                    "column_end": 14,
+                    "is_primary": true
+                  }
+                ],
+                "children": [
+                  {
+                    "rule": null,
+                    "message": "these are all the await points this lock is held through",
+                    "level": "note",
+                    "spans": [
+                      {
+                        "file_name": "src\\lib.rs",
+                        "line_start": 9,
+                        "line_end": 9,
+                        "column_start": 14,
+                        "column_end": 19,
+                        "is_primary": true
+                      }
+                    ],
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "candidate_check": {
+          "outcome": "findings",
+          "command": [
+            "cargo",
+            "clippy",
+            "--offline",
+            "--manifest-path",
+            "<candidate>\\Cargo.toml",
+            "--target-dir",
+            "<scratch>\\build",
+            "--all-targets",
+            "--message-format=json",
+            "--",
+            "-A",
+            "clippy::all",
+            "--force-warn",
+            "clippy::await_holding_lock"
+          ],
+          "exit_code": 0,
+          "diagnostic_root": "<candidate>",
+          "build_finished": [
+            true
+          ],
+          "raw_selected_count": 2,
+          "findings": [
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\lib.rs",
+                  "line_start": 7,
+                  "line_end": 7,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\lib.rs",
+                      "line_start": 9,
+                      "line_end": 9,
+                      "column_start": 14,
+                      "column_end": 19,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\lib.rs",
+                  "line_start": 7,
+                  "line_end": 7,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\lib.rs",
+                      "line_start": 9,
+                      "line_end": 9,
+                      "column_start": 14,
+                      "column_end": 19,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "indentation_only": {
+      "original_inputs_sha256": {
+        "Cargo.toml": "a8f2a9c1f38dc39fdcd480347e151b191bf794360c1205a9115672835d433213",
+        "src/lib.rs": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9"
+      },
+      "result": {
+        "outcome": "no_findings",
+        "target": "src/lib.rs",
+        "operation": "write",
+        "original_sha256": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9",
+        "candidate_sha256": "ba6fd88f32742c1d4a758a0d020daf3b0abbb7574c04851747050123b7a3755f",
+        "originals_unchanged": true,
+        "original_snapshot_sha256": "44337ee5c63b6523da53b59b156412f2214a7754e519b55e7d0c32abda1dba2d",
+        "candidate_compiled": true,
+        "reachability_control": {
+          "reached_as_rust": true,
+          "exit_code": 101,
+          "error": "unsuccessful_or_incomplete_check"
+        },
+        "findings": [],
+        "preexisting_findings": [
+          {
+            "rule": "clippy::await_holding_lock",
+            "message": "this `MutexGuard` is held across an await point",
+            "level": "warning",
+            "spans": [
+              {
+                "file_name": "src\\lib.rs",
+                "line_start": 7,
+                "line_end": 7,
+                "column_start": 13,
+                "column_end": 18,
+                "is_primary": true
+              }
+            ],
+            "children": [
+              {
+                "rule": null,
+                "message": "these are all the await points this lock is held through",
+                "level": "note",
+                "spans": [
+                  {
+                    "file_name": "src\\lib.rs",
+                    "line_start": 9,
+                    "line_end": 9,
+                    "column_start": 18,
+                    "column_end": 23,
+                    "is_primary": true
+                  }
+                ],
+                "children": []
+              }
+            ]
+          }
+        ],
+        "ambiguous_findings": [],
+        "baseline": {
+          "status": "required",
+          "check": {
+            "outcome": "findings",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<baseline>\\Cargo.toml",
+              "--target-dir",
+              "<baseline>-build",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 0,
+            "diagnostic_root": "<baseline>",
+            "build_finished": [
+              true
+            ],
+            "raw_selected_count": 2,
+            "findings": [
+              {
+                "rule": "clippy::await_holding_lock",
+                "message": "this `MutexGuard` is held across an await point",
+                "level": "warning",
+                "spans": [
+                  {
+                    "file_name": "src\\lib.rs",
+                    "line_start": 7,
+                    "line_end": 7,
+                    "column_start": 9,
+                    "column_end": 14,
+                    "is_primary": true
+                  }
+                ],
+                "children": [
+                  {
+                    "rule": null,
+                    "message": "these are all the await points this lock is held through",
+                    "level": "note",
+                    "spans": [
+                      {
+                        "file_name": "src\\lib.rs",
+                        "line_start": 9,
+                        "line_end": 9,
+                        "column_start": 14,
+                        "column_end": 19,
+                        "is_primary": true
+                      }
+                    ],
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "rule": "clippy::await_holding_lock",
+                "message": "this `MutexGuard` is held across an await point",
+                "level": "warning",
+                "spans": [
+                  {
+                    "file_name": "src\\lib.rs",
+                    "line_start": 7,
+                    "line_end": 7,
+                    "column_start": 9,
+                    "column_end": 14,
+                    "is_primary": true
+                  }
+                ],
+                "children": [
+                  {
+                    "rule": null,
+                    "message": "these are all the await points this lock is held through",
+                    "level": "note",
+                    "spans": [
+                      {
+                        "file_name": "src\\lib.rs",
+                        "line_start": 9,
+                        "line_end": 9,
+                        "column_start": 14,
+                        "column_end": 19,
+                        "is_primary": true
+                      }
+                    ],
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "candidate_check": {
+          "outcome": "findings",
+          "command": [
+            "cargo",
+            "clippy",
+            "--offline",
+            "--manifest-path",
+            "<candidate>\\Cargo.toml",
+            "--target-dir",
+            "<scratch>\\build",
+            "--all-targets",
+            "--message-format=json",
+            "--",
+            "-A",
+            "clippy::all",
+            "--force-warn",
+            "clippy::await_holding_lock"
+          ],
+          "exit_code": 0,
+          "diagnostic_root": "<candidate>",
+          "build_finished": [
+            true
+          ],
+          "raw_selected_count": 2,
+          "findings": [
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\lib.rs",
+                  "line_start": 7,
+                  "line_end": 7,
+                  "column_start": 13,
+                  "column_end": 18,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\lib.rs",
+                      "line_start": 9,
+                      "line_end": 9,
+                      "column_start": 18,
+                      "column_end": 23,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\lib.rs",
+                  "line_start": 7,
+                  "line_end": 7,
+                  "column_start": 13,
+                  "column_end": 18,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\lib.rs",
+                      "line_start": 9,
+                      "line_end": 9,
+                      "column_start": 18,
+                      "column_end": 23,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "comment_after_raw_literal": {
+      "original_inputs_sha256": {
+        "Cargo.toml": "a8f2a9c1f38dc39fdcd480347e151b191bf794360c1205a9115672835d433213",
+        "src/lib.rs": "ec519652af489f79ab5266979d0154847d465510e139501d4be95ae75e84662d"
+      },
+      "result": {
+        "outcome": "no_findings",
+        "target": "src/lib.rs",
+        "operation": "write",
+        "original_sha256": "ec519652af489f79ab5266979d0154847d465510e139501d4be95ae75e84662d",
+        "candidate_sha256": "e39e8f135964ed5f6122a02f1bcb6c913b42c404b41cae4250cfe2d21887e992",
+        "originals_unchanged": true,
+        "original_snapshot_sha256": "186a77079a56b5a743eb841ff3ea5c0e26ba6fc17fddb51a3032ff0208cd92cc",
+        "candidate_compiled": true,
+        "reachability_control": {
+          "reached_as_rust": true,
+          "exit_code": 101,
+          "error": "unsuccessful_or_incomplete_check"
+        },
+        "findings": [],
+        "preexisting_findings": [
+          {
+            "rule": "clippy::await_holding_lock",
+            "message": "this `MutexGuard` is held across an await point",
+            "level": "warning",
+            "spans": [
+              {
+                "file_name": "src\\lib.rs",
+                "line_start": 7,
+                "line_end": 7,
+                "column_start": 9,
+                "column_end": 14,
+                "is_primary": true
+              }
+            ],
+            "children": [
+              {
+                "rule": null,
+                "message": "these are all the await points this lock is held through",
+                "level": "note",
+                "spans": [
+                  {
+                    "file_name": "src\\lib.rs",
+                    "line_start": 9,
+                    "line_end": 9,
+                    "column_start": 14,
+                    "column_end": 19,
+                    "is_primary": true
+                  }
+                ],
+                "children": []
+              }
+            ]
+          }
+        ],
+        "ambiguous_findings": [],
+        "baseline": {
+          "status": "required",
+          "check": {
+            "outcome": "findings",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<baseline>\\Cargo.toml",
+              "--target-dir",
+              "<baseline>-build",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 0,
+            "diagnostic_root": "<baseline>",
+            "build_finished": [
+              true
+            ],
+            "raw_selected_count": 2,
+            "findings": [
+              {
+                "rule": "clippy::await_holding_lock",
+                "message": "this `MutexGuard` is held across an await point",
+                "level": "warning",
+                "spans": [
+                  {
+                    "file_name": "src\\lib.rs",
+                    "line_start": 7,
+                    "line_end": 7,
+                    "column_start": 9,
+                    "column_end": 14,
+                    "is_primary": true
+                  }
+                ],
+                "children": [
+                  {
+                    "rule": null,
+                    "message": "these are all the await points this lock is held through",
+                    "level": "note",
+                    "spans": [
+                      {
+                        "file_name": "src\\lib.rs",
+                        "line_start": 9,
+                        "line_end": 9,
+                        "column_start": 14,
+                        "column_end": 19,
+                        "is_primary": true
+                      }
+                    ],
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "rule": "clippy::await_holding_lock",
+                "message": "this `MutexGuard` is held across an await point",
+                "level": "warning",
+                "spans": [
+                  {
+                    "file_name": "src\\lib.rs",
+                    "line_start": 7,
+                    "line_end": 7,
+                    "column_start": 9,
+                    "column_end": 14,
+                    "is_primary": true
+                  }
+                ],
+                "children": [
+                  {
+                    "rule": null,
+                    "message": "these are all the await points this lock is held through",
+                    "level": "note",
+                    "spans": [
+                      {
+                        "file_name": "src\\lib.rs",
+                        "line_start": 9,
+                        "line_end": 9,
+                        "column_start": 14,
+                        "column_end": 19,
+                        "is_primary": true
+                      }
+                    ],
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "candidate_check": {
+          "outcome": "findings",
+          "command": [
+            "cargo",
+            "clippy",
+            "--offline",
+            "--manifest-path",
+            "<candidate>\\Cargo.toml",
+            "--target-dir",
+            "<scratch>\\build",
+            "--all-targets",
+            "--message-format=json",
+            "--",
+            "-A",
+            "clippy::all",
+            "--force-warn",
+            "clippy::await_holding_lock"
+          ],
+          "exit_code": 0,
+          "diagnostic_root": "<candidate>",
+          "build_finished": [
+            true
+          ],
+          "raw_selected_count": 2,
+          "findings": [
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\lib.rs",
+                  "line_start": 7,
+                  "line_end": 7,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\lib.rs",
+                      "line_start": 9,
+                      "line_end": 9,
+                      "column_start": 14,
+                      "column_end": 19,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\lib.rs",
+                  "line_start": 7,
+                  "line_end": 7,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\lib.rs",
+                      "line_start": 9,
+                      "line_end": 9,
+                      "column_start": 14,
+                      "column_end": 19,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "sibling_existing": {
+      "original_inputs_sha256": {
+        "Cargo.toml": "a8f2a9c1f38dc39fdcd480347e151b191bf794360c1205a9115672835d433213",
+        "src/lib.rs": "d325ddebbb0806de773b8fea5dae3733ae8f1da6b4a26de6179436f4c09b2721",
+        "src/sibling.rs": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9"
+      },
+      "result": {
+        "outcome": "no_findings",
+        "target": "src/lib.rs",
+        "operation": "write",
+        "original_sha256": "d325ddebbb0806de773b8fea5dae3733ae8f1da6b4a26de6179436f4c09b2721",
+        "candidate_sha256": "1ccc1bcf7762c35552c2dde093e30748e4ff7708b48fd80894ae28b78d84e034",
+        "originals_unchanged": true,
+        "original_snapshot_sha256": "38f87337f6ac7b8c741267f3c2fe6d193b24eea358f3a323d1dd1e20c0891f43",
+        "candidate_compiled": true,
+        "reachability_control": {
+          "reached_as_rust": true,
+          "exit_code": 101,
+          "error": "unsuccessful_or_incomplete_check"
+        },
+        "findings": [],
+        "preexisting_findings": [
+          {
+            "rule": "clippy::await_holding_lock",
+            "message": "this `MutexGuard` is held across an await point",
+            "level": "warning",
+            "spans": [
+              {
+                "file_name": "src\\sibling.rs",
+                "line_start": 7,
+                "line_end": 7,
+                "column_start": 9,
+                "column_end": 14,
+                "is_primary": true
+              }
+            ],
+            "children": [
+              {
+                "rule": null,
+                "message": "these are all the await points this lock is held through",
+                "level": "note",
+                "spans": [
+                  {
+                    "file_name": "src\\sibling.rs",
+                    "line_start": 9,
+                    "line_end": 9,
+                    "column_start": 14,
+                    "column_end": 19,
+                    "is_primary": true
+                  }
+                ],
+                "children": []
+              }
+            ]
+          }
+        ],
+        "ambiguous_findings": [],
+        "baseline": {
+          "status": "required",
+          "check": {
+            "outcome": "findings",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<baseline>\\Cargo.toml",
+              "--target-dir",
+              "<baseline>-build",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 0,
+            "diagnostic_root": "<baseline>",
+            "build_finished": [
+              true
+            ],
+            "raw_selected_count": 2,
+            "findings": [
+              {
+                "rule": "clippy::await_holding_lock",
+                "message": "this `MutexGuard` is held across an await point",
+                "level": "warning",
+                "spans": [
+                  {
+                    "file_name": "src\\sibling.rs",
+                    "line_start": 7,
+                    "line_end": 7,
+                    "column_start": 9,
+                    "column_end": 14,
+                    "is_primary": true
+                  }
+                ],
+                "children": [
+                  {
+                    "rule": null,
+                    "message": "these are all the await points this lock is held through",
+                    "level": "note",
+                    "spans": [
+                      {
+                        "file_name": "src\\sibling.rs",
+                        "line_start": 9,
+                        "line_end": 9,
+                        "column_start": 14,
+                        "column_end": 19,
+                        "is_primary": true
+                      }
+                    ],
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "rule": "clippy::await_holding_lock",
+                "message": "this `MutexGuard` is held across an await point",
+                "level": "warning",
+                "spans": [
+                  {
+                    "file_name": "src\\sibling.rs",
+                    "line_start": 7,
+                    "line_end": 7,
+                    "column_start": 9,
+                    "column_end": 14,
+                    "is_primary": true
+                  }
+                ],
+                "children": [
+                  {
+                    "rule": null,
+                    "message": "these are all the await points this lock is held through",
+                    "level": "note",
+                    "spans": [
+                      {
+                        "file_name": "src\\sibling.rs",
+                        "line_start": 9,
+                        "line_end": 9,
+                        "column_start": 14,
+                        "column_end": 19,
+                        "is_primary": true
+                      }
+                    ],
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "candidate_check": {
+          "outcome": "findings",
+          "command": [
+            "cargo",
+            "clippy",
+            "--offline",
+            "--manifest-path",
+            "<candidate>\\Cargo.toml",
+            "--target-dir",
+            "<scratch>\\build",
+            "--all-targets",
+            "--message-format=json",
+            "--",
+            "-A",
+            "clippy::all",
+            "--force-warn",
+            "clippy::await_holding_lock"
+          ],
+          "exit_code": 0,
+          "diagnostic_root": "<candidate>",
+          "build_finished": [
+            true
+          ],
+          "raw_selected_count": 2,
+          "findings": [
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\sibling.rs",
+                  "line_start": 7,
+                  "line_end": 7,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\sibling.rs",
+                      "line_start": 9,
+                      "line_end": 9,
+                      "column_start": 14,
+                      "column_end": 19,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\sibling.rs",
+                  "line_start": 7,
+                  "line_end": 7,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\sibling.rs",
+                      "line_start": 9,
+                      "line_end": 9,
+                      "column_start": 14,
+                      "column_end": 19,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "added_violation": {
+      "original_inputs_sha256": {
+        "Cargo.toml": "a8f2a9c1f38dc39fdcd480347e151b191bf794360c1205a9115672835d433213",
+        "src/lib.rs": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa"
+      },
+      "result": {
+        "outcome": "findings",
+        "target": "src/lib.rs",
+        "operation": "edit",
+        "original_sha256": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa",
+        "candidate_sha256": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9",
+        "originals_unchanged": true,
+        "original_snapshot_sha256": "d94038399db0cfe51f59ce0ec426c4f97eb7b2a00201fb8ea31c8c85f83bfc05",
+        "candidate_compiled": true,
+        "reachability_control": {
+          "reached_as_rust": true,
+          "exit_code": 101,
+          "error": "unsuccessful_or_incomplete_check"
+        },
+        "findings": [
+          {
+            "rule": "clippy::await_holding_lock",
+            "message": "this `MutexGuard` is held across an await point",
+            "level": "warning",
+            "spans": [
+              {
+                "file_name": "src\\lib.rs",
+                "line_start": 7,
+                "line_end": 7,
+                "column_start": 9,
+                "column_end": 14,
+                "is_primary": true
+              }
+            ],
+            "children": [
+              {
+                "rule": null,
+                "message": "these are all the await points this lock is held through",
+                "level": "note",
+                "spans": [
+                  {
+                    "file_name": "src\\lib.rs",
+                    "line_start": 9,
+                    "line_end": 9,
+                    "column_start": 14,
+                    "column_end": 19,
+                    "is_primary": true
+                  }
+                ],
+                "children": []
+              }
+            ]
+          }
+        ],
+        "preexisting_findings": [],
+        "ambiguous_findings": [],
+        "baseline": {
+          "status": "required",
+          "check": {
+            "outcome": "no_findings",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<baseline>\\Cargo.toml",
+              "--target-dir",
+              "<baseline>-build",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 0,
+            "diagnostic_root": "<baseline>",
+            "build_finished": [
+              true
+            ],
+            "raw_selected_count": 0,
+            "findings": []
+          }
+        },
+        "candidate_check": {
+          "outcome": "findings",
+          "command": [
+            "cargo",
+            "clippy",
+            "--offline",
+            "--manifest-path",
+            "<candidate>\\Cargo.toml",
+            "--target-dir",
+            "<scratch>\\build",
+            "--all-targets",
+            "--message-format=json",
+            "--",
+            "-A",
+            "clippy::all",
+            "--force-warn",
+            "clippy::await_holding_lock"
+          ],
+          "exit_code": 0,
+          "diagnostic_root": "<candidate>",
+          "build_finished": [
+            true
+          ],
+          "raw_selected_count": 2,
+          "findings": [
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\lib.rs",
+                  "line_start": 7,
+                  "line_end": 7,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\lib.rs",
+                      "line_start": 9,
+                      "line_end": 9,
+                      "column_start": 14,
+                      "column_end": 19,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\lib.rs",
+                  "line_start": 7,
+                  "line_end": 7,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\lib.rs",
+                      "line_start": 9,
+                      "line_end": 9,
+                      "column_start": 14,
+                      "column_end": 19,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "unchanged_primary_new_await": {
+      "original_inputs_sha256": {
+        "Cargo.toml": "a8f2a9c1f38dc39fdcd480347e151b191bf794360c1205a9115672835d433213",
+        "src/lib.rs": "9eaaf9af80133c215e2adb1ef45cb58536f6308299b19af86819cfa606b01204"
+      },
+      "result": {
+        "outcome": "findings",
+        "target": "src/lib.rs",
+        "operation": "edit",
+        "original_sha256": "9eaaf9af80133c215e2adb1ef45cb58536f6308299b19af86819cfa606b01204",
+        "candidate_sha256": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9",
+        "originals_unchanged": true,
+        "original_snapshot_sha256": "c8f58a282c7ddfbf6472521cd757712de619103a1aecfae7b354268acf20c04a",
+        "candidate_compiled": true,
+        "reachability_control": {
+          "reached_as_rust": true,
+          "exit_code": 101,
+          "error": "unsuccessful_or_incomplete_check"
+        },
+        "findings": [
+          {
+            "rule": "clippy::await_holding_lock",
+            "message": "this `MutexGuard` is held across an await point",
+            "level": "warning",
+            "spans": [
+              {
+                "file_name": "src\\lib.rs",
+                "line_start": 7,
+                "line_end": 7,
+                "column_start": 9,
+                "column_end": 14,
+                "is_primary": true
+              }
+            ],
+            "children": [
+              {
+                "rule": null,
+                "message": "these are all the await points this lock is held through",
+                "level": "note",
+                "spans": [
+                  {
+                    "file_name": "src\\lib.rs",
+                    "line_start": 9,
+                    "line_end": 9,
+                    "column_start": 14,
+                    "column_end": 19,
+                    "is_primary": true
+                  }
+                ],
+                "children": []
+              }
+            ]
+          }
+        ],
+        "preexisting_findings": [],
+        "ambiguous_findings": [],
+        "baseline": {
+          "status": "required",
+          "check": {
+            "outcome": "no_findings",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<baseline>\\Cargo.toml",
+              "--target-dir",
+              "<baseline>-build",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 0,
+            "diagnostic_root": "<baseline>",
+            "build_finished": [
+              true
+            ],
+            "raw_selected_count": 0,
+            "findings": []
+          }
+        },
+        "candidate_check": {
+          "outcome": "findings",
+          "command": [
+            "cargo",
+            "clippy",
+            "--offline",
+            "--manifest-path",
+            "<candidate>\\Cargo.toml",
+            "--target-dir",
+            "<scratch>\\build",
+            "--all-targets",
+            "--message-format=json",
+            "--",
+            "-A",
+            "clippy::all",
+            "--force-warn",
+            "clippy::await_holding_lock"
+          ],
+          "exit_code": 0,
+          "diagnostic_root": "<candidate>",
+          "build_finished": [
+            true
+          ],
+          "raw_selected_count": 2,
+          "findings": [
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\lib.rs",
+                  "line_start": 7,
+                  "line_end": 7,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\lib.rs",
+                      "line_start": 9,
+                      "line_end": 9,
+                      "column_start": 14,
+                      "column_end": 19,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\lib.rs",
+                  "line_start": 7,
+                  "line_end": 7,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\lib.rs",
+                      "line_start": 9,
+                      "line_end": 9,
+                      "column_start": 14,
+                      "column_end": 19,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "additional_held_await": {
+      "original_inputs_sha256": {
+        "Cargo.toml": "a8f2a9c1f38dc39fdcd480347e151b191bf794360c1205a9115672835d433213",
+        "src/lib.rs": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9"
+      },
+      "result": {
+        "outcome": "findings",
+        "target": "src/lib.rs",
+        "operation": "write",
+        "original_sha256": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9",
+        "candidate_sha256": "4eebfa53c600c0a2f5cfa61a8bdd6905caf64b8abd0ed3819388f78b0a2e9952",
+        "originals_unchanged": true,
+        "original_snapshot_sha256": "44337ee5c63b6523da53b59b156412f2214a7754e519b55e7d0c32abda1dba2d",
+        "candidate_compiled": true,
+        "reachability_control": {
+          "reached_as_rust": true,
+          "exit_code": 101,
+          "error": "unsuccessful_or_incomplete_check"
+        },
+        "findings": [
+          {
+            "rule": "clippy::await_holding_lock",
+            "message": "this `MutexGuard` is held across an await point",
+            "level": "warning",
+            "spans": [
+              {
+                "file_name": "src\\lib.rs",
+                "line_start": 7,
+                "line_end": 7,
+                "column_start": 9,
+                "column_end": 14,
+                "is_primary": true
+              }
+            ],
+            "children": [
+              {
+                "rule": null,
+                "message": "these are all the await points this lock is held through",
+                "level": "note",
+                "spans": [
+                  {
+                    "file_name": "src\\lib.rs",
+                    "line_start": 9,
+                    "line_end": 9,
+                    "column_start": 14,
+                    "column_end": 19,
+                    "is_primary": true
+                  },
+                  {
+                    "file_name": "src\\lib.rs",
+                    "line_start": 10,
+                    "line_end": 10,
+                    "column_start": 28,
+                    "column_end": 33,
+                    "is_primary": true
+                  }
+                ],
+                "children": []
+              }
+            ]
+          }
+        ],
+        "preexisting_findings": [],
+        "ambiguous_findings": [],
+        "baseline": {
+          "status": "required",
+          "check": {
+            "outcome": "findings",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<baseline>\\Cargo.toml",
+              "--target-dir",
+              "<baseline>-build",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 0,
+            "diagnostic_root": "<baseline>",
+            "build_finished": [
+              true
+            ],
+            "raw_selected_count": 2,
+            "findings": [
+              {
+                "rule": "clippy::await_holding_lock",
+                "message": "this `MutexGuard` is held across an await point",
+                "level": "warning",
+                "spans": [
+                  {
+                    "file_name": "src\\lib.rs",
+                    "line_start": 7,
+                    "line_end": 7,
+                    "column_start": 9,
+                    "column_end": 14,
+                    "is_primary": true
+                  }
+                ],
+                "children": [
+                  {
+                    "rule": null,
+                    "message": "these are all the await points this lock is held through",
+                    "level": "note",
+                    "spans": [
+                      {
+                        "file_name": "src\\lib.rs",
+                        "line_start": 9,
+                        "line_end": 9,
+                        "column_start": 14,
+                        "column_end": 19,
+                        "is_primary": true
+                      }
+                    ],
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "rule": "clippy::await_holding_lock",
+                "message": "this `MutexGuard` is held across an await point",
+                "level": "warning",
+                "spans": [
+                  {
+                    "file_name": "src\\lib.rs",
+                    "line_start": 7,
+                    "line_end": 7,
+                    "column_start": 9,
+                    "column_end": 14,
+                    "is_primary": true
+                  }
+                ],
+                "children": [
+                  {
+                    "rule": null,
+                    "message": "these are all the await points this lock is held through",
+                    "level": "note",
+                    "spans": [
+                      {
+                        "file_name": "src\\lib.rs",
+                        "line_start": 9,
+                        "line_end": 9,
+                        "column_start": 14,
+                        "column_end": 19,
+                        "is_primary": true
+                      }
+                    ],
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "candidate_check": {
+          "outcome": "findings",
+          "command": [
+            "cargo",
+            "clippy",
+            "--offline",
+            "--manifest-path",
+            "<candidate>\\Cargo.toml",
+            "--target-dir",
+            "<scratch>\\build",
+            "--all-targets",
+            "--message-format=json",
+            "--",
+            "-A",
+            "clippy::all",
+            "--force-warn",
+            "clippy::await_holding_lock"
+          ],
+          "exit_code": 0,
+          "diagnostic_root": "<candidate>",
+          "build_finished": [
+            true
+          ],
+          "raw_selected_count": 2,
+          "findings": [
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\lib.rs",
+                  "line_start": 7,
+                  "line_end": 7,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\lib.rs",
+                      "line_start": 9,
+                      "line_end": 9,
+                      "column_start": 14,
+                      "column_end": 19,
+                      "is_primary": true
+                    },
+                    {
+                      "file_name": "src\\lib.rs",
+                      "line_start": 10,
+                      "line_end": 10,
+                      "column_start": 28,
+                      "column_end": 33,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\lib.rs",
+                  "line_start": 7,
+                  "line_end": 7,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\lib.rs",
+                      "line_start": 9,
+                      "line_end": 9,
+                      "column_start": 14,
+                      "column_end": 19,
+                      "is_primary": true
+                    },
+                    {
+                      "file_name": "src\\lib.rs",
+                      "line_start": 10,
+                      "line_end": 10,
+                      "column_start": 28,
+                      "column_end": 33,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "partial_repair_removes_await": {
+      "original_inputs_sha256": {
+        "Cargo.toml": "a8f2a9c1f38dc39fdcd480347e151b191bf794360c1205a9115672835d433213",
+        "src/lib.rs": "4eebfa53c600c0a2f5cfa61a8bdd6905caf64b8abd0ed3819388f78b0a2e9952"
+      },
+      "result": {
+        "outcome": "no_findings",
+        "target": "src/lib.rs",
+        "operation": "write",
+        "original_sha256": "4eebfa53c600c0a2f5cfa61a8bdd6905caf64b8abd0ed3819388f78b0a2e9952",
+        "candidate_sha256": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9",
+        "originals_unchanged": true,
+        "original_snapshot_sha256": "35664ce8015f10c2786c7b72d8a902da0d1c5ac0b289257be5b33bc834f20c5b",
+        "candidate_compiled": true,
+        "reachability_control": {
+          "reached_as_rust": true,
+          "exit_code": 101,
+          "error": "unsuccessful_or_incomplete_check"
+        },
+        "findings": [],
+        "preexisting_findings": [
+          {
+            "rule": "clippy::await_holding_lock",
+            "message": "this `MutexGuard` is held across an await point",
+            "level": "warning",
+            "spans": [
+              {
+                "file_name": "src\\lib.rs",
+                "line_start": 7,
+                "line_end": 7,
+                "column_start": 9,
+                "column_end": 14,
+                "is_primary": true
+              }
+            ],
+            "children": [
+              {
+                "rule": null,
+                "message": "these are all the await points this lock is held through",
+                "level": "note",
+                "spans": [
+                  {
+                    "file_name": "src\\lib.rs",
+                    "line_start": 9,
+                    "line_end": 9,
+                    "column_start": 14,
+                    "column_end": 19,
+                    "is_primary": true
+                  }
+                ],
+                "children": []
+              }
+            ]
+          }
+        ],
+        "ambiguous_findings": [],
+        "baseline": {
+          "status": "required",
+          "check": {
+            "outcome": "findings",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<baseline>\\Cargo.toml",
+              "--target-dir",
+              "<baseline>-build",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 0,
+            "diagnostic_root": "<baseline>",
+            "build_finished": [
+              true
+            ],
+            "raw_selected_count": 2,
+            "findings": [
+              {
+                "rule": "clippy::await_holding_lock",
+                "message": "this `MutexGuard` is held across an await point",
+                "level": "warning",
+                "spans": [
+                  {
+                    "file_name": "src\\lib.rs",
+                    "line_start": 7,
+                    "line_end": 7,
+                    "column_start": 9,
+                    "column_end": 14,
+                    "is_primary": true
+                  }
+                ],
+                "children": [
+                  {
+                    "rule": null,
+                    "message": "these are all the await points this lock is held through",
+                    "level": "note",
+                    "spans": [
+                      {
+                        "file_name": "src\\lib.rs",
+                        "line_start": 9,
+                        "line_end": 9,
+                        "column_start": 14,
+                        "column_end": 19,
+                        "is_primary": true
+                      },
+                      {
+                        "file_name": "src\\lib.rs",
+                        "line_start": 10,
+                        "line_end": 10,
+                        "column_start": 28,
+                        "column_end": 33,
+                        "is_primary": true
+                      }
+                    ],
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "rule": "clippy::await_holding_lock",
+                "message": "this `MutexGuard` is held across an await point",
+                "level": "warning",
+                "spans": [
+                  {
+                    "file_name": "src\\lib.rs",
+                    "line_start": 7,
+                    "line_end": 7,
+                    "column_start": 9,
+                    "column_end": 14,
+                    "is_primary": true
+                  }
+                ],
+                "children": [
+                  {
+                    "rule": null,
+                    "message": "these are all the await points this lock is held through",
+                    "level": "note",
+                    "spans": [
+                      {
+                        "file_name": "src\\lib.rs",
+                        "line_start": 9,
+                        "line_end": 9,
+                        "column_start": 14,
+                        "column_end": 19,
+                        "is_primary": true
+                      },
+                      {
+                        "file_name": "src\\lib.rs",
+                        "line_start": 10,
+                        "line_end": 10,
+                        "column_start": 28,
+                        "column_end": 33,
+                        "is_primary": true
+                      }
+                    ],
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "candidate_check": {
+          "outcome": "findings",
+          "command": [
+            "cargo",
+            "clippy",
+            "--offline",
+            "--manifest-path",
+            "<candidate>\\Cargo.toml",
+            "--target-dir",
+            "<scratch>\\build",
+            "--all-targets",
+            "--message-format=json",
+            "--",
+            "-A",
+            "clippy::all",
+            "--force-warn",
+            "clippy::await_holding_lock"
+          ],
+          "exit_code": 0,
+          "diagnostic_root": "<candidate>",
+          "build_finished": [
+            true
+          ],
+          "raw_selected_count": 2,
+          "findings": [
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\lib.rs",
+                  "line_start": 7,
+                  "line_end": 7,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\lib.rs",
+                      "line_start": 9,
+                      "line_end": 9,
+                      "column_start": 14,
+                      "column_end": 19,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\lib.rs",
+                  "line_start": 7,
+                  "line_end": 7,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\lib.rs",
+                      "line_start": 9,
+                      "line_end": 9,
+                      "column_start": 14,
+                      "column_end": 19,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "held_await_after_raw_literal": {
+      "original_inputs_sha256": {
+        "Cargo.toml": "a8f2a9c1f38dc39fdcd480347e151b191bf794360c1205a9115672835d433213",
+        "src/lib.rs": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9"
+      },
+      "result": {
+        "outcome": "findings",
+        "target": "src/lib.rs",
+        "operation": "write",
+        "original_sha256": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9",
+        "candidate_sha256": "8d6a78b4af63f4fe02d7a0984ed0e4642bb176e3eefd5ab2ec5fb2b5bc2d3ecc",
+        "originals_unchanged": true,
+        "original_snapshot_sha256": "44337ee5c63b6523da53b59b156412f2214a7754e519b55e7d0c32abda1dba2d",
+        "candidate_compiled": true,
+        "reachability_control": {
+          "reached_as_rust": true,
+          "exit_code": 101,
+          "error": "unsuccessful_or_incomplete_check"
+        },
+        "findings": [
+          {
+            "rule": "clippy::await_holding_lock",
+            "message": "this `MutexGuard` is held across an await point",
+            "level": "warning",
+            "spans": [
+              {
+                "file_name": "src\\lib.rs",
+                "line_start": 7,
+                "line_end": 7,
+                "column_start": 9,
+                "column_end": 14,
+                "is_primary": true
+              }
+            ],
+            "children": [
+              {
+                "rule": null,
+                "message": "these are all the await points this lock is held through",
+                "level": "note",
+                "spans": [
+                  {
+                    "file_name": "src\\lib.rs",
+                    "line_start": 9,
+                    "line_end": 9,
+                    "column_start": 14,
+                    "column_end": 19,
+                    "is_primary": true
+                  },
+                  {
+                    "file_name": "src\\lib.rs",
+                    "line_start": 10,
+                    "line_end": 10,
+                    "column_start": 63,
+                    "column_end": 68,
+                    "is_primary": true
+                  }
+                ],
+                "children": []
+              }
+            ]
+          }
+        ],
+        "preexisting_findings": [],
+        "ambiguous_findings": [],
+        "baseline": {
+          "status": "required",
+          "check": {
+            "outcome": "findings",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<baseline>\\Cargo.toml",
+              "--target-dir",
+              "<baseline>-build",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 0,
+            "diagnostic_root": "<baseline>",
+            "build_finished": [
+              true
+            ],
+            "raw_selected_count": 2,
+            "findings": [
+              {
+                "rule": "clippy::await_holding_lock",
+                "message": "this `MutexGuard` is held across an await point",
+                "level": "warning",
+                "spans": [
+                  {
+                    "file_name": "src\\lib.rs",
+                    "line_start": 7,
+                    "line_end": 7,
+                    "column_start": 9,
+                    "column_end": 14,
+                    "is_primary": true
+                  }
+                ],
+                "children": [
+                  {
+                    "rule": null,
+                    "message": "these are all the await points this lock is held through",
+                    "level": "note",
+                    "spans": [
+                      {
+                        "file_name": "src\\lib.rs",
+                        "line_start": 9,
+                        "line_end": 9,
+                        "column_start": 14,
+                        "column_end": 19,
+                        "is_primary": true
+                      }
+                    ],
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "rule": "clippy::await_holding_lock",
+                "message": "this `MutexGuard` is held across an await point",
+                "level": "warning",
+                "spans": [
+                  {
+                    "file_name": "src\\lib.rs",
+                    "line_start": 7,
+                    "line_end": 7,
+                    "column_start": 9,
+                    "column_end": 14,
+                    "is_primary": true
+                  }
+                ],
+                "children": [
+                  {
+                    "rule": null,
+                    "message": "these are all the await points this lock is held through",
+                    "level": "note",
+                    "spans": [
+                      {
+                        "file_name": "src\\lib.rs",
+                        "line_start": 9,
+                        "line_end": 9,
+                        "column_start": 14,
+                        "column_end": 19,
+                        "is_primary": true
+                      }
+                    ],
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "candidate_check": {
+          "outcome": "findings",
+          "command": [
+            "cargo",
+            "clippy",
+            "--offline",
+            "--manifest-path",
+            "<candidate>\\Cargo.toml",
+            "--target-dir",
+            "<scratch>\\build",
+            "--all-targets",
+            "--message-format=json",
+            "--",
+            "-A",
+            "clippy::all",
+            "--force-warn",
+            "clippy::await_holding_lock"
+          ],
+          "exit_code": 0,
+          "diagnostic_root": "<candidate>",
+          "build_finished": [
+            true
+          ],
+          "raw_selected_count": 2,
+          "findings": [
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\lib.rs",
+                  "line_start": 7,
+                  "line_end": 7,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\lib.rs",
+                      "line_start": 9,
+                      "line_end": 9,
+                      "column_start": 14,
+                      "column_end": 19,
+                      "is_primary": true
+                    },
+                    {
+                      "file_name": "src\\lib.rs",
+                      "line_start": 10,
+                      "line_end": 10,
+                      "column_start": 63,
+                      "column_end": 68,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\lib.rs",
+                  "line_start": 7,
+                  "line_end": 7,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\lib.rs",
+                      "line_start": 9,
+                      "line_end": 9,
+                      "column_start": 14,
+                      "column_end": 19,
+                      "is_primary": true
+                    },
+                    {
+                      "file_name": "src\\lib.rs",
+                      "line_start": 10,
+                      "line_end": 10,
+                      "column_start": 63,
+                      "column_end": 68,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "repaired_violation": {
+      "original_inputs_sha256": {
+        "Cargo.toml": "a8f2a9c1f38dc39fdcd480347e151b191bf794360c1205a9115672835d433213",
+        "src/lib.rs": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9"
+      },
+      "result": {
+        "outcome": "no_findings",
+        "target": "src/lib.rs",
+        "operation": "write",
+        "original_sha256": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9",
+        "candidate_sha256": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa",
+        "originals_unchanged": true,
+        "original_snapshot_sha256": "44337ee5c63b6523da53b59b156412f2214a7754e519b55e7d0c32abda1dba2d",
+        "candidate_compiled": true,
+        "reachability_control": {
+          "reached_as_rust": true,
+          "exit_code": 101,
+          "error": "unsuccessful_or_incomplete_check"
+        },
+        "findings": [],
+        "preexisting_findings": [],
+        "ambiguous_findings": [],
+        "baseline": {
+          "status": "not_required",
+          "reason": "candidate_has_no_findings"
+        },
+        "candidate_check": {
+          "outcome": "no_findings",
+          "command": [
+            "cargo",
+            "clippy",
+            "--offline",
+            "--manifest-path",
+            "<candidate>\\Cargo.toml",
+            "--target-dir",
+            "<scratch>\\build",
+            "--all-targets",
+            "--message-format=json",
+            "--",
+            "-A",
+            "clippy::all",
+            "--force-warn",
+            "clippy::await_holding_lock"
+          ],
+          "exit_code": 0,
+          "diagnostic_root": "<candidate>",
+          "build_finished": [
+            true
+          ],
+          "raw_selected_count": 0,
+          "findings": []
+        }
+      }
+    },
+    "repaired_compile_error": {
+      "original_inputs_sha256": {
+        "Cargo.toml": "a8f2a9c1f38dc39fdcd480347e151b191bf794360c1205a9115672835d433213",
+        "src/lib.rs": "01590b33dffa159de22d24000502dbe8cc0cb1104f3326e1998c33145efc3936"
+      },
+      "result": {
+        "outcome": "no_findings",
+        "target": "src/lib.rs",
+        "operation": "write",
+        "original_sha256": "01590b33dffa159de22d24000502dbe8cc0cb1104f3326e1998c33145efc3936",
+        "candidate_sha256": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa",
+        "originals_unchanged": true,
+        "original_snapshot_sha256": "f061635acc1ac2f7a08465f813e78e404ef1ac842bb43bcaa8fec25ff987c4c3",
+        "candidate_compiled": true,
+        "reachability_control": {
+          "reached_as_rust": true,
+          "exit_code": 101,
+          "error": "unsuccessful_or_incomplete_check"
+        },
+        "findings": [],
+        "preexisting_findings": [],
+        "ambiguous_findings": [],
+        "baseline": {
+          "status": "not_required",
+          "reason": "candidate_has_no_findings"
+        },
+        "candidate_check": {
+          "outcome": "no_findings",
+          "command": [
+            "cargo",
+            "clippy",
+            "--offline",
+            "--manifest-path",
+            "<candidate>\\Cargo.toml",
+            "--target-dir",
+            "<scratch>\\build",
+            "--all-targets",
+            "--message-format=json",
+            "--",
+            "-A",
+            "clippy::all",
+            "--force-warn",
+            "clippy::await_holding_lock"
+          ],
+          "exit_code": 0,
+          "diagnostic_root": "<candidate>",
+          "build_finished": [
+            true
+          ],
+          "raw_selected_count": 0,
+          "findings": []
+        }
+      }
+    },
+    "required_baseline_failure": {
+      "original_inputs_sha256": {
+        "Cargo.toml": "a8f2a9c1f38dc39fdcd480347e151b191bf794360c1205a9115672835d433213",
+        "src/lib.rs": "01590b33dffa159de22d24000502dbe8cc0cb1104f3326e1998c33145efc3936"
+      },
+      "result": {
+        "outcome": "checker_failure",
+        "error": "required_baseline_failed",
+        "target": "src/lib.rs",
+        "operation": "write",
+        "original_sha256": "01590b33dffa159de22d24000502dbe8cc0cb1104f3326e1998c33145efc3936",
+        "candidate_sha256": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9",
+        "originals_unchanged": true,
+        "original_snapshot_sha256": "f061635acc1ac2f7a08465f813e78e404ef1ac842bb43bcaa8fec25ff987c4c3",
+        "candidate_compiled": true,
+        "reachability_control": {
+          "reached_as_rust": true,
+          "exit_code": 101,
+          "error": "unsuccessful_or_incomplete_check"
+        },
+        "findings": [],
+        "preexisting_findings": [],
+        "ambiguous_findings": [],
+        "baseline": {
+          "status": "required",
+          "check": {
+            "outcome": "checker_failure",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<baseline>\\Cargo.toml",
+              "--target-dir",
+              "<baseline>-build",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 101,
+            "error": "unsuccessful_or_incomplete_check",
+            "diagnostic_root": "<baseline>",
+            "build_finished": [
+              false
+            ],
+            "raw_selected_count": 0,
+            "findings": []
+          }
+        },
+        "candidate_check": {
+          "outcome": "findings",
+          "command": [
+            "cargo",
+            "clippy",
+            "--offline",
+            "--manifest-path",
+            "<candidate>\\Cargo.toml",
+            "--target-dir",
+            "<scratch>\\build",
+            "--all-targets",
+            "--message-format=json",
+            "--",
+            "-A",
+            "clippy::all",
+            "--force-warn",
+            "clippy::await_holding_lock"
+          ],
+          "exit_code": 0,
+          "diagnostic_root": "<candidate>",
+          "build_finished": [
+            true
+          ],
+          "raw_selected_count": 2,
+          "findings": [
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\lib.rs",
+                  "line_start": 7,
+                  "line_end": 7,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\lib.rs",
+                      "line_start": 9,
+                      "line_end": 9,
+                      "column_start": 14,
+                      "column_end": 19,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\lib.rs",
+                  "line_start": 7,
+                  "line_end": 7,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\lib.rs",
+                      "line_start": 9,
+                      "line_end": 9,
+                      "column_start": 14,
+                      "column_end": 19,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "candidate_compile_failure": {
+      "original_inputs_sha256": {
+        "Cargo.toml": "a8f2a9c1f38dc39fdcd480347e151b191bf794360c1205a9115672835d433213",
+        "src/lib.rs": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9"
+      },
+      "result": {
+        "outcome": "checker_failure",
+        "error": "unsuccessful_or_incomplete_check",
+        "target": "src/lib.rs",
+        "operation": "write",
+        "original_sha256": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9",
+        "candidate_sha256": "01590b33dffa159de22d24000502dbe8cc0cb1104f3326e1998c33145efc3936",
+        "originals_unchanged": true,
+        "original_snapshot_sha256": "44337ee5c63b6523da53b59b156412f2214a7754e519b55e7d0c32abda1dba2d",
+        "findings": [],
+        "preexisting_findings": [],
+        "ambiguous_findings": [],
+        "baseline": {
+          "status": "not_run",
+          "reason": "candidate_not_verified"
+        },
+        "candidate_check": {
+          "outcome": "checker_failure",
+          "command": [
+            "cargo",
+            "clippy",
+            "--offline",
+            "--manifest-path",
+            "<candidate>\\Cargo.toml",
+            "--target-dir",
+            "<scratch>\\build",
+            "--all-targets",
+            "--message-format=json",
+            "--",
+            "-A",
+            "clippy::all",
+            "--force-warn",
+            "clippy::await_holding_lock"
+          ],
+          "exit_code": 101,
+          "error": "unsuccessful_or_incomplete_check",
+          "diagnostic_root": "<candidate>",
+          "build_finished": [
+            false
+          ],
+          "raw_selected_count": 0,
+          "findings": []
+        }
+      }
+    },
+    "checker_unavailable": {
+      "original_inputs_sha256": {
+        "Cargo.toml": "a8f2a9c1f38dc39fdcd480347e151b191bf794360c1205a9115672835d433213",
+        "src/lib.rs": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa"
+      },
+      "result": {
+        "outcome": "checker_failure",
+        "error": "FileNotFoundError: [WinError 2] The system cannot find the file specified",
+        "target": "src/lib.rs",
+        "operation": "write",
+        "original_sha256": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa",
+        "candidate_sha256": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9",
+        "originals_unchanged": true,
+        "original_snapshot_sha256": "d94038399db0cfe51f59ce0ec426c4f97eb7b2a00201fb8ea31c8c85f83bfc05",
+        "findings": [],
+        "preexisting_findings": [],
+        "ambiguous_findings": [],
+        "baseline": {
+          "status": "not_run",
+          "reason": "candidate_not_verified"
+        },
+        "candidate_check": {
+          "outcome": "checker_failure",
+          "error": "FileNotFoundError: [WinError 2] The system cannot find the file specified",
+          "raw_selected_count": 0,
+          "findings": []
+        }
+      }
+    },
+    "new_referenced_bad": {
+      "original_inputs_sha256": {
+        "Cargo.toml": "a8f2a9c1f38dc39fdcd480347e151b191bf794360c1205a9115672835d433213",
+        "src/lib.rs": "ff0e785d6225214a945e5ca260cbf1ed6258451c5aec789f1d7dfa918e6358b8"
+      },
+      "result": {
+        "outcome": "findings",
+        "target": "src/new.rs",
+        "operation": "write",
+        "original_sha256": null,
+        "candidate_sha256": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9",
+        "originals_unchanged": true,
+        "original_snapshot_sha256": "65441af3f9c22fc6264ab2a69214710153a51fc7329598005db7b869bed0ea90",
+        "candidate_compiled": true,
+        "reachability_control": {
+          "reached_as_rust": true,
+          "exit_code": 101,
+          "error": "unsuccessful_or_incomplete_check"
+        },
+        "findings": [
+          {
+            "rule": "clippy::await_holding_lock",
+            "message": "this `MutexGuard` is held across an await point",
+            "level": "warning",
+            "spans": [
+              {
+                "file_name": "src\\new.rs",
+                "line_start": 7,
+                "line_end": 7,
+                "column_start": 9,
+                "column_end": 14,
+                "is_primary": true
+              }
+            ],
+            "children": [
+              {
+                "rule": null,
+                "message": "these are all the await points this lock is held through",
+                "level": "note",
+                "spans": [
+                  {
+                    "file_name": "src\\new.rs",
+                    "line_start": 9,
+                    "line_end": 9,
+                    "column_start": 14,
+                    "column_end": 19,
+                    "is_primary": true
+                  }
+                ],
+                "children": []
+              }
+            ]
+          }
+        ],
+        "preexisting_findings": [],
+        "ambiguous_findings": [],
+        "baseline": {
+          "status": "not_required",
+          "reason": "findings_wholly_in_new_file"
+        },
+        "candidate_check": {
+          "outcome": "findings",
+          "command": [
+            "cargo",
+            "clippy",
+            "--offline",
+            "--manifest-path",
+            "<candidate>\\Cargo.toml",
+            "--target-dir",
+            "<scratch>\\build",
+            "--all-targets",
+            "--message-format=json",
+            "--",
+            "-A",
+            "clippy::all",
+            "--force-warn",
+            "clippy::await_holding_lock"
+          ],
+          "exit_code": 0,
+          "diagnostic_root": "<candidate>",
+          "build_finished": [
+            true
+          ],
+          "raw_selected_count": 2,
+          "findings": [
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\new.rs",
+                  "line_start": 7,
+                  "line_end": 7,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\new.rs",
+                      "line_start": 9,
+                      "line_end": 9,
+                      "column_start": 14,
+                      "column_end": 19,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\new.rs",
+                  "line_start": 7,
+                  "line_end": 7,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\new.rs",
+                      "line_start": 9,
+                      "line_end": 9,
+                      "column_start": 14,
+                      "column_end": 19,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "new_referenced_good": {
+      "original_inputs_sha256": {
+        "Cargo.toml": "a8f2a9c1f38dc39fdcd480347e151b191bf794360c1205a9115672835d433213",
+        "src/lib.rs": "ff0e785d6225214a945e5ca260cbf1ed6258451c5aec789f1d7dfa918e6358b8"
+      },
+      "result": {
+        "outcome": "no_findings",
+        "target": "src/new.rs",
+        "operation": "write",
+        "original_sha256": null,
+        "candidate_sha256": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa",
+        "originals_unchanged": true,
+        "original_snapshot_sha256": "65441af3f9c22fc6264ab2a69214710153a51fc7329598005db7b869bed0ea90",
+        "candidate_compiled": true,
+        "reachability_control": {
+          "reached_as_rust": true,
+          "exit_code": 101,
+          "error": "unsuccessful_or_incomplete_check"
+        },
+        "findings": [],
+        "preexisting_findings": [],
+        "ambiguous_findings": [],
+        "baseline": {
+          "status": "not_required",
+          "reason": "candidate_has_no_findings"
+        },
+        "candidate_check": {
+          "outcome": "no_findings",
+          "command": [
+            "cargo",
+            "clippy",
+            "--offline",
+            "--manifest-path",
+            "<candidate>\\Cargo.toml",
+            "--target-dir",
+            "<scratch>\\build",
+            "--all-targets",
+            "--message-format=json",
+            "--",
+            "-A",
+            "clippy::all",
+            "--force-warn",
+            "clippy::await_holding_lock"
+          ],
+          "exit_code": 0,
+          "diagnostic_root": "<candidate>",
+          "build_finished": [
+            true
+          ],
+          "raw_selected_count": 0,
+          "findings": []
+        }
+      }
+    },
+    "new_auto_target": {
+      "original_inputs_sha256": {
+        "Cargo.toml": "a8f2a9c1f38dc39fdcd480347e151b191bf794360c1205a9115672835d433213",
+        "src/lib.rs": "f62f32b23cfb380e9c2f672ece131bd0918c5b0ffe6b2e4e2a500b543e563528"
+      },
+      "result": {
+        "outcome": "findings",
+        "target": "src/bin/new.rs",
+        "operation": "write",
+        "original_sha256": null,
+        "candidate_sha256": "3c037a73ecd15d0e8eec340721d4593a1c885053679f9ccb5ca44fd4479311f2",
+        "originals_unchanged": true,
+        "original_snapshot_sha256": "5a0b96a714b47c576d3bde31444a41ee07237c5b44545fa6a2b49612c1c8bfde",
+        "candidate_compiled": true,
+        "reachability_control": {
+          "reached_as_rust": true,
+          "exit_code": 101,
+          "error": "unsuccessful_or_incomplete_check"
+        },
+        "findings": [
+          {
+            "rule": "clippy::await_holding_lock",
+            "message": "this `MutexGuard` is held across an await point",
+            "level": "warning",
+            "spans": [
+              {
+                "file_name": "src\\bin\\new.rs",
+                "line_start": 7,
+                "line_end": 7,
+                "column_start": 9,
+                "column_end": 14,
+                "is_primary": true
+              }
+            ],
+            "children": [
+              {
+                "rule": null,
+                "message": "these are all the await points this lock is held through",
+                "level": "note",
+                "spans": [
+                  {
+                    "file_name": "src\\bin\\new.rs",
+                    "line_start": 9,
+                    "line_end": 9,
+                    "column_start": 14,
+                    "column_end": 19,
+                    "is_primary": true
+                  }
+                ],
+                "children": []
+              }
+            ]
+          }
+        ],
+        "preexisting_findings": [],
+        "ambiguous_findings": [],
+        "baseline": {
+          "status": "not_required",
+          "reason": "findings_wholly_in_new_file"
+        },
+        "candidate_check": {
+          "outcome": "findings",
+          "command": [
+            "cargo",
+            "clippy",
+            "--offline",
+            "--manifest-path",
+            "<candidate>\\Cargo.toml",
+            "--target-dir",
+            "<scratch>\\build",
+            "--all-targets",
+            "--message-format=json",
+            "--",
+            "-A",
+            "clippy::all",
+            "--force-warn",
+            "clippy::await_holding_lock"
+          ],
+          "exit_code": 0,
+          "diagnostic_root": "<candidate>",
+          "build_finished": [
+            true
+          ],
+          "raw_selected_count": 2,
+          "findings": [
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\bin\\new.rs",
+                  "line_start": 7,
+                  "line_end": 7,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\bin\\new.rs",
+                      "line_start": 9,
+                      "line_end": 9,
+                      "column_start": 14,
+                      "column_end": 19,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\bin\\new.rs",
+                  "line_start": 7,
+                  "line_end": 7,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\bin\\new.rs",
+                      "line_start": 9,
+                      "line_end": 9,
+                      "column_start": 14,
+                      "column_end": 19,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "new_file_with_unresolved_sibling": {
+      "original_inputs_sha256": {
+        "Cargo.toml": "a8f2a9c1f38dc39fdcd480347e151b191bf794360c1205a9115672835d433213",
+        "src/lib.rs": "d37413c6ac73adb50349b1a301fb4e7140f294d859df95c0001956017ca72ec5",
+        "src/sibling.rs": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9"
+      },
+      "result": {
+        "outcome": "checker_failure",
+        "error": "required_baseline_failed",
+        "target": "src/new.rs",
+        "operation": "write",
+        "original_sha256": null,
+        "candidate_sha256": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9",
+        "originals_unchanged": true,
+        "original_snapshot_sha256": "9863206aae6d748b10c234234cac54ae5d4f94f9bf8adba9c8721bd17bb7edf0",
+        "candidate_compiled": true,
+        "reachability_control": {
+          "reached_as_rust": true,
+          "exit_code": 101,
+          "error": "unsuccessful_or_incomplete_check"
+        },
+        "findings": [
+          {
+            "rule": "clippy::await_holding_lock",
+            "message": "this `MutexGuard` is held across an await point",
+            "level": "warning",
+            "spans": [
+              {
+                "file_name": "src\\new.rs",
+                "line_start": 7,
+                "line_end": 7,
+                "column_start": 9,
+                "column_end": 14,
+                "is_primary": true
+              }
+            ],
+            "children": [
+              {
+                "rule": null,
+                "message": "these are all the await points this lock is held through",
+                "level": "note",
+                "spans": [
+                  {
+                    "file_name": "src\\new.rs",
+                    "line_start": 9,
+                    "line_end": 9,
+                    "column_start": 14,
+                    "column_end": 19,
+                    "is_primary": true
+                  }
+                ],
+                "children": []
+              }
+            ]
+          }
+        ],
+        "preexisting_findings": [],
+        "ambiguous_findings": [],
+        "baseline": {
+          "status": "required",
+          "check": {
+            "outcome": "checker_failure",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<baseline>\\Cargo.toml",
+              "--target-dir",
+              "<baseline>-build",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 101,
+            "error": "unsuccessful_or_incomplete_check",
+            "diagnostic_root": "<baseline>",
+            "build_finished": [
+              false
+            ],
+            "raw_selected_count": 0,
+            "findings": []
+          }
+        },
+        "candidate_check": {
+          "outcome": "findings",
+          "command": [
+            "cargo",
+            "clippy",
+            "--offline",
+            "--manifest-path",
+            "<candidate>\\Cargo.toml",
+            "--target-dir",
+            "<scratch>\\build",
+            "--all-targets",
+            "--message-format=json",
+            "--",
+            "-A",
+            "clippy::all",
+            "--force-warn",
+            "clippy::await_holding_lock"
+          ],
+          "exit_code": 0,
+          "diagnostic_root": "<candidate>",
+          "build_finished": [
+            true
+          ],
+          "raw_selected_count": 4,
+          "findings": [
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\new.rs",
+                  "line_start": 7,
+                  "line_end": 7,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\new.rs",
+                      "line_start": 9,
+                      "line_end": 9,
+                      "column_start": 14,
+                      "column_end": 19,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\new.rs",
+                  "line_start": 7,
+                  "line_end": 7,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\new.rs",
+                      "line_start": 9,
+                      "line_end": 9,
+                      "column_start": 14,
+                      "column_end": 19,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\sibling.rs",
+                  "line_start": 7,
+                  "line_end": 7,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\sibling.rs",
+                      "line_start": 9,
+                      "line_end": 9,
+                      "column_start": 14,
+                      "column_end": 19,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\sibling.rs",
+                  "line_start": 7,
+                  "line_end": 7,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\sibling.rs",
+                      "line_start": 9,
+                      "line_end": 9,
+                      "column_start": 14,
+                      "column_end": 19,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "new_file_with_known_sibling": {
+      "original_inputs_sha256": {
+        "Cargo.toml": "a8f2a9c1f38dc39fdcd480347e151b191bf794360c1205a9115672835d433213",
+        "src/lib.rs": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9"
+      },
+      "result": {
+        "outcome": "findings",
+        "target": "src/bin/new.rs",
+        "operation": "write",
+        "original_sha256": null,
+        "candidate_sha256": "3c037a73ecd15d0e8eec340721d4593a1c885053679f9ccb5ca44fd4479311f2",
+        "originals_unchanged": true,
+        "original_snapshot_sha256": "44337ee5c63b6523da53b59b156412f2214a7754e519b55e7d0c32abda1dba2d",
+        "candidate_compiled": true,
+        "reachability_control": {
+          "reached_as_rust": true,
+          "exit_code": 101,
+          "error": "unsuccessful_or_incomplete_check"
+        },
+        "findings": [
+          {
+            "rule": "clippy::await_holding_lock",
+            "message": "this `MutexGuard` is held across an await point",
+            "level": "warning",
+            "spans": [
+              {
+                "file_name": "src\\bin\\new.rs",
+                "line_start": 7,
+                "line_end": 7,
+                "column_start": 9,
+                "column_end": 14,
+                "is_primary": true
+              }
+            ],
+            "children": [
+              {
+                "rule": null,
+                "message": "these are all the await points this lock is held through",
+                "level": "note",
+                "spans": [
+                  {
+                    "file_name": "src\\bin\\new.rs",
+                    "line_start": 9,
+                    "line_end": 9,
+                    "column_start": 14,
+                    "column_end": 19,
+                    "is_primary": true
+                  }
+                ],
+                "children": []
+              }
+            ]
+          }
+        ],
+        "preexisting_findings": [
+          {
+            "rule": "clippy::await_holding_lock",
+            "message": "this `MutexGuard` is held across an await point",
+            "level": "warning",
+            "spans": [
+              {
+                "file_name": "src\\lib.rs",
+                "line_start": 7,
+                "line_end": 7,
+                "column_start": 9,
+                "column_end": 14,
+                "is_primary": true
+              }
+            ],
+            "children": [
+              {
+                "rule": null,
+                "message": "these are all the await points this lock is held through",
+                "level": "note",
+                "spans": [
+                  {
+                    "file_name": "src\\lib.rs",
+                    "line_start": 9,
+                    "line_end": 9,
+                    "column_start": 14,
+                    "column_end": 19,
+                    "is_primary": true
+                  }
+                ],
+                "children": []
+              }
+            ]
+          }
+        ],
+        "ambiguous_findings": [],
+        "baseline": {
+          "status": "required",
+          "check": {
+            "outcome": "findings",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<baseline>\\Cargo.toml",
+              "--target-dir",
+              "<baseline>-build",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 0,
+            "diagnostic_root": "<baseline>",
+            "build_finished": [
+              true
+            ],
+            "raw_selected_count": 2,
+            "findings": [
+              {
+                "rule": "clippy::await_holding_lock",
+                "message": "this `MutexGuard` is held across an await point",
+                "level": "warning",
+                "spans": [
+                  {
+                    "file_name": "src\\lib.rs",
+                    "line_start": 7,
+                    "line_end": 7,
+                    "column_start": 9,
+                    "column_end": 14,
+                    "is_primary": true
+                  }
+                ],
+                "children": [
+                  {
+                    "rule": null,
+                    "message": "these are all the await points this lock is held through",
+                    "level": "note",
+                    "spans": [
+                      {
+                        "file_name": "src\\lib.rs",
+                        "line_start": 9,
+                        "line_end": 9,
+                        "column_start": 14,
+                        "column_end": 19,
+                        "is_primary": true
+                      }
+                    ],
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "rule": "clippy::await_holding_lock",
+                "message": "this `MutexGuard` is held across an await point",
+                "level": "warning",
+                "spans": [
+                  {
+                    "file_name": "src\\lib.rs",
+                    "line_start": 7,
+                    "line_end": 7,
+                    "column_start": 9,
+                    "column_end": 14,
+                    "is_primary": true
+                  }
+                ],
+                "children": [
+                  {
+                    "rule": null,
+                    "message": "these are all the await points this lock is held through",
+                    "level": "note",
+                    "spans": [
+                      {
+                        "file_name": "src\\lib.rs",
+                        "line_start": 9,
+                        "line_end": 9,
+                        "column_start": 14,
+                        "column_end": 19,
+                        "is_primary": true
+                      }
+                    ],
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "candidate_check": {
+          "outcome": "findings",
+          "command": [
+            "cargo",
+            "clippy",
+            "--offline",
+            "--manifest-path",
+            "<candidate>\\Cargo.toml",
+            "--target-dir",
+            "<scratch>\\build",
+            "--all-targets",
+            "--message-format=json",
+            "--",
+            "-A",
+            "clippy::all",
+            "--force-warn",
+            "clippy::await_holding_lock"
+          ],
+          "exit_code": 0,
+          "diagnostic_root": "<candidate>",
+          "build_finished": [
+            true
+          ],
+          "raw_selected_count": 4,
+          "findings": [
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\lib.rs",
+                  "line_start": 7,
+                  "line_end": 7,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\lib.rs",
+                      "line_start": 9,
+                      "line_end": 9,
+                      "column_start": 14,
+                      "column_end": 19,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\lib.rs",
+                  "line_start": 7,
+                  "line_end": 7,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\lib.rs",
+                      "line_start": 9,
+                      "line_end": 9,
+                      "column_start": 14,
+                      "column_end": 19,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\bin\\new.rs",
+                  "line_start": 7,
+                  "line_end": 7,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\bin\\new.rs",
+                      "line_start": 9,
+                      "line_end": 9,
+                      "column_start": 14,
+                      "column_end": 19,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\bin\\new.rs",
+                  "line_start": 7,
+                  "line_end": 7,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\bin\\new.rs",
+                      "line_start": 9,
+                      "line_end": 9,
+                      "column_start": 14,
+                      "column_end": 19,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "generated_source_ambiguity": {
+      "original_inputs_sha256": {
+        "build.rs": "b25ab95da78e7bf60b1c0d3ed8ff665524fe99fc046dacb0f222587c5d2623fa",
+        "Cargo.toml": "a8f2a9c1f38dc39fdcd480347e151b191bf794360c1205a9115672835d433213",
+        "src/lib.rs": "44af6b61586c0f28eb15456e57e593faf29fd0aac2e62ce3d2c3b96175b7cf14"
+      },
+      "result": {
+        "outcome": "checker_failure",
+        "error": "attribution_ambiguous",
+        "target": "src/lib.rs",
+        "operation": "write",
+        "original_sha256": "44af6b61586c0f28eb15456e57e593faf29fd0aac2e62ce3d2c3b96175b7cf14",
+        "candidate_sha256": "67c72ed13823d7b2e2e38e18fa202bc37d54fe0434100a9c0d31183995c27ac3",
+        "originals_unchanged": true,
+        "original_snapshot_sha256": "54c75d93a0c0b2e04f924f82680795b4a4232d084e974591d05b7087855c1406",
+        "candidate_compiled": true,
+        "reachability_control": {
+          "reached_as_rust": true,
+          "exit_code": 101,
+          "error": "unsuccessful_or_incomplete_check"
+        },
+        "findings": [],
+        "preexisting_findings": [],
+        "ambiguous_findings": [
+          {
+            "rule": "clippy::await_holding_lock",
+            "message": "this `MutexGuard` is held across an await point",
+            "level": "warning",
+            "spans": [
+              {
+                "file_name": "<scratch>\\build\\intermediate\\debug\\build\\attribution-probe-1bdef0ab6169ce12\\out/generated.rs",
+                "line_start": 7,
+                "line_end": 7,
+                "column_start": 9,
+                "column_end": 14,
+                "is_primary": true
+              }
+            ],
+            "children": [
+              {
+                "rule": null,
+                "message": "these are all the await points this lock is held through",
+                "level": "note",
+                "spans": [
+                  {
+                    "file_name": "<scratch>\\build\\intermediate\\debug\\build\\attribution-probe-1bdef0ab6169ce12\\out/generated.rs",
+                    "line_start": 9,
+                    "line_end": 9,
+                    "column_start": 14,
+                    "column_end": 19,
+                    "is_primary": true
+                  }
+                ],
+                "children": []
+              }
+            ]
+          },
+          {
+            "rule": "clippy::await_holding_lock",
+            "message": "this `MutexGuard` is held across an await point",
+            "level": "warning",
+            "spans": [
+              {
+                "file_name": "<scratch>\\build\\intermediate\\debug\\build\\attribution-probe-1bdef0ab6169ce12\\out/generated.rs",
+                "line_start": 7,
+                "line_end": 7,
+                "column_start": 9,
+                "column_end": 14,
+                "is_primary": true
+              }
+            ],
+            "children": [
+              {
+                "rule": null,
+                "message": "these are all the await points this lock is held through",
+                "level": "note",
+                "spans": [
+                  {
+                    "file_name": "<scratch>\\build\\intermediate\\debug\\build\\attribution-probe-1bdef0ab6169ce12\\out/generated.rs",
+                    "line_start": 9,
+                    "line_end": 9,
+                    "column_start": 14,
+                    "column_end": 19,
+                    "is_primary": true
+                  }
+                ],
+                "children": []
+              }
+            ]
+          }
+        ],
+        "baseline": {
+          "status": "required",
+          "check": {
+            "outcome": "findings",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<baseline>\\Cargo.toml",
+              "--target-dir",
+              "<baseline>-build",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 0,
+            "diagnostic_root": "<baseline>",
+            "build_finished": [
+              true
+            ],
+            "raw_selected_count": 2,
+            "findings": [
+              {
+                "rule": "clippy::await_holding_lock",
+                "message": "this `MutexGuard` is held across an await point",
+                "level": "warning",
+                "spans": [
+                  {
+                    "file_name": "<baseline>-build\\intermediate\\debug\\build\\attribution-probe-1bdef0ab6169ce12\\out/generated.rs",
+                    "line_start": 7,
+                    "line_end": 7,
+                    "column_start": 9,
+                    "column_end": 14,
+                    "is_primary": true
+                  }
+                ],
+                "children": [
+                  {
+                    "rule": null,
+                    "message": "these are all the await points this lock is held through",
+                    "level": "note",
+                    "spans": [
+                      {
+                        "file_name": "<baseline>-build\\intermediate\\debug\\build\\attribution-probe-1bdef0ab6169ce12\\out/generated.rs",
+                        "line_start": 9,
+                        "line_end": 9,
+                        "column_start": 14,
+                        "column_end": 19,
+                        "is_primary": true
+                      }
+                    ],
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "rule": "clippy::await_holding_lock",
+                "message": "this `MutexGuard` is held across an await point",
+                "level": "warning",
+                "spans": [
+                  {
+                    "file_name": "<baseline>-build\\intermediate\\debug\\build\\attribution-probe-1bdef0ab6169ce12\\out/generated.rs",
+                    "line_start": 7,
+                    "line_end": 7,
+                    "column_start": 9,
+                    "column_end": 14,
+                    "is_primary": true
+                  }
+                ],
+                "children": [
+                  {
+                    "rule": null,
+                    "message": "these are all the await points this lock is held through",
+                    "level": "note",
+                    "spans": [
+                      {
+                        "file_name": "<baseline>-build\\intermediate\\debug\\build\\attribution-probe-1bdef0ab6169ce12\\out/generated.rs",
+                        "line_start": 9,
+                        "line_end": 9,
+                        "column_start": 14,
+                        "column_end": 19,
+                        "is_primary": true
+                      }
+                    ],
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "candidate_check": {
+          "outcome": "findings",
+          "command": [
+            "cargo",
+            "clippy",
+            "--offline",
+            "--manifest-path",
+            "<candidate>\\Cargo.toml",
+            "--target-dir",
+            "<scratch>\\build",
+            "--all-targets",
+            "--message-format=json",
+            "--",
+            "-A",
+            "clippy::all",
+            "--force-warn",
+            "clippy::await_holding_lock"
+          ],
+          "exit_code": 0,
+          "diagnostic_root": "<candidate>",
+          "build_finished": [
+            true
+          ],
+          "raw_selected_count": 2,
+          "findings": [
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "<scratch>\\build\\intermediate\\debug\\build\\attribution-probe-1bdef0ab6169ce12\\out/generated.rs",
+                  "line_start": 7,
+                  "line_end": 7,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "<scratch>\\build\\intermediate\\debug\\build\\attribution-probe-1bdef0ab6169ce12\\out/generated.rs",
+                      "line_start": 9,
+                      "line_end": 9,
+                      "column_start": 14,
+                      "column_end": 19,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "<scratch>\\build\\intermediate\\debug\\build\\attribution-probe-1bdef0ab6169ce12\\out/generated.rs",
+                  "line_start": 7,
+                  "line_end": 7,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "<scratch>\\build\\intermediate\\debug\\build\\attribution-probe-1bdef0ab6169ce12\\out/generated.rs",
+                      "line_start": 9,
+                      "line_end": 9,
+                      "column_start": 14,
+                      "column_end": 19,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "equal_count_repair_and_add": {
+      "original_inputs_sha256": {
+        "Cargo.toml": "a8f2a9c1f38dc39fdcd480347e151b191bf794360c1205a9115672835d433213",
+        "src/lib.rs": "47d2c1bc0e546d128b23d45bd4cfbfef1403e675b3e3389b2d12bdecde033b48"
+      },
+      "result": {
+        "outcome": "findings",
+        "target": "src/lib.rs",
+        "operation": "write",
+        "original_sha256": "47d2c1bc0e546d128b23d45bd4cfbfef1403e675b3e3389b2d12bdecde033b48",
+        "candidate_sha256": "3b48b0abd11ab19792dca7d467cfd94eb901ab2a168fb54748f7cfe237ac1abe",
+        "originals_unchanged": true,
+        "original_snapshot_sha256": "cdafd29fc36fb5a98d7e7ff6f730d2e8aeab9c1676d2fb3e22491ff71c8572c4",
+        "candidate_compiled": true,
+        "reachability_control": {
+          "reached_as_rust": true,
+          "exit_code": 101,
+          "error": "unsuccessful_or_incomplete_check"
+        },
+        "findings": [
+          {
+            "rule": "clippy::await_holding_lock",
+            "message": "this `MutexGuard` is held across an await point",
+            "level": "warning",
+            "spans": [
+              {
+                "file_name": "src\\lib.rs",
+                "line_start": 10,
+                "line_end": 10,
+                "column_start": 9,
+                "column_end": 14,
+                "is_primary": true
+              }
+            ],
+            "children": [
+              {
+                "rule": null,
+                "message": "these are all the await points this lock is held through",
+                "level": "note",
+                "spans": [
+                  {
+                    "file_name": "src\\lib.rs",
+                    "line_start": 12,
+                    "line_end": 12,
+                    "column_start": 28,
+                    "column_end": 33,
+                    "is_primary": true
+                  }
+                ],
+                "children": []
+              }
+            ]
+          }
+        ],
+        "preexisting_findings": [],
+        "ambiguous_findings": [],
+        "baseline": {
+          "status": "required",
+          "check": {
+            "outcome": "findings",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<baseline>\\Cargo.toml",
+              "--target-dir",
+              "<baseline>-build",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 0,
+            "diagnostic_root": "<baseline>",
+            "build_finished": [
+              true
+            ],
+            "raw_selected_count": 2,
+            "findings": [
+              {
+                "rule": "clippy::await_holding_lock",
+                "message": "this `MutexGuard` is held across an await point",
+                "level": "warning",
+                "spans": [
+                  {
+                    "file_name": "src\\lib.rs",
+                    "line_start": 2,
+                    "line_end": 2,
+                    "column_start": 9,
+                    "column_end": 14,
+                    "is_primary": true
+                  }
+                ],
+                "children": [
+                  {
+                    "rule": null,
+                    "message": "these are all the await points this lock is held through",
+                    "level": "note",
+                    "spans": [
+                      {
+                        "file_name": "src\\lib.rs",
+                        "line_start": 4,
+                        "line_end": 4,
+                        "column_start": 28,
+                        "column_end": 33,
+                        "is_primary": true
+                      }
+                    ],
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "rule": "clippy::await_holding_lock",
+                "message": "this `MutexGuard` is held across an await point",
+                "level": "warning",
+                "spans": [
+                  {
+                    "file_name": "src\\lib.rs",
+                    "line_start": 2,
+                    "line_end": 2,
+                    "column_start": 9,
+                    "column_end": 14,
+                    "is_primary": true
+                  }
+                ],
+                "children": [
+                  {
+                    "rule": null,
+                    "message": "these are all the await points this lock is held through",
+                    "level": "note",
+                    "spans": [
+                      {
+                        "file_name": "src\\lib.rs",
+                        "line_start": 4,
+                        "line_end": 4,
+                        "column_start": 28,
+                        "column_end": 33,
+                        "is_primary": true
+                      }
+                    ],
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "candidate_check": {
+          "outcome": "findings",
+          "command": [
+            "cargo",
+            "clippy",
+            "--offline",
+            "--manifest-path",
+            "<candidate>\\Cargo.toml",
+            "--target-dir",
+            "<scratch>\\build",
+            "--all-targets",
+            "--message-format=json",
+            "--",
+            "-A",
+            "clippy::all",
+            "--force-warn",
+            "clippy::await_holding_lock"
+          ],
+          "exit_code": 0,
+          "diagnostic_root": "<candidate>",
+          "build_finished": [
+            true
+          ],
+          "raw_selected_count": 2,
+          "findings": [
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\lib.rs",
+                  "line_start": 10,
+                  "line_end": 10,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\lib.rs",
+                      "line_start": 12,
+                      "line_end": 12,
+                      "column_start": 28,
+                      "column_end": 33,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "rule": "clippy::await_holding_lock",
+              "message": "this `MutexGuard` is held across an await point",
+              "level": "warning",
+              "spans": [
+                {
+                  "file_name": "src\\lib.rs",
+                  "line_start": 10,
+                  "line_end": 10,
+                  "column_start": 9,
+                  "column_end": 14,
+                  "is_primary": true
+                }
+              ],
+              "children": [
+                {
+                  "rule": null,
+                  "message": "these are all the await points this lock is held through",
+                  "level": "note",
+                  "spans": [
+                    {
+                      "file_name": "src\\lib.rs",
+                      "line_start": 12,
+                      "line_end": 12,
+                      "column_start": 28,
+                      "column_end": 33,
+                      "is_primary": true
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  "commands": [
+    {
+      "command": "python tools/probe_rust_attribution.py",
+      "exit_code": 0,
+      "passed": true,
+      "expectations": {
+        "unrelated_line_shift_immutable": true,
+        "shifted_existing_does_not_block": true,
+        "crlf_line_shift_immutable": true,
+        "line_endings_do_not_create_debt": true,
+        "trailing_primary_comment_immutable": true,
+        "trailing_primary_comment_preserves_existing_debt": true,
+        "indentation_only_immutable": true,
+        "indentation_only_preserves_existing_debt": true,
+        "comment_after_raw_literal_immutable": true,
+        "raw_literal_is_not_stripped_as_comment": true,
+        "sibling_existing_immutable": true,
+        "whole_selection_existing_does_not_block": true,
+        "added_violation_immutable": true,
+        "added_lock_finding": true,
+        "unchanged_primary_new_await_immutable": true,
+        "await_addition_on_unchanged_lock": true,
+        "additional_held_await_immutable": true,
+        "secondary_await_expands_existing_finding": true,
+        "partial_repair_removes_await_immutable": true,
+        "removing_a_cause_does_not_introduce_debt": true,
+        "held_await_after_raw_literal_immutable": true,
+        "raw_literal_does_not_hide_new_await": true,
+        "repaired_violation_immutable": true,
+        "repaired_compile_error_immutable": true,
+        "repair_clean_without_baseline": true,
+        "compile_repair_clean_without_baseline": true,
+        "required_baseline_failure_immutable": true,
+        "required_baseline_failure_holds": true,
+        "candidate_compile_failure_immutable": true,
+        "candidate_failure_never_clean": true,
+        "checker_unavailable_immutable": true,
+        "unavailable_never_clean": true,
+        "new_referenced_bad_immutable": true,
+        "new_referenced_good_immutable": true,
+        "new_referenced_violation_intrinsic": true,
+        "new_referenced_good_remains_supported": true,
+        "new_auto_target_immutable": true,
+        "new_auto_target_is_intrinsic": true,
+        "new_file_with_unresolved_sibling_immutable": true,
+        "new_intrinsic_does_not_clear_unknown_sibling": true,
+        "new_file_with_known_sibling_immutable": true,
+        "new_and_existing_partitioned": true,
+        "generated_source_ambiguity_immutable": true,
+        "unavailable_source_identity_is_not_clean": true,
+        "equal_count_repair_and_add_immutable": true,
+        "equal_counts_do_not_erase_new_occurrence": true
+      },
+      "input_sha256": {
+        "tools/rust_candidates.py": "784c96a24bc72cc9b272584e1632f22228adab8440316a1d763dad7c942bb512",
+        "tools/rust_attribution.py": "816c617fe55a24b592cf3ed1b9381367cf8cf4b7ff220ca81be214f31da554a2",
+        "tools/rust_checker.py": "fd955f68290d0fa288fde9c22b0358123502cb22a17c1807ed747372b51a794c",
+        "tools/probe_rust_attribution.py": "fabafdefcaad2b36956df8544b75a1b2ede8a7a0e8d09b14fba400a672ef3355",
+        "fixtures/await-holding-lock/bad.rs": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9",
+        "fixtures/await-holding-lock/good.rs": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa"
+      }
+    },
+    {
+      "command": "python tools/probe_rust_candidates.py",
+      "exit_code": 0,
+      "passed": true,
+      "expectations": {
+        "edit_bad_originals_unchanged": true,
+        "edit_good_originals_unchanged": true,
+        "edit_bad_again_originals_unchanged": true,
+        "new_bad_originals_unchanged": true,
+        "new_good_originals_unchanged": true,
+        "new_bad_again_originals_unchanged": true,
+        "replacement_bad_originals_unchanged": true,
+        "nested_cwd_good_originals_unchanged": true,
+        "vcs_absent_originals_unchanged": true,
+        "vcs_absent_excluded": true,
+        "vcs_file_originals_unchanged": true,
+        "vcs_file_excluded": true,
+        "vcs_directory_originals_unchanged": true,
+        "vcs_directory_excluded": true,
+        "edit_compile_failure_originals_unchanged": true,
+        "new_compile_failure_originals_unchanged": true,
+        "unavailable_originals_unchanged": true,
+        "orphan_originals_unchanged": true,
+        "feature_excluded_originals_unchanged": true,
+        "inner_cfg_excluded_originals_unchanged": true,
+        "embedded_not_rust_originals_unchanged": true,
+        "traversal_originals_unchanged": true,
+        "ambiguous_edit_originals_unchanged": true,
+        "missing_edit_originals_unchanged": true,
+        "missing_target_originals_unchanged": true,
+        "sequential_unicode_crlf_originals_unchanged": true,
+        "sequential_edit_preserves_bytes": true,
+        "external_dependency_originals_unchanged": true,
+        "external_dependency_unchanged": true,
+        "linked_context_rejected": true,
+        "linked_destination_unchanged": true,
+        "edit_bad_selected_diagnostic": true,
+        "edit_bad_again_selected_diagnostic": true,
+        "new_bad_selected_diagnostic": true,
+        "new_bad_again_selected_diagnostic": true,
+        "replacement_bad_selected_diagnostic": true,
+        "edit_good_clean_and_compiled": true,
+        "new_good_clean_and_compiled": true,
+        "nested_cwd_good_clean_and_compiled": true,
+        "edit_compile_failure_visible": true,
+        "new_compile_failure_visible": true,
+        "unavailable_rejected": true,
+        "traversal_rejected": true,
+        "ambiguous_edit_rejected": true,
+        "missing_edit_rejected": true,
+        "missing_target_rejected": true,
+        "external_dependency_rejected": true,
+        "orphan_not_claimed_analyzed": true,
+        "feature_excluded_not_claimed_analyzed": true,
+        "inner_cfg_excluded_not_claimed_analyzed": true,
+        "embedded_not_rust_not_claimed_analyzed": true
+      },
+      "input_sha256": {
+        "tools/rust_candidates.py": "784c96a24bc72cc9b272584e1632f22228adab8440316a1d763dad7c942bb512",
+        "tools/rust_attribution.py": "816c617fe55a24b592cf3ed1b9381367cf8cf4b7ff220ca81be214f31da554a2",
+        "tools/probe_rust_candidates.py": "3580205b0e046c508b513a6471e03c3bd163adfce51065ffd8c29c3cb5222385",
+        "tools/rust_checker.py": "fd955f68290d0fa288fde9c22b0358123502cb22a17c1807ed747372b51a794c",
+        "fixtures/await-holding-lock/bad.rs": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9",
+        "fixtures/await-holding-lock/good.rs": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa"
+      }
+    },
+    {
+      "command": "python tools/probe_rust_quality.py",
+      "exit_code": 0,
+      "passed": true,
+      "expectations": {
+        "bad_reports_lock": true,
+        "near_match_passes": true,
+        "compiler_failure_is_not_clean": true,
+        "unavailable_is_not_clean": true
+      },
+      "input_sha256": {
+        "fixtures/await-holding-lock/Cargo.toml": "b6daabebe3ded20fc7e0803346d221ef9e5d1ea4d5a6292b5d38f8276d6a4775",
+        "fixtures/await-holding-lock/bad.rs": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9",
+        "fixtures/await-holding-lock/good.rs": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa",
+        "tools/probe_rust_quality.py": "3e28affd2523a77d64b85d5e1cf8c503be08c4cebecd7c6835acb4cb5ddfbe7f",
+        "tools/rust_checker.py": "fd955f68290d0fa288fde9c22b0358123502cb22a17c1807ed747372b51a794c"
+      }
+    }
+  ],
+  "mutation_controls": [
+    {
+      "mutation": "primary_only",
+      "command": "python <isolated-mutant>/tools/probe_rust_attribution.py",
+      "exit_code": 1,
+      "failed_expectations": [
+        "secondary_await_expands_existing_finding",
+        "raw_literal_does_not_hide_new_await"
+      ],
+      "copy_removed": true
+    },
+    {
+      "mutation": "exact_instead_of_subset",
+      "command": "python <isolated-mutant>/tools/probe_rust_attribution.py",
+      "exit_code": 1,
+      "failed_expectations": [
+        "removing_a_cause_does_not_introduce_debt"
+      ],
+      "copy_removed": true
+    }
+  ],
+  "review_regressions": {
+    "preceding_snapshot": "82fc2919fe919e786d50e3ea335a761cc5f9a2972fee532249d4276f086b9318",
+    "independent_receipt_sha256": "bfd4325d4bd9d53290f8dfd7213433a80e35eebf46568a0544913937571cb4ff",
+    "independent_red_cases": [
+      "comment_only_primary_line",
+      "indentation_only",
+      "partial_repair_removes_second_await"
+    ],
+    "finding_ids": [
+      "S3-R1",
+      "S3-R2",
+      "S3-R3"
+    ],
+    "author_postfix_exact_case_recheck": {
+      "comment_only_primary_line": {
+        "outcome": "no_findings",
+        "introduced": 0,
+        "preexisting": 1,
+        "ambiguous": 0,
+        "originals_unchanged": true
+      },
+      "indentation_only": {
+        "outcome": "no_findings",
+        "introduced": 0,
+        "preexisting": 1,
+        "ambiguous": 0,
+        "originals_unchanged": true
+      },
+      "partial_repair_removes_second_await": {
+        "outcome": "no_findings",
+        "introduced": 0,
+        "preexisting": 1,
+        "ambiguous": 0,
+        "originals_unchanged": true
+      }
+    },
+    "recheck_command": "Fresh python -c consumer reading independently constructed source transitions, with project-module origins asserted; disposable original crates.",
+    "recheck_exit_code": 0,
+    "status": "Author fixes verified; revised independent review and director acceptance remain pending."
+  },
+  "source_view_measurement": {
+    "outcome": "no_findings",
+    "raw_diagnostics": 4,
+    "source_view_constructions": 2,
+    "distinct_capture_objects": 2,
+    "measurement": "Throwaway instrumentation of immutable source-view construction; no elapsed-time claim."
+  },
+  "limitations": [
+    "Diagnostic continuity is compiler-span/source differencing, not arbitrary Rust semantic causality.",
+    "Generated/external/unmappable diagnostic sources remain ambiguous when preexistence cannot be established.",
+    "A newly expanded lock diagnostic retains all raw primary and child spans; the entire diagnostic is reported introduced, not every await claimed new.",
+    "Candidate failure and required baseline failure remain checker_failure; a not-required baseline is not a passed check.",
+    "Trusted Cargo execution is not an OS sandbox; original-tree integrity is before/after evidence, not concurrent-write prevention."
+  ]
+}

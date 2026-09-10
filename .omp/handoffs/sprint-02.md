@@ -4,6 +4,10 @@ Scope: candidate preparation and analysis under the [approved build plan](../../
 This handoff reports implementation and measured behavior, not independent approval
 or an OMP execution gate. The director owns acceptance and sequencing.
 
+This records the Sprint 2 boundary. The [Sprint 3 handoff](sprint-03.md) supersedes
+the whole-selection result semantics below with introduced-finding attribution;
+the preparation API shape and trusted-context limits remain applicable.
+
 ## Reproduce and evidence
 
 From the project root, with Python 3.11+ and Rust/Cargo/Clippy installed:

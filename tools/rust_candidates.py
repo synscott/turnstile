@@ -16,6 +16,7 @@ import tempfile
 import tomllib
 
 from rust_checker import RULE, check, run
+from rust_attribution import attribute, _spans
 
 
 class CandidateError(ValueError):
@@ -146,15 +147,70 @@ def _compiled(candidate, candidate_bytes, command, environment, cwd, target_dir,
         candidate.write_bytes(candidate_bytes)
 
 
+def _check_context(context, copied, target_dir, environment, cargo):
+    """Run the same Cargo selection for either exact source context."""
+    manifest = copied / _relative(context.manifest)
+    cwd = copied / _relative(context.cwd)
+    environment = environment.copy()
+    environment["CARGO_TARGET_DIR"] = str(target_dir)
+    environment["CARGO_BUILD_BUILD_DIR"] = str(target_dir / "intermediate")
+    metadata_command = [cargo, "metadata", "--offline", "--format-version=1",
+                        "--manifest-path", str(manifest), *_selection(context)]
+    try:
+        process = run(metadata_command, environment, cwd=cwd)
+        if process.returncode != 0:
+            return {"outcome": "checker_failure", "findings": [], "error": "cargo_metadata_failed",
+                    "command": metadata_command, "stderr": process.stderr, "exit_code": process.returncode}
+        metadata = json.loads(process.stdout)
+        if not Path(metadata["workspace_root"]).resolve().is_relative_to(copied):
+            raise CandidateError("Cargo workspace escapes copied context")
+        for package in metadata["packages"]:
+            if package["source"] is None:
+                paths = [package["manifest_path"], *(t["src_path"] for t in package["targets"])]
+                if any(not Path(p).resolve().is_relative_to(copied) for p in paths):
+                    raise CandidateError("local Cargo package/target escapes copied context")
+        command = [cargo, "clippy", "--offline", "--manifest-path", str(manifest),
+                   "--target-dir", str(target_dir), "--all-targets", "--message-format=json",
+                   *_selection(context)]
+        if context.package:
+            command += ["--package", context.package]
+        if context.target:
+            command += ["--target", context.target]
+        command += ["--", "-A", "clippy::all", "--force-warn", RULE]
+        result = check(command, environment, cwd=cwd)
+        result["diagnostic_root"] = metadata["workspace_root"]
+        return result
+    except (OSError, ValueError, KeyError, TypeError, subprocess.TimeoutExpired) as error:
+        return {"outcome": "checker_failure", "findings": [], "error": f"{type(error).__name__}: {error}"}
+
+
+def _sources(observed, copied, expected):
+    sources = {}
+    for diagnostic in observed["findings"]:
+        for span in _spans(diagnostic):
+            path = (Path(observed["diagnostic_root"]) / span["file_name"]).resolve()
+            if not path.is_relative_to(copied):
+                continue
+            relative = path.relative_to(copied).as_posix()
+            if relative in sources or relative not in expected:
+                continue
+            data = path.read_bytes()
+            if _digest(data) != expected[relative]:
+                raise CandidateError("Cargo changed diagnostic source bytes during analysis")
+            sources[relative] = data
+    return sources
+
+
 def analyze_candidate(context, target, *, edits=None, content=None, cargo="cargo"):
-    """Analyze sequential unique-text edits OR a full UTF-8 write, never apply it.
+    """Identify introduced findings for unique-text edits OR a full UTF-8 write.
 
     Paths are relative to context.root. The caller encloses the workspace and
     relative local dependencies, and selects the original Cargo invocation cwd.
     Once inputs are snapshotted, returns unchanged-input evidence. Preflight
     failures before that point do not claim verified immutability. No release exists.
     """
-    result = {"outcome": "checker_failure", "findings": []}
+    result = {"outcome": "checker_failure", "findings": [], "preexisting_findings": [],
+              "ambiguous_findings": [], "baseline": {"status": "not_run", "reason": "candidate_not_verified"}}
     root = Path(context.root).absolute()
     before = None
     try:
@@ -162,7 +218,7 @@ def analyze_candidate(context, target, *, edits=None, content=None, cargo="cargo
             raise CandidateError("context root cannot be a link/reparse point")
         root = root.resolve(strict=True)
         target_relative = _relative(target)
-        manifest_relative = _relative(context.manifest)
+        _relative(context.manifest)
         cwd_relative = _relative(context.cwd)
         if target_relative.suffix != ".rs":
             raise CandidateError("candidate must be a Rust file")
@@ -216,51 +272,80 @@ def analyze_candidate(context, target, *, edits=None, content=None, cargo="cargo
             candidate = copied / target_relative
             candidate.parent.mkdir(parents=True, exist_ok=True)
             candidate.write_bytes(candidate_bytes)
-            manifest = copied / manifest_relative
             cwd = copied / cwd_relative
             target_dir = Path(temporary) / "build"
-            # Cargo/rustc output and generated lockfiles belong only to the copy.
-            environment["CARGO_TARGET_DIR"] = str(target_dir)
-            environment["CARGO_BUILD_BUILD_DIR"] = str(target_dir / "intermediate")
-            metadata_command = [cargo, "metadata", "--offline", "--format-version=1",
-                                "--manifest-path", str(manifest), *_selection(context)]
-            metadata_process = run(metadata_command, environment, cwd=cwd)
-            if metadata_process.returncode != 0:
-                result.update(error="cargo_metadata_failed", stderr=metadata_process.stderr,
-                              exit_code=metadata_process.returncode)
-            else:
-                metadata = json.loads(metadata_process.stdout)
-                if not Path(metadata["workspace_root"]).resolve().is_relative_to(copied):
-                    raise CandidateError("Cargo workspace escapes copied context")
-                for package in metadata["packages"]:
-                    if package["source"] is None:
-                        paths = [package["manifest_path"], *(t["src_path"] for t in package["targets"])]
-                        if any(not Path(p).resolve().is_relative_to(copied) for p in paths):
-                            raise CandidateError("local Cargo package/target escapes copied context")
-                command = [cargo, "clippy", "--offline", "--manifest-path", str(manifest),
-                           "--target-dir", str(target_dir), "--all-targets", "--message-format=json",
-                           *_selection(context)]
-                if context.package:
-                    command += ["--package", context.package]
-                if context.target:
-                    command += ["--target", context.target]
-                command += ["--", "-A", "clippy::all", "--force-warn", RULE]
-                result.update(check(command, environment, cwd=cwd))
-                result["diagnostic_root"] = metadata["workspace_root"]
-                if candidate.read_bytes() != candidate_bytes:
-                    raise CandidateError("Cargo changed candidate bytes during analysis")
-                if result["outcome"] != "checker_failure":
-                    reached, control = _compiled(
-                        candidate, candidate_bytes, command, environment, cwd, target_dir,
-                        Path(metadata["workspace_root"]),
-                    )
-                    result["candidate_compiled"] = reached
-                    result["reachability_control"] = control
-                    if not reached:
-                        result.update(outcome="checker_failure", error="candidate_not_compiled")
+            candidate_check = _check_context(context, copied, target_dir, environment, cargo)
+            result.update(candidate_check)
+            result["candidate_check"] = candidate_check
+            result["findings"] = []
+            if candidate.read_bytes() != candidate_bytes:
+                raise CandidateError("Cargo changed candidate bytes during analysis")
+            if candidate_check["outcome"] != "checker_failure":
+                reached, control = _compiled(
+                    candidate, candidate_bytes, candidate_check["command"], environment, cwd, target_dir,
+                    Path(candidate_check["diagnostic_root"]),
+                )
+                result["candidate_compiled"] = reached
+                result["reachability_control"] = control
+                if not reached:
+                    result.update(outcome="checker_failure", error="candidate_not_compiled")
+                elif not candidate_check["findings"]:
+                    result["baseline"] = {"status": "not_required", "reason": "candidate_has_no_findings"}
+                else:
+                    expected = {**before, target_relative.as_posix(): _digest(candidate_bytes)}
+                    candidate_sources = _sources(candidate_check, copied, expected)
+                    intrinsic, remaining = [], []
+                    for diagnostic in candidate_check["findings"]:
+                        spans = list(_spans(diagnostic))
+                        wholly_new = original is None and spans and all(
+                            (Path(candidate_check["diagnostic_root"]) / s["file_name"]).resolve() == candidate
+                            for s in spans)
+                        (intrinsic if wholly_new else remaining).append(diagnostic)
+                    empty = {"findings": [], "diagnostic_root": str(copied)}
+                    introduced, _, ambiguous = attribute(
+                        empty, {**candidate_check, "findings": intrinsic}, {}, candidate_sources, copied, copied)
+                    preexisting = []
+                    if remaining:
+                        baseline_root = Path(temporary) / "baseline"
+                        baseline_root.mkdir()
+                        for source in _files(root):
+                            destination = baseline_root / source.relative_to(root)
+                            destination.parent.mkdir(parents=True, exist_ok=True)
+                            shutil.copy2(source, destination)
+                        if _snapshot(baseline_root) != before:
+                            raise CandidateError("original context changed before baseline capture")
+                        baseline = _check_context(context, baseline_root, Path(temporary) / "baseline-build", environment, cargo)
+                        result["baseline"] = {"status": "required", "check": baseline}
+                        if baseline["outcome"] == "checker_failure":
+                            result.update(outcome="checker_failure", error="required_baseline_failed")
+                        else:
+                            original_sources = _sources(baseline, baseline_root, before)
+                            # The baseline may have no finding in a newly diagnosed
+                            # file. Its original bytes still establish occurrence identity.
+                            for relative in candidate_sources:
+                                if relative in before and relative not in original_sources:
+                                    data = (baseline_root / relative).read_bytes()
+                                    if _digest(data) != before[relative]:
+                                        raise CandidateError("Cargo changed baseline source bytes")
+                                    original_sources[relative] = data
+                            new, preexisting, uncertain = attribute(
+                                baseline, {**candidate_check, "findings": remaining},
+                                original_sources, candidate_sources, baseline_root, copied)
+                            introduced.extend(new)
+                            ambiguous.extend(uncertain)
+                    else:
+                        result["baseline"] = {"status": "not_required", "reason": "findings_wholly_in_new_file"}
+                    result.update(findings=introduced, preexisting_findings=preexisting, ambiguous_findings=ambiguous)
+                    if result["outcome"] != "checker_failure":
+                        if ambiguous:
+                            result.update(outcome="checker_failure", error="attribution_ambiguous")
+                        else:
+                            result["outcome"] = "findings" if introduced else "no_findings"
             # Returned diagnostics refer to stable context-relative locations.
             serialized = json.dumps(result)
             for old, new in ((str(copied), "<candidate>"), (copied.as_posix(), "<candidate>"),
+                             (str(Path(temporary) / "baseline"), "<baseline>"),
+                             ((Path(temporary) / "baseline").as_posix(), "<baseline>"),
                              (str(Path(temporary)), "<scratch>"), (Path(temporary).as_posix(), "<scratch>")):
                 serialized = serialized.replace(json.dumps(old)[1:-1], new)
             result = json.loads(serialized)

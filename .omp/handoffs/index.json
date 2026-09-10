@@ -8,5 +8,10 @@
     "handoff": ".omp/handoffs/sprint-02.md",
     "evidence": "docs/sprint-02-results.json",
     "reproduce_from_project_root": "python tools/probe_rust_candidates.py"
+  },
+  "sprint-03": {
+    "handoff": ".omp/handoffs/sprint-03.md",
+    "evidence": "docs/sprint-03-results.json",
+    "reproduce_from_project_root": "python tools/probe_rust_attribution.py"
   }
 }

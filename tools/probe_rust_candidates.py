@@ -215,7 +215,7 @@ def probe():
                 cases[name]["outcome"] == "checker_failure" and cases[name].get("error") == "candidate_not_compiled")
     report["input_sha256"] = {
         name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest()
-        for name in ("tools/rust_candidates.py", "tools/probe_rust_candidates.py", "tools/rust_checker.py",
+        for name in ("tools/rust_candidates.py", "tools/rust_attribution.py", "tools/probe_rust_candidates.py", "tools/rust_checker.py",
                      "fixtures/await-holding-lock/bad.rs", "fixtures/await-holding-lock/good.rs")}
     report["passed"] = all(report["expectations"].values())
     serialized = json.dumps(report, indent=2)
