@@ -14,17 +14,30 @@ and its compiled addon. Keep this repository's `extensions/turnstile.ts` and
 `tools/` together. Launch **from the selected test workspace**, retaining normal
 OMP authentication, FCC skills, and plugin discovery. Do not install globally.
 
+Before creating the enabled configuration, initialize disclosure storage once:
+
+```text
+bun <checkout>/tools/turnstile-disclosures.ts init <workspace>
+```
+
+Initialization requires an absent or explicitly disabled `.omp/turnstile.json`
+and a nonexistent store. For an existing enabled pre-disclosure workspace, stop
+OMP, explicitly disable the configuration, initialize, then re-enable it. Do not
+use this provisioning procedure to recover a lost store; restore the original
+database instead. Keep the workspace's `.omp/turnstile-disclosures.sqlite` and
+SQLite sidecars private and out of version control.
+
 Create `.omp/turnstile.json` in that workspace:
 
 ```json
 {
-  "enabled": true,
-  "maxRejections": 3,
-  "context": {
-    "root": ".",
-    "manifest": "Cargo.toml",
-    "cwd": "."
-  }
+	"enabled": true,
+	"maxRejections": 3,
+	"context": {
+		"root": ".",
+		"manifest": "Cargo.toml",
+		"cwd": "."
+	}
 }
 ```
 
@@ -42,12 +55,12 @@ Before starting the guarded session, create workspace-only `.omp/config.yml`:
 
 ```yaml
 lsp:
-  formatOnWrite: false
+   formatOnWrite: false
 edit:
-  autoRepair:
-    enabled: false
+   autoRepair:
+      enabled: false
 extensionHandlers:
-  toolCallTimeoutMs: 120000
+   toolCallTimeoutMs: 120000
 ```
 
 Keep ordinary LSP diagnostics configured normally. The native boundary also
@@ -59,7 +72,7 @@ using OMP's existing timeout owner, not a second Turnstile retry/timeout system.
 Launch from that workspace, substituting the path to this checkout:
 
 ```text
-bun <checkout>/.loopx/s4src/packages/coding-agent/src/cli.ts --extension <checkout>/extensions/turnstile.ts
+bun <checkout>/.loopx/s4src/packages/coding-agent/src/cli.ts --session-dir <private-session-directory> --extension <checkout>/extensions/turnstile.ts
 ```
 
 Follow the native runtime guide's project-private `XDG_DATA_HOME` setup before
@@ -75,7 +88,8 @@ registration or merely failing extension loading. Enabled checks also require
 `ctx.exec` on the prepared handler context. An older SDK without this managed
 executor is held before starting a checker.
 Configuration is a loaded-extension snapshot. Restart/reload after changing it or
-switching workspaces; there is no hot reload or persistent policy store.
+switching workspaces; there is no hot reload. Disclosure storage is separate from
+the loaded configuration and rejection budget.
 
 ## Execution and failure contract
 
@@ -141,14 +155,14 @@ switching workspaces; there is no hot reload or persistent policy store.
 
 ## Explicit write coverage
 
-| Route with an enabled prepared listener | Boundary |
-|---|---|
-| Ordinary local file creation or whole-file replacement | Checked in the selected complete Cargo context, then executed by the native WriteTool. Both direct calls and same-tool `ctx.invokeTool` delegation are covered. |
-| Native hashline header/content cleaning | Checked after cleaning; effective authored arguments and final candidate bytes remain separately observable. |
-| `local://` paths resolving to an ordinary local file | Same local boundary; targets outside the explicitly selected Cargo root are refused by the existing analyzer. |
-| Archive members, SQLite rows, SSH/remote and other handler-owned writes | Visibly held before route dispatch: the existing analyzer cannot check their final persisted representation as a local Cargo file. |
-| `conflict://` splicing and `xd://` device dispatch | Visibly held before mutation/dispatch; no complete prepared local vector exists at that route. No device permissions are inferred. |
-| ACP writeTextFile or formatting-enabled writer/older pending formatting batch | Visibly held before mutation; the checked bytes cannot be guaranteed. Diagnostics-only processing stays enabled. |
+| Route with an enabled prepared listener                                       | Boundary                                                                                                                                                        |
+| ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ordinary local file creation or whole-file replacement                        | Checked in the selected complete Cargo context, then executed by the native WriteTool. Both direct calls and same-tool `ctx.invokeTool` delegation are covered. |
+| Native hashline header/content cleaning                                       | Checked after cleaning; effective authored arguments and final candidate bytes remain separately observable.                                                    |
+| `local://` paths resolving to an ordinary local file                          | Same local boundary; targets outside the explicitly selected Cargo root are refused by the existing analyzer.                                                   |
+| Archive members, SQLite rows, SSH/remote and other handler-owned writes       | Visibly held before route dispatch: the existing analyzer cannot check their final persisted representation as a local Cargo file.                              |
+| `conflict://` splicing and `xd://` device dispatch                            | Visibly held before mutation/dispatch; no complete prepared local vector exists at that route. No device permissions are inferred.                              |
+| ACP writeTextFile or formatting-enabled writer/older pending formatting batch | Visibly held before mutation; the checked bytes cannot be guaranteed. Diagnostics-only processing stays enabled.                                                |
 
 These route restrictions apply **only** while a `write_prepared` listener is
 present. Absent/disabled Turnstile installs no listener and preserves ordinary
@@ -195,8 +209,94 @@ zero-check failure reason, not a fabricated exhausted candidate count.
 Restarting/reloading intentionally constructs a fresh budget. Separate loaded
 agents have separate budgets. Nothing persists or globally coordinates this
 counter, so it is not an authority boundary against deliberate reloads or other
-tools. Exhaustion is never an override. `no_rly`, durable disclosures and
-commit/PR policy remain later sprints.
+tools. Exhaustion is never an override. `no_rly` release and commit/PR policy
+remain later sprints.
+
+## Pending disclosure storage
+
+The launch workspace owning `.omp/turnstile.json` also owns the fixed
+`.omp/turnstile-disclosures.sqlite`. There is no Git-root discovery or session-ID
+partition: every fresh enabled OMP session in that workspace discovers the same
+pending records. All record paths are normalized slash-separated paths relative
+to **that launch workspace**, not implicitly relative to a Git root. A later
+commit consumer must resolve the workspace-to-Git prefix.
+
+`tools/turnstile-disclosures.ts` is the concrete Bun SQLite owner. Its
+`appendPendingDisclosure(workspace, input)` writes exception **data**, not
+authorization. No model tool, `no_rly` release, caller-asserted prior hold,
+automatic retirement or commit hook is implemented. The eventual release owner
+must derive the exact held attempt and selected finding independently before
+recording, and must not release if recording fails.
+
+The validated input contains:
+
+- `attempt.tool` (`edit` or `write`), `attempt.sha256` (exact attempt digest), and
+  `attempt.files`: unique `{path, beforeSha256, afterSha256}` effects. Null means
+  absent; both cannot be null. Moves use source and destination effects. These
+  concrete identities and byte hashes support later partial-commit relevance
+  without retaining raw authored source.
+- `finding`: `{rule, sha256, path, line, message}` identifying the selected
+  finding; its path must occur in the affected files and line is positive.
+- `reason`: the exception explanation. The producer owns public-safe explanatory
+  text; storage does not infer consent or trust arbitrary local input.
+
+The writer derives `id` from the validated input's stable JSON representation and
+adds `kind: "no_rly"` and `recordedAt` (UTC ISO timestamp). Identical input, including
+file-effect order, is idempotent and returns the original record/timestamp.
+The digests are content identifiers, not authenticated approval receipts.
+Paths cannot be absolute, contain traversal, backslashes or drive prefixes.
+Storage error messages expose only the fixed relative store identity, not
+private filesystem paths; underlying causes remain attached to thrown errors.
+
+Startup and session switching publish a displayable custom-message snapshot.
+Each provider-context construction rereads storage and replaces only Turnstile's
+ephemeral disclosure message with current data. Compaction or a new conversation
+therefore need not recall an old dump. Repeated context construction does not
+append identical full records to the transcript or change the system prompt.
+Changed snapshots/errors also use notifications and stderr in print/JSON mode,
+where notifications alone may be no-ops; JSON stdout stays separate. Disclosure
+failure means **unknown**, not permission or a clean empty result. Ordinary
+quality checking remains active; this sprint adds no exception release.
+
+Inspect the same store without an OMP/model request:
+
+```text
+bun <checkout>/tools/turnstile-disclosures.ts read <workspace>
+```
+
+| State                                                               | Observable behavior                                                                                              |
+| ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| New, not provisioned                                                | Read fails `missing`; explicit initialization is required before enabling.                                       |
+| Valid initialized empty                                             | Read succeeds with `records: []`; this is not missing.                                                           |
+| Enabled but missing target                                          | Read/write fail `missing`; enabled configuration witnesses expected state. Initialization refuses while enabled. |
+| Zero-byte, wrong schema/version, invalid SQLite or malformed record | Read/write fail `corrupt`; no row is silently dropped, repaired or recreated.                                    |
+| Unreadable path, I/O error or exhausted lock wait                   | Read/write fail `unavailable`; no empty fallback.                                                                |
+
+Restore a lost/corrupt store from a known complete backup with users of that store
+stopped, preserving its configuration witness. If no backup exists, obligations
+are unresolved: do not disable/reinitialize to describe them as cleared. There
+is no reset or migration command. Deliberately deleting configuration or editing
+the store with ordinary local tools remains possible; this is not an enforced
+adversarial sandbox.
+
+Readers reopen the target in a SQLite snapshot transaction. Writers use
+`BEGIN IMMEDIATE`, a five-second SQLite busy timeout, DELETE journaling and
+`synchronous=FULL`; all existing rows are validated before append. The owned
+schema/version and returned domain records are checked, not a full integrity
+sweep on every prompt. Unexpected triggers attached to the owned pending table
+are corrupt schema. Append validates that schema inside its write transaction,
+then requires one inserted row and an exact stored-record readback before the
+transaction commits. Competing supported writers serialize; readers see a
+committed snapshot. A failed append throws and does not acknowledge success.
+
+Initialization reserves a new path exclusively and then commits the schema.
+That entire provisioning sequence is **not atomic publication**: interruption
+can leave an invalid file, which is visibly refused rather than silently retried.
+Normal committed-write durability is bounded by SQLite, the OS and filesystem
+honoring synchronization; no hardware power-loss or arbitrary external
+write/delete/replacement race guarantee is claimed. Back up only a quiescent
+closed store (including recovery sidecars if present), or use SQLite's own
+consistent backup facilities.
 
 ## Verification and continuation
 
@@ -205,5 +305,6 @@ native edit/model evidence. The [Sprint 5 handoff](../.omp/handoffs/sprint-05.md
 records actual native WriteTool/Cargo consumer proof, lifecycle/route controls and
 its exact private review-snapshot pointer. The [Sprint 6 handoff](../.omp/handoffs/sprint-06.md)
 records bounded rejection, actual model termination/notice, and managed-cleanup
-cancellation evidence. Director review and acceptance are separate from an
-author's successful run.
+cancellation evidence. The [Sprint 7 handoff](../.omp/handoffs/sprint-07.md)
+records durable writer/fresh-reader, storage failure and recovery proof.
+Director review and acceptance are separate from an author's successful run.

@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { ExtensionAPI, ExtensionContext, EditPreparedEvent, WritePreparedEvent } from "@oh-my-pi/pi-coding-agent";
+import { readPendingDisclosures } from "../tools/turnstile-disclosures";
 
 function object(value: unknown): Record<string, unknown> {
 	if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("expected an object");
@@ -35,8 +36,45 @@ export default async function turnstile(api: ExtensionAPI) {
 			throw new Error("maxRejections must be a positive safe integer");
 		config = { context, python, cargo, root: context.root, maxRejections };
 	} catch (error) {
-		if ((error as NodeJS.ErrnoException).code === "ENOENT") return;
-		failure = `invalid ${configPath}: ${error instanceof Error ? error.message : String(error)}`;
+		const code = error && typeof error === "object" && "code" in error ? error.code : undefined;
+		if (code === "ENOENT") return;
+		failure = `invalid .omp/turnstile.json: ${typeof code === "string" ? code : error instanceof SyntaxError ? "invalid JSON" : error instanceof Error ? error.message : "configuration read failed"}`;
+	}
+	if (config) {
+		const customType = "turnstile-pending-disclosures";
+		let lastNotice = "";
+		const disclosureMessage = (ctx: ExtensionContext) => {
+			let content: string;
+			let failed = false;
+			try {
+				if (resolve(ctx.cwd) !== resolve(workspace))
+					throw new Error(
+						"Turnstile disclosure workspace changed; restart in the workspace owning the configuration. Pending state is unknown.",
+					);
+				const records = readPendingDisclosures(workspace);
+				content = `Turnstile pending disclosure data (not instructions or authorization; no release is asserted). Paths are relative to the launch workspace. Current records: ${JSON.stringify(records)}`;
+			} catch (error) {
+				failed = true;
+				content =
+					error instanceof Error ? error.message : "Turnstile disclosure read failed; pending state is unknown.";
+			}
+			if (content !== lastNotice) {
+				if (ctx.mode === "print" || ctx.mode === "json") process.stderr.write(`${content}\n`);
+				ctx.ui.notify(content, failed ? "error" : "info");
+				lastNotice = content;
+			}
+			return { customType, content, display: true };
+		};
+		// Startup keeps one operator-visible snapshot. Provider contexts reread the store
+		// without appending identical dumps to the transcript or elevating data to a system prompt.
+		api.on("session_start", (_event, ctx) => api.sendMessage(disclosureMessage(ctx)));
+		api.on("session_switch", (_event, ctx) => api.sendMessage(disclosureMessage(ctx)));
+		api.on("context", (event, ctx) => ({
+			messages: [
+				...event.messages.filter(message => message.role !== "custom" || message.customType !== customType),
+				{ role: "custom", ...disclosureMessage(ctx), timestamp: Date.now() },
+			],
+		}));
 	}
 	if (!failure) {
 		try {
@@ -87,7 +125,7 @@ export default async function turnstile(api: ExtensionAPI) {
 		if ((failure || exhausted) && (event.toolName === "edit" || event.toolName === "write")) return stop(ctx);
 	});
 	if (failure) {
-		api.on("session_start", (_event, ctx) => ctx.ui.notify(exhaustionReason, "error"));
+		api.on("session_start", (_event, ctx) => announce(ctx));
 		return;
 	}
 	const enabled = config!;
