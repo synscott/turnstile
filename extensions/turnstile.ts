@@ -1,13 +1,142 @@
+import { createHash, randomUUID } from "node:crypto";
 import { readFile, realpath } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { ExtensionAPI, ExtensionContext, EditPreparedEvent, WritePreparedEvent } from "@oh-my-pi/pi-coding-agent";
-import { readPendingDisclosures } from "../tools/turnstile-disclosures";
+import { appendPendingDisclosure, readPendingDisclosures, type DisclosureInput } from "../tools/turnstile-disclosures";
 
 function object(value: unknown): Record<string, unknown> {
 	if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("expected an object");
 	return value as Record<string, unknown>;
+}
+
+type Prepared = EditPreparedEvent | WritePreparedEvent;
+type HeldAttempt = Omit<DisclosureInput, "reason"> & { hold: string; context: string };
+const rule = "clippy::await_holding_lock";
+const sha256 = (value: string) => createHash("sha256").update(value).digest("hex");
+const imageHash = (value: string | null) => (value === null ? null : sha256(value));
+
+function workspacePath(workspace: string, path: string): string {
+	const name = relative(workspace, path).split(sep).join("/");
+	if (!name || isAbsolute(name) || name.split("/").includes("..") || name.includes(":"))
+		throw new Error("no_rly effect is outside the launch workspace");
+	return name;
+}
+
+/** Only the native vector supplies effects; this does not reconstruct edits. */
+function attemptIdentity(event: Prepared, workspace: string): DisclosureInput["attempt"] {
+	const files = new Map<string, DisclosureInput["attempt"]["files"][number]>();
+	const effect = (path: string, before: string | null, after: string | null) => {
+		const name = workspacePath(workspace, path);
+		const previous = files.get(name);
+		files.set(name, {
+			path: name,
+			beforeSha256: previous ? previous.beforeSha256 : imageHash(before),
+			afterSha256: imageHash(after),
+		});
+	};
+	for (const operation of event.operations) {
+		if (operation.op === "noop") continue;
+		if (operation.op === "move") {
+			effect(operation.moveTo!, operation.moveBefore, operation.after);
+			effect(operation.path, operation.before, null);
+		} else effect(operation.path, operation.before, operation.after);
+	}
+	return {
+		tool: event.type === "edit_prepared" ? "edit" : "write",
+		sha256: sha256(
+			JSON.stringify({
+				type: event.type,
+				mode: "mode" in event ? event.mode : null,
+				input: event.input,
+				operations: event.operations,
+			}),
+		),
+		files: [...files.values()].filter(file => file.beforeSha256 !== null || file.afterSha256 !== null),
+	};
+}
+
+function completedCheck(value: unknown): boolean {
+	const check = object(value);
+	return (
+		check.exit_code === 0 &&
+		Array.isArray(check.build_finished) &&
+		check.build_finished.length === 1 &&
+		check.build_finished[0] === true
+	);
+}
+
+/** A named, unambiguous introduced finding, never a required-check failure. */
+function selectedFinding(
+	result: Record<string, unknown>,
+	attempt: DisclosureInput["attempt"],
+	root: string,
+	workspace: string,
+): HeldAttempt | undefined {
+	if (
+		result.outcome !== "findings" ||
+		!Array.isArray(result.findings) ||
+		result.findings.length !== 1 ||
+		!Array.isArray(result.ambiguous_findings) ||
+		result.ambiguous_findings.length !== 0 ||
+		result.originals_unchanged !== true ||
+		result.analyzed_sources_unchanged !== true ||
+		typeof result.original_snapshot_sha256 !== "string" ||
+		!/^[a-f0-9]{64}$/.test(result.original_snapshot_sha256) ||
+		!completedCheck(result.candidate_check)
+	)
+		return;
+	const candidate = object(result.candidate_check);
+	if (
+		candidate.outcome !== "findings" ||
+		!Array.isArray(candidate.diagnostics) ||
+		candidate.diagnostics.some(value => object(value).level === "error")
+	)
+		return;
+	const baseline = object(result.baseline);
+	if (baseline.status !== "not_required" && (baseline.status !== "required" || !completedCheck(baseline.check)))
+		return;
+	const diagnostic = object(result.findings[0]);
+	if (
+		object(diagnostic.code).code !== rule ||
+		typeof diagnostic.message !== "string" ||
+		!Array.isArray(diagnostic.spans)
+	)
+		return;
+	const primary = diagnostic.spans.map(object).filter(span => span.is_primary === true);
+	if (primary.length !== 1) return;
+	const span = primary[0];
+	if (
+		typeof span.file_name !== "string" ||
+		typeof span.line_start !== "number" ||
+		!Number.isSafeInteger(span.line_start) ||
+		span.line_start < 1 ||
+		typeof candidate.diagnostic_root !== "string"
+	)
+		return;
+	// The analyzer replaces its private copied-context prefix with <candidate>.
+	const diagnosticRoot = candidate.diagnostic_root.replaceAll("\\", "/");
+	if (diagnosticRoot !== "<candidate>" && !diagnosticRoot.startsWith("<candidate>/")) return;
+	const name = span.file_name.replaceAll("\\", "/");
+	if (isAbsolute(name) || name.includes(":") || name.includes("<") || name.split("/").includes("..")) return;
+	const path = workspacePath(
+		workspace,
+		resolve(root, diagnosticRoot.slice("<candidate>".length).replace(/^\//, ""), name),
+	);
+	if (!attempt.files.some(file => file.path === path && file.afterSha256 !== null)) return;
+	return {
+		hold: randomUUID(),
+		attempt,
+		context: result.original_snapshot_sha256,
+		finding: {
+			rule,
+			sha256: sha256(JSON.stringify(diagnostic)),
+			path,
+			line: span.line_start,
+			message: diagnostic.message,
+		},
+	};
 }
 
 /** Explicit workspace opt-in; native OMP owns edit reconstruction and final write bytes. */
@@ -95,6 +224,40 @@ export default async function turnstile(api: ExtensionAPI) {
 	let rejections = 0;
 	let pending = 0;
 	let exhausted = false;
+	let live: HeldAttempt | undefined;
+	let arm: { held: HeldAttempt; reason: string; owner?: string } | undefined;
+	// Only observed calls can own the next exception attempt. Prepared IDs differ
+	// for same-tool invokeTool, so they are deliberately not treated as outer IDs.
+	const active = new Map<string, string>();
+	let generation = 0;
+	const invalidate = () => {
+		generation++;
+		live = undefined;
+		arm = undefined;
+	};
+	const finishCall = (id: string) => {
+		active.delete(id);
+		if (arm?.owner === id) {
+			arm = undefined;
+			generation++;
+		}
+	};
+	api.on("tool_result", event => finishCall(event.toolCallId));
+	api.on("tool_execution_end", event => finishCall(event.toolCallId));
+	const resetLive = () => {
+		invalidate();
+		active.clear();
+	};
+	api.on("session_start", resetLive);
+	api.on("session_switch", resetLive);
+	api.on("session_branch", resetLive);
+	api.on("session_tree", resetLive);
+	api.on("session_shutdown", resetLive);
+	api.on("agent_end", () => {
+		active.clear();
+		arm = undefined;
+		generation++;
+	});
 	let noticePending = false;
 	let exhaustionReason = failure
 		? `Turnstile configuration/capability failure; zero checks ran. Native edits and writes remain held, and this mutation turn is stopped. Read-only work remains available. Restart/reload after correcting the configuration/runtime.\n${failure}`
@@ -122,6 +285,13 @@ export default async function turnstile(api: ExtensionAPI) {
 		if (noticePending) announce(ctx);
 	});
 	api.on("tool_call", (event, ctx) => {
+		generation++;
+		active.set(event.toolCallId, event.toolName);
+		if (arm) {
+			if (!arm.owner && active.size === 1 && event.toolName === arm.held.attempt.tool) arm.owner = event.toolCallId;
+			else arm = undefined;
+		}
+		if (event.toolName !== "no_rly") live = undefined;
 		if ((failure || exhausted) && (event.toolName === "edit" || event.toolName === "write")) return stop(ctx);
 	});
 	if (failure) {
@@ -129,6 +299,56 @@ export default async function turnstile(api: ExtensionAPI) {
 		return;
 	}
 	const enabled = config!;
+	api.registerTool({
+		name: "no_rly",
+		label: "Last-resort rule exception",
+		description:
+			"Explicit last-resort exception for one live held native edit/write and named clippy finding. Prefer revising. Explain why revision is unsuitable. This arms only the immediately next exact native attempt; no mutation occurs here, required checks and native authority remain active. Exhaustion cannot be overridden.",
+		approval: "write",
+		loadMode: "essential",
+		parameters: api.typebox.Type.Object({
+			hold: api.typebox.Type.String({ minLength: 1, description: "Live hold ID from the held native result" }),
+			finding: api.typebox.Type.String({ minLength: 1, description: "Exact named finding SHA256 from that result" }),
+			reason: api.typebox.Type.String({
+				minLength: 1,
+				description: "Public-safe last-resort rationale; explain why revision is unsuitable, without raw source",
+			}),
+		}),
+		async execute(id, params, signal, _update, ctx) {
+			signal?.throwIfAborted();
+			const selected = live;
+			live = undefined;
+			arm = undefined;
+			if (exhausted) return { content: [{ type: "text", text: stop(ctx).reason }], isError: true };
+			if (
+				!selected ||
+				selected.hold !== params.hold ||
+				selected.finding.sha256 !== params.finding ||
+				!params.reason.trim() ||
+				pending !== 0 ||
+				active.size !== 1 ||
+				active.get(id) !== "no_rly"
+			)
+				return {
+					content: [
+						{
+							type: "text",
+							text: "no_rly refused: no matching exclusive live held attempt/finding. No permission or record was issued.",
+						},
+					],
+					isError: true,
+				};
+			arm = { held: selected, reason: params.reason.trim() };
+			return {
+				content: [
+					{
+						type: "text",
+						text: `no_rly armed for exactly the next ${selected.attempt.tool} call. Repeat its original arguments unchanged, with no intervening tool. A fresh full check and durable disclosure must succeed before native release. This is not an application receipt.`,
+					},
+				],
+			};
+		},
+	});
 
 	api.on("session_start", (_event, ctx) =>
 		ctx.ui.notify(
@@ -137,12 +357,21 @@ export default async function turnstile(api: ExtensionAPI) {
 		),
 	);
 	const check = async (event: EditPreparedEvent | WritePreparedEvent, ctx: ExtensionContext) => {
+		const requested = arm;
+		arm = undefined;
+		live = undefined;
+		const version = ++generation;
+		const outer = active.size === 1 ? [...active.entries()][0] : undefined;
+		const owner = outer?.[1] === (event.type === "edit_prepared" ? "edit" : "write") ? outer[0] : undefined;
+		const exclusive = () => generation === version && active.size === 1 && owner !== undefined && active.has(owner);
+		const exception = requested?.owner === owner && exclusive() ? requested : undefined;
 		if (exhausted) return stop(ctx);
 		if (rejections + pending >= enabled.maxRejections)
 			return held("remaining rejection slots are reserved by in-flight checks; wait for those checks to finish");
 		pending++;
 		let permitted = false;
 		let reason = "";
+		let selected: HeldAttempt | undefined;
 		try {
 			if (resolve(ctx.cwd) !== resolve(workspace))
 				throw new Error("workspace changed; restart to load its explicit configuration");
@@ -172,17 +401,36 @@ export default async function turnstile(api: ExtensionAPI) {
 				reason = `required checker process failed (${process.code}): ${process.stderr || process.stdout}`;
 			} else {
 				const result = object(JSON.parse(process.stdout));
-				const candidate = result.outcome === "no_findings" ? object(result.candidate_check) : undefined;
 				permitted =
 					result.outcome === "no_findings" &&
 					Array.isArray(result.findings) &&
 					result.findings.length === 0 &&
-					candidate?.exit_code === 0 &&
-					Array.isArray(candidate.build_finished) &&
-					candidate.build_finished.length === 1 &&
-					candidate.build_finished[0] === true;
+					completedCheck(result.candidate_check);
+				if (!permitted) selected = selectedFinding(result, attemptIdentity(event, workspace), root, workspace);
+				if (exception) {
+					permitted = false;
+					if (
+						!exclusive() ||
+						!selected ||
+						selected.attempt.sha256 !== exception.held.attempt.sha256 ||
+						selected.context !== exception.held.context ||
+						selected.finding.sha256 !== exception.held.finding.sha256
+					) {
+						reason =
+							"no_rly invalidated: ownership, exact native arguments/vector, originals, or selected finding changed";
+					} else {
+						// Synchronous SQLite commit/readback must finish before returning native permission.
+						// The record describes attempted authorization, not successful native application.
+						appendPendingDisclosure(workspace, {
+							attempt: selected.attempt,
+							finding: selected.finding,
+							reason: exception.reason,
+						});
+						permitted = true;
+					}
+				}
 				// Preserve actual diagnostic spans, rendered Clippy explanation and failure causes.
-				if (!permitted)
+				if (!permitted && !reason)
 					reason = `required clippy::await_holding_lock check returned ${result.outcome ?? "invalid output"}\n${JSON.stringify(result)}`;
 			}
 		} catch (error) {
@@ -195,8 +443,13 @@ export default async function turnstile(api: ExtensionAPI) {
 		if (permitted) return;
 		if (rejections >= enabled.maxRejections) {
 			exhausted = true;
+			invalidate();
 			exhaustionReason = `Turnstile revision limit exhausted (${rejections}/${enabled.maxRejections}). Native edits and writes remain held; no permission was issued. The retry turn is stopped. Read-only work remains available. Restart/reload explicitly begins a new gate budget; session events and successful calls do not reset it.\nLast rejection: ${reason}`;
 			return stop(ctx);
+		}
+		if (selected && exclusive() && !requested) {
+			live = selected;
+			reason += `\nLast-resort no_rly is available before exhaustion only: hold=${selected.hold} finding=${selected.finding.sha256} rule=${selected.finding.rule} path=${selected.finding.path}:${selected.finding.line}. Prefer revision; an explicit rationale is required, not proof that alternatives are exhausted.`;
 		}
 		return held(
 			`${reason}\nRejections: ${rejections}/${enabled.maxRejections}; this rejection remains charged after successful calls`,

@@ -116,11 +116,12 @@ the loaded configuration and rejection budget.
   root outside the selected Cargo context and set child-only `TEMP`/`TMP`/`TMPDIR`.
   Python places copied contexts there. The executor removes the root only after
   its process tree settles.
-- Only `outcome="no_findings"` permits execution. Empty findings, a skipped or
+- Ordinary execution requires `outcome="no_findings"`. The only exception is the
+  explicit, exact-attempt `no_rly` path below. Empty findings, a skipped or
   unavailable checker, compilation failure, unresolved attribution, changed
-  context, malformed output, and process failure do not permit a mutation. Actual
-  diagnostic spans, rendered Clippy guidance, and required-failure causes remain
-  in tool feedback.
+  context, malformed output, and process failure do not permit an exception.
+  Actual diagnostic spans, rendered Clippy guidance, and required-failure causes
+  remain in tool feedback.
   The bridge validates the analyzer's existing success witness: final
   `no_findings`, an empty final `findings` array, and `candidate_check` with
   `exit_code=0` and `build_finished=[true]`. Preexisting candidate findings and
@@ -209,8 +210,73 @@ zero-check failure reason, not a fabricated exhausted candidate count.
 Restarting/reloading intentionally constructs a fresh budget. Separate loaded
 agents have separate budgets. Nothing persists or globally coordinates this
 counter, so it is not an authority boundary against deliberate reloads or other
-tools. Exhaustion is never an override. `no_rly` release and commit/PR policy
-remain later sprints.
+tools. Exhaustion is never an override. `no_rly` is available only **before**
+exhaustion; `maxRejections: 1` deliberately leaves no exception window.
+
+## Explicit last-resort `no_rly`
+
+Prefer revision. When one completed native edit/write check finds exactly one
+introduced `clippy::await_holding_lock` finding, with unambiguous attribution and
+successful required checks, held feedback identifies a live `hold` ID and a
+`finding` SHA256, along with the rule and location. Other findings or required
+failures do not become overridable because the author asserts they are safe.
+
+The author (user or model) may explicitly call:
+
+```text
+no_rly({
+  hold: "<live hold ID>",
+  finding: "<named finding SHA256>",
+  reason: "<public-safe last-resort rationale explaining why revision is unsuitable>"
+})
+```
+
+This tool does not mutate a file or approve an arbitrary row. It arms only the
+**immediately next native call of the held tool**. Repeat the original tool's
+arguments unchanged, without an intervening tool. The rationale must be nonempty;
+its semantic sufficiency is an explicit author judgment, not machine-proven
+exhaustion of alternatives. No extra co-signer or human-only stage is required.
+Do not put raw source, secrets or private paths in the explanation.
+
+One loaded extension owns one live held candidate and one one-use arm. The hold
+comes from an actual prepared check, never a caller's prior-hold boolean or a
+persisted disclosure. The next attempt must match the native final effective
+input, edit mode, complete ordered operation vector (including preimages, move
+destinations and destination preimages), the original Cargo-context snapshot,
+and the freshly rechecked selected diagnostic. Even different path spelling or
+arguments that happen to produce the same bytes invalidate the exception.
+
+All analysis runs again. Only the same sole introduced finding can be excepted;
+other findings, ambiguous attribution, missing/failed checks and compilation
+errors remain held. Ordinary preexisting-finding and non-Rust success semantics
+are unchanged. Native path, transform, argument and freshness guards still run;
+`no_rly` cannot override those boundaries, tool approval policy, or authorize a
+different tool, command, device, archive or remote route.
+
+The boundary tracks only observed outer calls for this exception. Arming requires
+the held call to have completed, with no competing observed call or check active.
+The first prepared callback consumes the arm. Direct native calls and supported
+same-tool `ctx.invokeTool` delegation use the same exclusive outer ownership;
+delegated `invoke-*` IDs are not mistaken for outer call IDs. Another observed
+call or prepared callback invalidates an in-flight exception. Completion/error,
+tool-execution end and agent end clean up ownership. This is not retrospective
+cancellation after native permission already returned.
+
+An unconsumed hold can survive an ordinary end of turn, but an arm cannot.
+Session start/switch/branch/tree/shutdown clears live exception state, not S6
+rejection debt. Restart/reload cannot recover authority from an old hold or row.
+Stale or failed authorization consumes its arm; obtain a newly held attempt
+before asking again. Successful authorization releases only its current budget
+reservation and does not refund earlier rejections.
+
+After the fresh match, the prepared handler synchronously appends through the
+existing SQLite writer and waits for its committed/read-back record **before
+returning permission to native code**. Missing, corrupt, triggered, locked or
+otherwise unavailable storage holds visibly. A row conservatively describes
+**attempted exception authorization**, not confirmed application: a later native
+freshness guard or ordinary I/O failure may leave that row pending without
+applying the candidate. There is no automatic retirement or rollback claim.
+Existing rows are disclosure data only, including after fresh-session recovery.
 
 ## Pending disclosure storage
 
@@ -223,10 +289,9 @@ commit consumer must resolve the workspace-to-Git prefix.
 
 `tools/turnstile-disclosures.ts` is the concrete Bun SQLite owner. Its
 `appendPendingDisclosure(workspace, input)` writes exception **data**, not
-authorization. No model tool, `no_rly` release, caller-asserted prior hold,
-automatic retirement or commit hook is implemented. The eventual release owner
-must derive the exact held attempt and selected finding independently before
-recording, and must not release if recording fails.
+authorization. The prepared release owner derives the exact live held attempt,
+selected finding and actual effects before recording. It does not release if
+recording fails. No automatic retirement or commit hook is implemented.
 
 The validated input contains:
 
@@ -256,7 +321,8 @@ append identical full records to the transcript or change the system prompt.
 Changed snapshots/errors also use notifications and stderr in print/JSON mode,
 where notifications alone may be no-ops; JSON stdout stays separate. Disclosure
 failure means **unknown**, not permission or a clean empty result. Ordinary
-quality checking remains active; this sprint adds no exception release.
+quality checking remains active, but exception release requires a successful
+durable append at the prepared boundary.
 
 Inspect the same store without an OMP/model request:
 

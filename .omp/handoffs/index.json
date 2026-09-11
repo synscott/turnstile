@@ -142,5 +142,26 @@
     "qualification": "Synthetic disclosure data, not authorized no_rly release. No network/model inference, TUI visual or hardware power-loss claim. SDK/Python/patch/addon unchanged; no automatic retirement.",
     "acceptance": "Main inspected full successor review and accepted only corrected85467967. Old58 remains rejected; exact source/evidence preserved. Authorized serialized bookkeeping and intended public-only commit.",
     "next_action": "Under /vibe, start a fresh bounded Sprint 8 worker to bind no_rly to exact held attempt/finding and record before release. This worker does not start Sprint8."
+  },
+  "sprint-08": {
+    "status": "ACCEPTED",
+    "handoff": ".omp/handoffs/sprint-08.md",
+    "acceptance_owner": "Main",
+    "snapshot_id": "41e9efc3ad91dece126b82c99725add843023eba29164965be833fadd3941c96",
+    "reviewer": "sprint-eight-review",
+    "review_receipt": ".loopx/s8-review/review-41e9efc3.json",
+    "review_receipt_sha256": "ed6b23f6cac8b3e0a854f552710df8d3e09d9eb3a9a6e7f1aa10ff5ae0a61fc8",
+    "acceptance_receipt": ".loopx/materials/sprint08-acceptance.json",
+    "commit_receipt": ".loopx/materials/sprint08-commit.json",
+    "immutable_review": ".loopx/materials/sprint08-review.json",
+    "author_verification": ".loopx/sprint08/verification.json",
+    "model_evidence": ".loopx/sprint08/model-v1789103926448538900.json",
+    "fresh_record_recovery": ".loopx/sprint08/run-recover-v1789103926448538900.json",
+    "cumulative_patch_sha256": "03dcbb379b32d8e07f994e7bda6966426ee37b6d5f8c5e9e198f0c2b2248c9cd",
+    "addon_sha256": "676bd3c3699e8a7c0f5ca350939d4340b32be64e7e6a38a873d7d2c259658b0f",
+    "verification": "Independent37 author replays plus10 native adversaries, exact-guard red/green, separate SQL before-write oracle, actual configured-model evidence parsing and fresh real-record provider-context/SessionManager recovery.",
+    "qualification": "Reviewer provider transport substituted; lifecycle dispatch and checker-output injections explicitly qualified. maxRejections1 has no no_rly window. Records describe attempted authorization, not applied state; no OS sandbox or rollback claim.",
+    "acceptance": "Main read full review, accepted only41e9efc3 with no findings, and authorized serialized bookkeeping/public-only commit. Frozen product/store/SDK/Python/patch/addon unchanged; no retirement or Sprint9 implemented.",
+    "next_action": "Under /vibe, start a fresh bounded Sprint 9 worker to carry relevant disclosures into ordinary commits without silently retiring failed/partial obligations. This worker does not start Sprint9."
   }
 }
