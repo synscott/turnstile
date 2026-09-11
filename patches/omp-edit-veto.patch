@@ -1,0 +1,1664 @@
+diff --git a/crates/pi-edit/src/engine.rs b/crates/pi-edit/src/engine.rs
+--- a/crates/pi-edit/src/engine.rs
++++ b/crates/pi-edit/src/engine.rs
+@@ -133,6 +133,8 @@
+ 	/// Clipboard state to publish once this file's write lands (hashline
+ 	/// `CUT`/`PUT` registers).
+ 	pub clipboard_after:    Option<crate::store::Clipboard>,
++	/// Accepted no-op accounting is published only after the whole-call guard.
++	pub noop_payload:       Option<u64>,
+ }
+ 
+ impl StagedFile {
+@@ -158,6 +160,7 @@
+ 			text_override: None,
+ 			record_snapshot: false,
+ 			clipboard_after: None,
++			noop_payload: None,
+ 		}
+ 	}
+ }
+diff --git a/crates/pi-edit/src/files.rs b/crates/pi-edit/src/files.rs
+--- a/crates/pi-edit/src/files.rs
++++ b/crates/pi-edit/src/files.rs
+@@ -15,7 +15,7 @@
+ };
+ 
+ use crate::{
+-	engine::Resolved,
++	engine::{Resolved, StagedFile},
+ 	error::{EditError, EditResult},
+ 	notebook,
+ 	path_policy::{PathPolicy, canonical_key},
+@@ -99,20 +99,139 @@
+ 	Some(Stamp { mtime: meta.modified().ok(), len: meta.len() })
+ }
+ 
++/// Exact original filesystem image retained only for guarded application.
++#[derive(Debug, PartialEq, Eq)]
++pub struct OriginalFile {
++	pub canonical: PathBuf,
++	parent:        PathBuf,
++	links:         Vec<(PathBuf, PathBuf)>,
++	pub content:   Option<String>,
++}
++
++impl OriginalFile {
++	fn read(path: &Path) -> EditResult<Self> {
++		let content = match std::fs::read(path) {
++			Ok(bytes) => Some(String::from_utf8(bytes).map_err(|_| {
++				EditError::apply(format!("Edit held: non-UTF-8 input: {}", path.display()))
++			})?),
++			Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
++			Err(source) => return Err(EditError::Io { path: path.to_owned(), source }),
++		};
++		// Resolve the nearest existing ancestor too: a create under missing
++		// directories must notice a symlink/reparse-point rebinding above them.
++		let parent = path
++			.ancestors()
++			.skip(1)
++			.find_map(|ancestor| {
++				std::fs::canonicalize(ancestor)
++					.ok()
++					.map(|resolved| resolved.join(path.strip_prefix(ancestor).expect("ancestor prefix")))
++			})
++			.unwrap_or_else(|| path.to_owned());
++		let mut links = Vec::new();
++		for ancestor in path.ancestors() {
++			if std::fs::symlink_metadata(ancestor).is_ok_and(|meta| meta.file_type().is_symlink()) {
++				let target = std::fs::read_link(ancestor)
++					.map_err(|source| EditError::Io { path: ancestor.to_owned(), source })?;
++				links.push((ancestor.to_owned(), target));
++			}
++		}
++		Ok(Self { canonical: canonical_key(path), parent, links, content })
++	}
++}
++
+ /// Default [`FileSource`] backed by `std::fs`.
+ pub struct FileCache {
+ 	policy:      PathPolicy,
+ 	reads:       HashMap<PathBuf, (Stamp, Arc<FileRead>)>,
+ 	/// Authored path → resolution (so paired hunks share one recovery).
+ 	resolutions: HashMap<(String, bool), Resolved>,
++	guarded:     bool,
++	existence:   HashMap<PathBuf, bool>,
+ }
+ 
+ impl FileCache {
+ 	pub fn new(policy: PathPolicy) -> Self {
+-		Self { policy, reads: HashMap::new(), resolutions: HashMap::new() }
++		Self {
++			policy,
++			reads: HashMap::new(),
++			resolutions: HashMap::new(),
++			guarded: false,
++			existence: HashMap::new(),
++		}
++	}
++
++	pub fn set_guarded(&mut self, guarded: bool) {
++		self.guarded = guarded;
++	}
++
++	/// Capture omitted source/destination images as well as every staging read.
++	pub fn originals(&self, staged: &[StagedFile]) -> EditResult<HashMap<PathBuf, OriginalFile>> {
++		let mut originals = HashMap::new();
++		for path in self
++			.reads
++			.keys()
++			.chain(self.existence.keys())
++			.chain(staged.iter().flat_map(|file| {
++				std::iter::once(&file.absolute).chain(file.move_to.iter().map(|dest| &dest.absolute))
++			})) {
++			if !originals.contains_key(path) {
++				originals.insert(path.clone(), OriginalFile::read(path)?);
++			}
++		}
++		for (path, (_, read)) in &self.reads {
++			let original = &originals[path];
++			if original.canonical != read.canonical
++				|| original.content.as_deref() != Some(read.raw.as_str())
++			{
++				return Err(EditError::apply(format!(
++					"Edit held: input changed during staging: {}",
++					path.display()
++				)));
++			}
++		}
++		for (path, existed) in &self.existence {
++			if originals[path].content.is_some() != *existed {
++				return Err(EditError::apply(format!(
++					"Edit held: path changed during staging: {}",
++					path.display()
++				)));
++			}
++		}
++		self.revalidate(&originals)?;
++		Ok(originals)
++	}
++
++	pub fn revalidate(&self, originals: &HashMap<PathBuf, OriginalFile>) -> EditResult<()> {
++		for (path, original) in originals {
++			if OriginalFile::read(path)? != *original {
++				return Err(EditError::apply(format!(
++					"Edit held: input changed while checking: {}",
++					path.display()
++				)));
++			}
++		}
++		let mut fresh = Self::new(self.policy.clone());
++		for ((authored, must_exist), resolved) in &self.resolutions {
++			if fresh.resolve(authored, *must_exist)? != *resolved {
++				return Err(EditError::apply(format!(
++					"Edit held: path resolution changed: {authored}"
++				)));
++			}
++		}
++		Ok(())
+ 	}
+ 
+ 	fn read_resolved(&mut self, resolved: &Resolved) -> EditResult<Option<Arc<FileRead>>> {
++		if self.guarded {
++			self
++				.existence
++				.entry(resolved.absolute.clone())
++				.or_insert_with(|| stamp(&resolved.absolute).is_some());
++			if let Some((_, read)) = self.reads.get(&resolved.absolute) {
++				return Ok(Some(Arc::clone(read)));
++			}
++		}
+ 		let Some(current) = stamp(&resolved.absolute) else {
+ 			return Ok(None);
+ 		};
+@@ -187,7 +306,11 @@
+ 	}
+ 
+ 	fn exists(&mut self, absolute: &Path) -> bool {
+-		stamp(absolute).is_some()
++		let exists = stamp(absolute).is_some();
++		if self.guarded {
++			self.existence.entry(absolute.to_owned()).or_insert(exists);
++		}
++		exists
+ 	}
+ 
+ 	fn read(&mut self, authored: &str) -> EditResult<Arc<FileRead>> {
+@@ -204,5 +327,6 @@
+ 	fn clear(&mut self) {
+ 		self.reads.clear();
+ 		self.resolutions.clear();
+-	}
+-}
++		self.existence.clear();
++	}
++}
+diff --git a/crates/pi-edit/src/lib.rs b/crates/pi-edit/src/lib.rs
+--- a/crates/pi-edit/src/lib.rs
++++ b/crates/pi-edit/src/lib.rs
+@@ -1,6 +1,6 @@
+ //! Edit engine: every edit mode's parsing, matching, in-memory application,
+ //! and diff generation, plus a streaming [`session::Session`] that turns raw
+-//! tool-call argument deltas into progressive previews and a final atomic
++//! tool-call argument deltas into progressive previews and a final staged
+ //! apply through a host-owned writer.
+ //!
+ //! # Architecture
+@@ -39,8 +39,8 @@
+ pub use error::{EditError, EditResult};
+ pub use path_policy::PathPolicy;
+ pub use session::{
+-	ApplyOutcome, ApplyRequest, EditWriter, FileOutcome, PreviewBatch, Session, WriteRequest,
+-	WriteResponse,
++	ApplyOutcome, ApplyRequest, EditGuard, EditWriter, FileOutcome, PreparedOperation, PreviewBatch,
++	Session, WriteRequest, WriteResponse,
+ };
+ pub use store::EditStore;
+ pub use stream_json::{ArgSnapshot, ArgStream, EditEntry};
+diff --git a/crates/pi-edit/src/modes/hashline/patcher.rs b/crates/pi-edit/src/modes/hashline/patcher.rs
+--- a/crates/pi-edit/src/modes/hashline/patcher.rs
++++ b/crates/pi-edit/src/modes/hashline/patcher.rs
+@@ -408,11 +408,14 @@
+ 		item.record_snapshot = true;
+ 		item.clipboard_after = Some(clipboard.fork());
+ 		if engine_op == EngineFileOp::Noop && patch.sections.len() == 1 {
+-			let (count, escalate) = store.record_noop(&read.canonical, payload_hash(raw_input));
++			let payload = payload_hash(raw_input);
++			let (count, escalate) = store.next_noop_count(&read.canonical, payload);
+ 			if escalate {
++				store.record_noop(&read.canonical, payload);
+ 				return Err(EditError::apply(no_change_loop_diagnostic(&original.path, count)));
+ 			}
+ 			item.text_override = Some(no_change_diagnostic(&original.path));
++			item.noop_payload = Some(payload);
+ 		}
+ 		staged.push(item);
+ 	}
+diff --git a/crates/pi-edit/src/modes/sloppy/apply.rs b/crates/pi-edit/src/modes/sloppy/apply.rs
+--- a/crates/pi-edit/src/modes/sloppy/apply.rs
++++ b/crates/pi-edit/src/modes/sloppy/apply.rs
+@@ -2497,7 +2497,6 @@
+ 	if result == content {
+ 		return Err(no_op_error(context, payload, None, Some((content, last_match)), None, None));
+ 	}
+-	context.store.reset_noop(context.canonical);
+ 	context.notes.extend(recovery_notes);
+ 	context.notes.extend(deletion_notes.into_values());
+ 	Ok(result)
+diff --git a/crates/pi-edit/src/session.rs b/crates/pi-edit/src/session.rs
+--- a/crates/pi-edit/src/session.rs
++++ b/crates/pi-edit/src/session.rs
+@@ -72,6 +72,28 @@
+ #[async_trait]
+ pub trait EditWriter: Send + Sync {
+ 	async fn write(&self, request: WriteRequest) -> EditResult<WriteResponse>;
++}
++
++/// Immutable, complete persisted operations. Preimages are always pre-call disk
++/// images.
++pub struct PreparedOperation<'a> {
++	pub op:           &'static str,
++	pub path:         &'a std::path::Path,
++	pub display_path: &'a str,
++	pub move_to:      Option<&'a std::path::Path>,
++	pub before:       Option<&'a str>,
++	pub after:        Option<&'a str>,
++	pub move_before:  Option<&'a str>,
++}
++
++#[async_trait]
++pub trait EditGuard: Send + Sync {
++	async fn check(&self, operations: &[PreparedOperation<'_>]) -> EditResult<()>;
++	/// Cancellation/argument identity immediately before releasing the staged
++	/// vector.
++	fn check_active(&self) -> EditResult<()> {
++		Ok(())
++	}
+ }
+ 
+ /// Apply-time knobs.
+@@ -218,15 +240,18 @@
+ 	///
+ 	/// Order: reread every target fresh, stage all files in memory (any
+ 	/// failure aborts before the first write), enforce the plan-mode guard
+-	/// for every file, then write in payload order. A writer failure aborts
+-	/// the loop; files already written stay written and the error is
+-	/// returned verbatim.
++	/// for every file, then await the optional complete-edit guard and recheck
++	/// its inputs before writing in staged order. A writer failure aborts the
++	/// loop; files already written stay written.
+ 	pub async fn apply(
+ 		&mut self,
+ 		request: ApplyRequest,
+ 		writer: &dyn EditWriter,
++		guard: Option<&dyn EditGuard>,
+ 	) -> EditResult<ApplyOutcome> {
+ 		self.files.clear();
++		self.files.set_guarded(guard.is_some());
++		let revision = guard.map_or(0, |_| self.store.revision());
+ 		let snapshot = self.args.snapshot();
+ 		if !snapshot.complete {
+ 			return Err(EditError::parse("Edit arguments were incomplete"));
+@@ -239,11 +264,62 @@
+ 				file.move_to.as_ref().map(|m| m.display.as_str()),
+ 			)?;
+ 		}
++		if let Some(guard) = guard {
++			guard.check_active()?;
++			let originals = self.files.originals(&staged)?;
++			if self.store.revision() != revision {
++				return Err(EditError::apply("Edit held: store changed during staging"));
++			}
++			let operations = staged
++				.iter()
++				.map(|file| {
++					let before = originals[&file.absolute].content.as_deref();
++					PreparedOperation {
++						op: if file.move_to.is_some() {
++							"move"
++						} else if file.op == FileOp::Noop {
++							"noop"
++						} else {
++							file.op.as_str()
++						},
++						path: &file.absolute,
++						display_path: &file.display,
++						move_to: file.move_to.as_ref().map(|dest| dest.absolute.as_path()),
++						before,
++						after: if file.op == FileOp::Noop {
++							before
++						} else {
++							file.persisted.as_deref()
++						},
++						move_before: file
++							.move_to
++							.as_ref()
++							.and_then(|dest| originals[&dest.absolute].content.as_deref()),
++					}
++				})
++				.collect::<Vec<_>>();
++			guard.check(&operations).await?;
++			self.files.revalidate(&originals)?;
++			for file in &staged {
++				self.config.policy.enforce_write(
++					&file.display,
++					file.op,
++					file.move_to.as_ref().map(|m| m.display.as_str()),
++				)?;
++			}
++			if self.store.revision() != revision {
++				return Err(EditError::apply("Edit held: store changed while checking"));
++			}
++			guard.check_active()?;
++		}
+ 
+ 		let last_write = staged.iter().rposition(|file| file.op != FileOp::Noop);
+ 		let mut files = Vec::with_capacity(staged.len());
+ 		for (index, mut file) in staged.into_iter().enumerate() {
+ 			let canonical = canonical_key(&file.absolute);
++			if let Some(payload) = file.noop_payload {
++				self.store.record_noop(&canonical, payload);
++			}
+ 			let response = if file.op == FileOp::Noop {
+ 				WriteResponse::default()
+ 			} else {
+diff --git a/crates/pi-edit/src/store.rs b/crates/pi-edit/src/store.rs
+--- a/crates/pi-edit/src/store.rs
++++ b/crates/pi-edit/src/store.rs
+@@ -111,6 +111,7 @@
+ }
+ 
+ struct StoreState {
++	revision:        u64,
+ 	histories:       HashMap<PathBuf, PathHistory>,
+ 	clipboard:       Clipboard,
+ 	noop:            HashMap<PathBuf, (u64, u32)>,
+@@ -123,6 +124,7 @@
+ impl Default for StoreState {
+ 	fn default() -> Self {
+ 		Self {
++			revision:        0,
+ 			histories:       HashMap::new(),
+ 			clipboard:       Clipboard::default(),
+ 			noop:            HashMap::new(),
+@@ -141,6 +143,21 @@
+ }
+ 
+ impl EditStore {
++	/// Semantic changes invalidate a prepared edit; read recency does not.
++	pub fn revision(&self) -> u64 {
++		self.inner.lock().revision
++	}
++
++	pub fn next_noop_count(&self, path: &Path, payload: u64) -> (u32, bool) {
++		let state = self.inner.lock();
++		let count = state
++			.noop
++			.get(path)
++			.filter(|(hash, _)| *hash == payload)
++			.map_or(1, |(_, count)| count + 1);
++		(count, count >= NOOP_HARD_LIMIT)
++	}
++
+ 	/// Construct a store with production retention limits.
+ 	pub fn new() -> Self {
+ 		Self::default()
+@@ -156,6 +173,7 @@
+ 	pub fn record(&self, path: &Path, text: &str, seen_lines: Option<&[u32]>) -> String {
+ 		let hash = file_hash(text);
+ 		let mut state = self.inner.lock();
++		state.revision = state.revision.wrapping_add(1);
+ 		state.clock = state.clock.wrapping_add(1);
+ 		let touched = state.clock;
+ 		let max_versions = state.max_versions;
+@@ -205,6 +223,7 @@
+ 	/// Union displayed lines into the most recent version matching a tag.
+ 	pub fn record_seen_lines(&self, path: &Path, hash: &str, lines: &[u32]) {
+ 		let mut state = self.inner.lock();
++		state.revision = state.revision.wrapping_add(1);
+ 		touch(&mut state, path);
+ 		if let Some(version) = state
+ 			.histories
+@@ -262,12 +281,15 @@
+ 
+ 	/// Remove one path's history.
+ 	pub fn invalidate(&self, path: &Path) {
+-		self.inner.lock().histories.remove(path);
++		let mut state = self.inner.lock();
++		state.revision = state.revision.wrapping_add(1);
++		state.histories.remove(path);
+ 	}
+ 
+ 	/// Move source history and provenance to a destination path.
+ 	pub fn relocate(&self, from: &Path, to: &Path) {
+ 		let mut state = self.inner.lock();
++		state.revision = state.revision.wrapping_add(1);
+ 		state.clock = state.clock.wrapping_add(1);
+ 		let touched = state.clock;
+ 		let max_versions = state.max_versions;
+@@ -292,7 +314,9 @@
+ 
+ 	/// Remove all snapshots, clipboard state, and no-op counters.
+ 	pub fn clear(&self) {
+-		*self.inner.lock() = StoreState::default();
++		let mut state = self.inner.lock();
++		let revision = state.revision.wrapping_add(1);
++		*state = StoreState { revision, ..StoreState::default() };
+ 	}
+ 
+ 	/// Start a clipboard batch with persisted named registers.
+@@ -302,13 +326,16 @@
+ 
+ 	/// Publish named registers from a batch fork.
+ 	pub fn commit_clipboard(&self, fork: &Clipboard) {
+-		self.inner.lock().clipboard.commit_from(fork);
++		let mut state = self.inner.lock();
++		state.revision = state.revision.wrapping_add(1);
++		state.clipboard.commit_from(fork);
+ 	}
+ 
+ 	/// Record an identical no-op and return its consecutive count and escalation
+ 	/// state.
+ 	pub fn record_noop(&self, path: &Path, payload: u64) -> (u32, bool) {
+ 		let mut state = self.inner.lock();
++		state.revision = state.revision.wrapping_add(1);
+ 		let count = state
+ 			.noop
+ 			.get(path)
+@@ -320,7 +347,9 @@
+ 
+ 	/// Clear one path's no-op counter.
+ 	pub fn reset_noop(&self, path: &Path) {
+-		self.inner.lock().noop.remove(path);
++		let mut state = self.inner.lock();
++		state.revision = state.revision.wrapping_add(1);
++		state.noop.remove(path);
+ 	}
+ }
+ 
+diff --git a/crates/pi-edit/tests/common/mod.rs b/crates/pi-edit/tests/common/mod.rs
+--- a/crates/pi-edit/tests/common/mod.rs
++++ b/crates/pi-edit/tests/common/mod.rs
+@@ -157,7 +157,7 @@
+ 		let mut session = self.session();
+ 		session.set_args_json(&args.to_string());
+ 		session.finish();
+-		session.apply(ApplyRequest::default(), writer).await
++		session.apply(ApplyRequest::default(), writer, None).await
+ 	}
+ 
+ 	/// Run a raw-payload apply (custom-format tools).
+@@ -167,7 +167,7 @@
+ 		let mut session = Session::new(config, self.store.clone());
+ 		session.push(input);
+ 		session.finish();
+-		session.apply(ApplyRequest::default(), writer).await
++		session.apply(ApplyRequest::default(), writer, None).await
+ 	}
+ }
+ 
+diff --git a/crates/pi-edit/tests/guard.rs b/crates/pi-edit/tests/guard.rs
+new file mode 100644
+--- /dev/null
++++ b/crates/pi-edit/tests/guard.rs
+@@ -0,0 +1,92 @@
++//! Whole-call guard regressions: originals, provenance, and stale release.
++mod common;
++
++use async_trait::async_trait;
++use common::{DiskWriter, Workspace};
++use pi_edit::{ApplyRequest, EditError, EditGuard, EditMode, EditResult, PreparedOperation};
++
++struct Check<'a> {
++	ws:           &'a Workspace,
++	deny:         bool,
++	change_store: bool,
++}
++
++#[async_trait]
++impl EditGuard for Check<'_> {
++	async fn check(&self, operations: &[PreparedOperation<'_>]) -> EditResult<()> {
++		assert_eq!(operations.len(), 2);
++		assert_eq!(operations[0].before, Some("first\n"));
++		assert_eq!(operations[0].after, Some("FIRST\n"));
++		assert_eq!(operations[1].before, Some("second\n"));
++		assert_eq!(operations[1].after, Some("SECOND\n"));
++		assert_eq!(self.ws.read("a.txt").as_deref(), Some("first\n"));
++		assert_eq!(self.ws.read("b.txt").as_deref(), Some("second\n"));
++		// Recency-only reads must not invalidate permission.
++		self.ws.store.head(&self.ws.cwd().join("a.txt"));
++		if self.change_store {
++			self.ws.store.clear();
++		}
++		if self.deny {
++			Err(EditError::apply("quality finding"))
++		} else {
++			Ok(())
++		}
++	}
++}
++
++#[tokio::test]
++async fn complete_guard_denies_and_store_changes_invalidate_release() {
++	let ws = Workspace::new(EditMode::ApplyPatch);
++	ws.write("a.txt", "first\n");
++	ws.write("b.txt", "second\n");
++	let input = "*** Begin Patch\n*** Update File: a.txt\n@@\n-first\n+FIRST\n*** Update File: \
++	             b.txt\n@@\n-second\n+SECOND\n*** End Patch";
++	for (deny, change_store) in [(true, false), (false, true), (false, false)] {
++		let mut session = ws.session();
++		session.set_args_json(&serde_json::json!({ "input": input }).to_string());
++		session.finish();
++		let result = session
++			.apply(
++				ApplyRequest::default(),
++				&DiskWriter::default(),
++				Some(&Check { ws: &ws, deny, change_store }),
++			)
++			.await;
++		if deny || change_store {
++			assert!(result.is_err());
++			assert_eq!(ws.read("a.txt").as_deref(), Some("first\n"));
++			assert_eq!(ws.read("b.txt").as_deref(), Some("second\n"));
++		} else {
++			result.unwrap();
++			assert_eq!(ws.read("a.txt").as_deref(), Some("FIRST\n"));
++			assert_eq!(ws.read("b.txt").as_deref(), Some("SECOND\n"));
++		}
++	}
++}
++
++struct Overwrite<'a>(&'a Workspace);
++#[async_trait]
++impl EditGuard for Overwrite<'_> {
++	async fn check(&self, operations: &[PreparedOperation<'_>]) -> EditResult<()> {
++		assert_eq!(operations[0].op, "create");
++		assert_eq!(operations[0].before, Some("original\n"));
++		assert_eq!(operations[0].after, Some("replacement\n"));
++		self.0.write("a.txt", "external\n");
++		Ok(())
++	}
++}
++
++#[tokio::test]
++async fn create_overwrite_keeps_real_preimage_and_rejects_disk_drift() {
++	let ws = Workspace::new(EditMode::Patch);
++	ws.write("a.txt", "original\n");
++	let mut session = ws.session();
++	session.set_args_json(&serde_json::json!({ "path": "a.txt", "edits": [{ "op": "create", "diff": "replacement\n" }] }).to_string());
++	session.finish();
++	let error = session
++		.apply(ApplyRequest::default(), &DiskWriter::default(), Some(&Overwrite(&ws)))
++		.await
++		.unwrap_err();
++	assert!(error.to_string().contains("changed"));
++	assert_eq!(ws.read("a.txt").as_deref(), Some("external\n"));
++}
+diff --git a/crates/pi-edit/tests/session.rs b/crates/pi-edit/tests/session.rs
+--- a/crates/pi-edit/tests/session.rs
++++ b/crates/pi-edit/tests/session.rs
+@@ -49,7 +49,7 @@
+ 
+ 	let writer = DiskWriter::default();
+ 	let outcome = session
+-		.apply(ApplyRequest::default(), &writer)
++		.apply(ApplyRequest::default(), &writer, None)
+ 		.await
+ 		.expect("apply");
+ 	assert_eq!(outcome.files.len(), 1);
+@@ -101,7 +101,7 @@
+ 	session.finish();
+ 	let writer = DiskWriter::default();
+ 	let outcome = session
+-		.apply(ApplyRequest::default(), &writer)
++		.apply(ApplyRequest::default(), &writer, None)
+ 		.await
+ 		.expect("apply");
+ 	assert!(outcome.files[0].diff.contains("+3|BETA"), "{}", outcome.files[0].diff);
+diff --git a/crates/pi-natives/src/edit.rs b/crates/pi-natives/src/edit.rs
+--- a/crates/pi-natives/src/edit.rs
++++ b/crates/pi-natives/src/edit.rs
+@@ -17,13 +17,13 @@
+ 	path::{Path, PathBuf},
+ 	sync::{
+ 		Arc,
+-		atomic::{AtomicBool, Ordering},
++		atomic::{AtomicBool, AtomicU64, Ordering},
+ 	},
+ };
+ 
+ use async_trait::async_trait;
+ use napi::{
+-	bindgen_prelude::{Promise, Result},
++	bindgen_prelude::{Either, Null, Promise, Result},
+ 	threadsafe_function::{ThreadsafeFunction, UnknownReturnValue},
+ };
+ use napi_derive::napi;
+@@ -32,7 +32,10 @@
+ 	diff_string::{BlockContextSource, generate_diff_string},
+ 	modes::{hashline, sloppy},
+ 	path_policy::canonical_key,
+-	session::{ApplyRequest, EditWriter, PreviewBatch, SessionConfig, WriteRequest, WriteResponse},
++	session::{
++		ApplyRequest, EditGuard, EditWriter, PreparedOperation, PreviewBatch, SessionConfig,
++		WriteRequest, WriteResponse,
++	},
+ 	store,
+ 	stream_json::snapshot_from_text,
+ 	text::normalize_to_lf,
+@@ -183,6 +186,24 @@
+ 	pub lsp_flush:    bool,
+ }
+ 
++/// Complete persisted operation with actual pre-call source/destination images.
++#[napi(object)]
++pub struct EditPreparedOperation {
++	pub op:           String,
++	pub path:         String,
++	pub display_path: String,
++	pub move_to:      Either<String, Null>,
++	pub before:       Either<String, Null>,
++	pub after:        Either<String, Null>,
++	pub move_before:  Either<String, Null>,
++}
++
++#[napi(object)]
++pub struct EditGuardResult {
++	pub block:  bool,
++	pub reason: Option<String>,
++}
++
+ /// One file's apply outcome.
+ #[napi(object)]
+ pub struct EditFileOutcome {
+@@ -345,6 +366,7 @@
+ 
+ type PreviewCallback = ThreadsafeFunction<EditPreviewBatch, UnknownReturnValue>;
+ type WriterCallback = ThreadsafeFunction<EditWriteRequest, Promise<EditWriteResponse>>;
++type GuardCallback = ThreadsafeFunction<Vec<EditPreparedOperation>, Promise<EditGuardResult>>;
+ 
+ /// Argument mutations queued on the JS thread and drained into the session
+ /// under its lock, preserving arrival order without ever blocking JS.
+@@ -355,15 +377,19 @@
+ }
+ 
+ struct Shared {
+-	session: napi::tokio::sync::Mutex<Session>,
+-	queue:   parking_lot::Mutex<Vec<ArgOp>>,
+-	closed:  AtomicBool,
+-	wake:    flume::Sender<()>,
++	session:   napi::tokio::sync::Mutex<Option<Session>>,
++	queue:     parking_lot::Mutex<Vec<ArgOp>>,
++	closed:    AtomicBool,
++	wake:      flume::Sender<()>,
++	cancelled: AtomicBool,
++	revision:  AtomicU64,
++	cancel:    napi::tokio::sync::Notify,
+ }
+ 
+ impl Shared {
+ 	fn enqueue(&self, op: ArgOp) {
+ 		self.queue.lock().push(op);
++		self.revision.fetch_add(1, Ordering::Release);
+ 		let _ = self.wake.try_send(());
+ 	}
+ 
+@@ -415,6 +441,66 @@
+ 	}
+ }
+ 
++struct TsfnGuard {
++	tsfn:     GuardCallback,
++	shared:   Arc<Shared>,
++	revision: u64,
++}
++
++fn nullable(value: Option<&str>) -> Either<String, Null> {
++	value.map_or(Either::B(Null), |text| Either::A(text.to_owned()))
++}
++
++#[async_trait]
++impl EditGuard for TsfnGuard {
++	async fn check(&self, operations: &[PreparedOperation<'_>]) -> EditResult<()> {
++		let cancelled = self.shared.cancel.notified();
++		napi::tokio::pin!(cancelled);
++		cancelled.as_mut().enable();
++		self.check_active()?;
++		let payload = operations
++			.iter()
++			.map(|op| EditPreparedOperation {
++				op:           op.op.to_owned(),
++				path:         op.path.to_string_lossy().into_owned(),
++				display_path: op.display_path.to_owned(),
++				move_to:      op
++					.move_to
++					.map_or(Either::B(Null), |path| Either::A(path.to_string_lossy().into_owned())),
++				before:       nullable(op.before),
++				after:        nullable(op.after),
++				move_before:  nullable(op.move_before),
++			})
++			.collect();
++		let response = napi::tokio::select! {
++			_ = &mut cancelled => return Err(EditError::apply("Edit held: session cancelled")),
++			response = async {
++				let promise = self.tsfn.call_async(Ok(payload)).await.map_err(|err| EditError::Writer(err.reason))?;
++				promise.await.map_err(|err| EditError::Writer(err.reason))
++			} => response?,
++		};
++		self.check_active()?;
++		if response.block {
++			return Err(EditError::apply(
++				response
++					.reason
++					.unwrap_or_else(|| "Edit held by guard".to_owned()),
++			));
++		}
++		Ok(())
++	}
++
++	fn check_active(&self) -> EditResult<()> {
++		if self.shared.cancelled.load(Ordering::Acquire) {
++			return Err(EditError::apply("Edit held: session cancelled"));
++		}
++		if self.shared.revision.load(Ordering::Acquire) != self.revision {
++			return Err(EditError::apply("Edit held: arguments changed while checking"));
++		}
++		Ok(())
++	}
++}
++
+ /// One edit tool call's streaming session.
+ #[napi]
+ pub struct EditSession {
+@@ -423,6 +509,12 @@
+ 
+ #[napi]
+ impl EditSession {
++	/// Whether this loaded native addon implements the pre-write guard.
++	#[napi]
++	pub fn supports_prepared_guard() -> bool {
++		true
++	}
++
+ 	/// Open a session. `onPreview` (optional) receives every settled preview
+ 	/// batch; batches are delivered one at a time, in generation order.
+ 	#[napi(constructor)]
+@@ -436,10 +528,13 @@
+ 		let config = policy.into_config()?;
+ 		let (wake, rx) = flume::bounded::<()>(1);
+ 		let shared = Arc::new(Shared {
+-			session: napi::tokio::sync::Mutex::new(Session::new(config, store.inner.clone())),
++			session: napi::tokio::sync::Mutex::new(Some(Session::new(config, store.inner.clone()))),
+ 			queue: parking_lot::Mutex::new(Vec::new()),
+ 			closed: AtomicBool::new(false),
+ 			wake,
++			cancelled: AtomicBool::new(false),
++			revision: AtomicU64::new(0),
++			cancel: napi::tokio::sync::Notify::new(),
+ 		});
+ 		if let Some(on_preview) = on_preview {
+ 			napi::bindgen_prelude::spawn(preview_pump(Arc::clone(&shared), rx, on_preview));
+@@ -465,9 +560,10 @@
+ 		self.shared.enqueue(ArgOp::Finish);
+ 	}
+ 
+-	/// Stage and apply the finished edit through `writer`. Never rejects for
+-	/// engine failures: those come back as `isError` outcomes carrying the
+-	/// model-facing message.
++	/// Consume this session once: stage, optionally check the complete edit,
++	/// then write. Engine/guard failures return `isError` outcomes with the
++	/// model-facing reason. Close cancels an awaited guard, never rolls back
++	/// writes.
+ 	#[napi]
+ 	pub async fn apply(
+ 		&self,
+@@ -475,17 +571,28 @@
+ 		#[napi(ts_arg_type = "(error: Error | null, request: EditWriteRequest) => \
+ 		                      Promise<EditWriteResponse>")]
+ 		writer: WriterCallback,
++		#[napi(ts_arg_type = "((error: Error | null, operations: EditPreparedOperation[]) => \
++		                      Promise<EditGuardResult>) | undefined | null")]
++		guard: Option<GuardCallback>,
+ 	) -> Result<EditApplyOutcome> {
+ 		self.shared.closed.store(true, Ordering::Release);
+ 		let _ = self.shared.wake.try_send(());
+ 		let shared = Arc::clone(&self.shared);
+-		let mut session = shared.session.lock().await;
++		let mut session = shared
++			.session
++			.lock()
++			.await
++			.take()
++			.ok_or_else(|| reason("Edit session has already been applied"))?;
++		let revision = shared.revision.load(Ordering::Acquire);
+ 		shared.drain_into(&mut session);
++		let guard = guard.map(|tsfn| TsfnGuard { tsfn, shared: Arc::clone(&shared), revision });
+ 		let writer = TsfnWriter { tsfn: writer };
+ 		let outcome = session
+ 			.apply(
+ 				ApplyRequest { lsp_batch_id: request.lsp_batch_id, lsp_flush: request.lsp_flush },
+ 				&writer,
++				guard.as_ref().map(|guard| guard as &dyn EditGuard),
+ 			)
+ 			.await;
+ 		Ok(match outcome {
+@@ -522,6 +629,8 @@
+ 	#[napi]
+ 	pub fn close(&self) {
+ 		self.shared.closed.store(true, Ordering::Release);
++		self.shared.cancelled.store(true, Ordering::Release);
++		self.shared.cancel.notify_waiters();
+ 		let _ = self.shared.wake.try_send(());
+ 	}
+ }
+@@ -539,8 +648,9 @@
+ 		}
+ 		let compute = Arc::clone(&shared);
+ 		let batch = napi::bindgen_prelude::spawn_blocking(move || {
+-			let mut session = compute.session.blocking_lock();
+-			compute.drain_into(&mut session);
++			let mut locked = compute.session.blocking_lock();
++			let session = locked.as_mut()?;
++			compute.drain_into(session);
+ 			if !session.preview_pending() {
+ 				return None;
+ 			}
+diff --git a/docs/extensions.md b/docs/extensions.md
+--- a/docs/extensions.md
++++ b/docs/extensions.md
+@@ -305,11 +305,76 @@
+ ### Tool lifecycle
+ 
+ - `tool_call` (pre-exec, may block, or revise the tool's execution `input`; for model-issued calls it fires at arg-prep time in the agent loop, so a revision is revalidated and seen by concurrency scheduling, execution events, the persisted assistant message, and the approval gate alike)
++- `edit_prepared` (optional deny-only check of a complete native edit, at execute time after final arguments and scheduling)
+ - `tool_result` (post-exec, may patch content/details/isError)
+ - `tool_execution_start` / `tool_execution_update` / `tool_execution_end` (observability)
+ - `tool_approval_requested` / `tool_approval_resolved` (observability; emitted by `wrapper.ts` only when a tool requires approval and an approval handler is registered)
+ 
+ `tool_result` is middleware-style: handlers run in extension order and each sees prior modifications.
++
++### Native edit veto (`edit_prepared`)
++
++Registering a listener opts that session into guarded native edits. With no listeners,
++the ordinary edit path and writer configuration are unchanged. The callback receives
++`{ type, toolCallId, mode, input, operations }`; the event and its nested data are
++immutable. `input` is the effective execute input, including prior `tool_call` changes,
++not a potentially stale streamed preview.
++
++Check `api.supportsEditPrepared?.() === true` before enabling a required guard. This
++queries a marker in the **loaded native addon**, not package version text. The patched
++SDK also refuses guarded execution against an older addon before calling `apply`.
++Stock SDKs may silently accept unknown event registration and never emit the event.
++An integration that must hold on stock SDKs should install an existing `tool_call`
++blocker when the method is absent or false, rather than merely throwing during
++extension loading (which could leave the extension disabled):
++
++```ts
++if (api.supportsEditPrepared?.() !== true) {
++  api.on("tool_call", event => event.toolName === "edit"
++    ? { block: true, reason: "This integration requires native edit_prepared support" }
++    : undefined);
++  return;
++}
++```
++
++Each ordered operation contains `op` (`create`, `update`, `delete`, `move`, or `noop`),
++absolute `path`, `displayPath`, nullable `moveTo`, and nullable `before`, `after`,
++`moveBefore`. Text is complete persisted UTF-8, including BOM and original line endings,
++not preview diffs or normalized editor text. `before` and `moveBefore` are actual
++pre-call filesystem images, even when a native create overwrites a file. Null means
++absence (or no move for `moveBefore`); it must not be inferred from the operation name.
++`after` is null for deletion and unchanged original text for a no-op.
++All seven operation keys are present in JSON; nullable fields are explicit `null`,
++never omitted `undefined` values.
++
++Validate preimages against the untouched baseline, then replay in native vector order.
++Native grouping can collapse several authored entries into one operation. Do not impose
++extra collision/overwrite restrictions or treat later preimages as sequential states.
++Moves retain original source identity for finding attribution, independently of the
++destination being overwritten. Native parsing, register expansion, recovery, and
++serialization remain native-owned.
++
++Return `{ block: true, reason }` to hold the entire call, or no block to permit it.
++Handlers cannot replace input or content. Errors, invalid results, timeout (the existing
++`extensionHandlers.toolCallTimeoutMs` setting), and abort hold before writes. Permission
++consumes the same staged operations after filesystem, path, argument, policy, and store
++freshness checks. Candidate snapshots/registers are not committed on a hold; truthful
++native rejection diagnostics and observed-line bookkeeping can still be retained.
++The analyzer must also validate the freshness of surrounding context it used.
++
++Guarded edits require `lsp.formatOnWrite=false`, `edit.autoRepair.enabled=false`, and no
++relevant ACP `writeTextFile` route: those writers cannot guarantee the checked final
++bytes. Conflicts and non-UTF-8 preimages hold visibly; settings are never silently
++changed. LSP diagnostics remain configured normally. Start the opted-in workspace with
++these settings, without an older formatting-enabled LSP batch pending.
++If the final edit in a batch is held before writing, diagnostics already queued by
++earlier permitted edits are drained without formatting or rewriting files and returned
++in the held result's normal diagnostic metadata. That drain consumes the batch and is
++not cancelled by the denied edit's abort signal.
++
++This is a pre-write veto, not filesystem rollback: unrelated I/O failures after
++permission can leave earlier files applied. It covers the native edit tool, including
++same-tool delegation, not arbitrary extension writes or other tools.
+ 
+ ### Reliability/runtime signals
+ 
+@@ -382,8 +447,9 @@
+ cannot reach an arbitrary target or escalate past the approval already granted for this call) and
+ returns its result, including the native tool's own side effects and internal bookkeeping. It is
+ present only when a native built-in of that name exists — `ctx.invokeTool` is `undefined` for a
+-net-new tool that shadows no built-in. The native call is not re-gated, since it is the same tool you
+-are already approved as, and delegation depth is guarded against accidental self-recursion.
++net-new tool that shadows no built-in. Approval is not re-requested, since it is the same
++tool already approved for this call; native `edit_prepared` listeners still run.
++Delegation depth is guarded against accidental self-recursion.
+ 
+ Template:
+ 
+diff --git a/packages/coding-agent/src/edit/index.ts b/packages/coding-agent/src/edit/index.ts
+--- a/packages/coding-agent/src/edit/index.ts
++++ b/packages/coding-agent/src/edit/index.ts
+@@ -18,6 +18,7 @@
+ 	type EditFileOutcome,
+ 	type EditInspection,
+ 	type EditPolicy,
++	type EditPreparedOperation,
+ 	type EditWriteRequest,
+ 	type EditWriteResponse,
+ } from "@oh-my-pi/pi-natives";
+@@ -35,7 +36,7 @@
+ import { DeferredDiagnostics } from "../lsp/deferred-diagnostics";
+ import { getDiagnosticsLedger } from "../lsp/diagnostics-ledger";
+ import type { ToolSession } from "../tools";
+-import { routeWriteThroughBridge } from "../tools/acp-bridge";
++import { routeWriteThroughBridge, shouldRouteWriteThroughBridge } from "../tools/acp-bridge";
+ import { truncateForPrompt } from "../tools/approval";
+ import {
+ 	deleteFileWithFallback,
+@@ -51,7 +52,7 @@
+ import { outputMeta } from "../tools/output-meta";
+ import { resolveFileWriteApprovalTier } from "../tools/path-utils";
+ import { planLocalProtocolOptions } from "../tools/plan-mode-guard";
+-import { ToolError } from "../tools/tool-errors";
++import { renderError, ToolError } from "../tools/tool-errors";
+ import { type EditMode, normalizeEditMode, resolveEditMode } from "../utils/edit-mode";
+ import { attemptEditAutoRepair, type EditAutoRepairOutcome } from "./auto-repair";
+ import { type AppliedEditSnapshot, createEditBlackboxRecorder } from "./blackbox";
+@@ -339,6 +340,7 @@
+ 	readonly #writethrough: WritethroughCallback;
+ 	readonly #editMode?: EditMode;
+ 	readonly #deferredDiagnostics: DeferredDiagnostics;
++	readonly #formatsWrites: boolean;
+ 	readonly #sessions = new Map<string, EditSession>();
+ 
+ 	constructor(
+@@ -359,6 +361,7 @@
+ 			session.settings.get("lsp.diagnosticsDeduplicate");
+ 		this.#deferredDiagnostics = new DeferredDiagnostics(session, deduplicateDiagnostics);
+ 		this.#writethrough = createEditWritethrough(session);
++		this.#formatsWrites = (session.enableLsp ?? true) && session.settings.get("lsp.formatOnWrite");
+ 	}
+ 
+ 	get mode(): EditMode {
+@@ -468,34 +471,110 @@
+ 		_onUpdate?: AgentToolUpdateCallback<EditToolDetails, TInput>,
+ 		context?: AgentToolContext,
+ 	): Promise<AgentToolResult<EditToolDetails, TInput>> {
++		const beforeApply = this.session.getBeforeEditApply?.();
++		const paramsJson = beforeApply ? JSON.stringify(params) : undefined;
++		const policy = beforeApply ? this.#policy(false) : undefined;
++		if (beforeApply) {
++			this.#sessions.get(toolCallId)?.close();
++			this.#sessions.delete(toolCallId);
++		}
+ 		let editSession = this.#sessions.get(toolCallId);
+ 		if (!editSession) {
+ 			// No deltas were streamed (non-streaming provider, inline recovery,
+ 			// Cursor batch frames): the parsed args are the whole payload.
+-			editSession = new EditSession(getEditStore(this.session), this.#policy(false));
+-			editSession.setArgsJson(JSON.stringify(params));
++			editSession = new EditSession(getEditStore(this.session), policy ?? this.#policy(false));
++			editSession.setArgsJson(paramsJson ?? JSON.stringify(params));
+ 			editSession.finish();
+ 		}
+ 		const batch = getLspBatchRequest(context?.toolCall);
+ 		let outcome;
++		let writeStarted = false;
++		let heldDiagnostics: FileDiagnosticsResult | undefined;
++		const cancel = () => editSession.close();
++		if (beforeApply) {
++			signal?.addEventListener("abort", cancel, { once: true });
++			if (signal?.aborted) cancel();
++		}
+ 		try {
++			if (beforeApply && EditSession.supportsPreparedGuard?.() !== true) {
++				throw new ToolError(
++					"Edit held: the loaded native addon does not support edit_prepared; rebuild the patched addon",
++				);
++			}
+ 			outcome = await editSession.apply(
+ 				{ lspBatchId: batch?.id, lspFlush: batch?.flush ?? false },
+-				(_error, request) => this.#write(request, signal),
++				(_error, request) => {
++					if (beforeApply) signal?.throwIfAborted();
++					writeStarted = true;
++					return this.#write(request, signal);
++				},
++				beforeApply
++					? async (_error, operations) => {
++							signal?.throwIfAborted();
++							this.#assertGuardedWriter(operations);
++							const result = await beforeApply(
++								{
++									type: "edit_prepared",
++									toolCallId,
++									mode: policy!.mode,
++									input: JSON.parse(paramsJson!),
++									operations,
++								},
++								signal,
++							);
++							signal?.throwIfAborted();
++							this.#assertGuardedWriter(operations);
++							if (
++								JSON.stringify(params) !== paramsJson ||
++								JSON.stringify(this.#policy(false)) !== JSON.stringify(policy)
++							) {
++								throw new ToolError("Edit held: effective arguments or policy changed while checking");
++							}
++							return { block: result?.block ?? false, reason: result?.reason };
++						}
++					: undefined,
+ 			);
+ 			if (outcome.isError && batch?.flush) {
+-				await flushLspWritethroughBatch(batch.id, this.session.cwd, signal);
++				const diagnosticsOnly = !!beforeApply && !writeStarted;
++				heldDiagnostics = await flushLspWritethroughBatch(
++					batch.id,
++					this.session.cwd,
++					diagnosticsOnly ? undefined : signal,
++					diagnosticsOnly,
++				);
+ 			}
+ 		} catch (error) {
+-			if (batch?.flush) await flushLspWritethroughBatch(batch.id, this.session.cwd, signal);
+-			throw error;
++			if (batch?.flush) {
++				const diagnosticsOnly = !!beforeApply && !writeStarted;
++				heldDiagnostics = await flushLspWritethroughBatch(
++					batch.id,
++					this.session.cwd,
++					diagnosticsOnly ? undefined : signal,
++					diagnosticsOnly,
++				);
++			}
++			if (!beforeApply || writeStarted || !heldDiagnostics) throw error;
++			outcome = { isError: true, text: renderError(error), files: [] };
+ 		} finally {
++			signal?.removeEventListener("abort", cancel);
+ 			editSession.close();
+ 			if (this.#sessions.get(toolCallId) === editSession) this.#sessions.delete(toolCallId);
+ 		}
+ 
+ 		if (outcome.isError) {
+-			return { content: [{ type: "text", text: outcome.text }], isError: true };
++			return {
++				content: [{ type: "text", text: outcome.text }],
++				isError: true,
++				...(heldDiagnostics
++					? {
++							details: {
++								diff: "",
++								diagnostics: heldDiagnostics,
++								meta: outputMeta().diagnostics(heldDiagnostics.summary, heldDiagnostics.messages).get(),
++							},
++						}
++					: {}),
++			};
+ 		}
+ 
+ 		const details = aggregateDetails(outcome.files, this.mode);
+@@ -543,6 +622,31 @@
+ 		return result;
+ 	}
+ 
++	#assertGuardedWriter(operations: readonly EditPreparedOperation[]): void {
++		if (this.#formatsWrites || this.session.settings.get("lsp.formatOnWrite")) {
++			throw new ToolError("Edit held: edit_prepared requires lsp.formatOnWrite=false; settings were not changed");
++		}
++		if (this.session.settings.get("edit.autoRepair.enabled")) {
++			throw new ToolError(
++				"Edit held: edit_prepared requires edit.autoRepair.enabled=false; settings were not changed",
++			);
++		}
++		const bridge = this.session.getClientBridge?.();
++		if (
++			bridge?.capabilities.writeTextFile &&
++			bridge.writeTextFile &&
++			operations.some(
++				op =>
++					(op.op === "create" || op.op === "update") &&
++					shouldRouteWriteThroughBridge(this.session, op.displayPath, op.path),
++			)
++		) {
++			throw new ToolError(
++				"Edit held: ACP writeTextFile cannot guarantee the checked bytes; use a direct-writer session",
++			);
++		}
++	}
++
+ 	#inspect(args: unknown): EditInspection {
+ 		try {
+ 			return editInspect(this.mode, JSON.stringify(args ?? {}));
+diff --git a/packages/coding-agent/src/extensibility/extensions/loader.ts b/packages/coding-agent/src/extensibility/extensions/loader.ts
+--- a/packages/coding-agent/src/extensibility/extensions/loader.ts
++++ b/packages/coding-agent/src/extensibility/extensions/loader.ts
+@@ -16,6 +16,7 @@
+ 	TextContent,
+ 	TSchema,
+ } from "@oh-my-pi/pi-ai";
++import { EditSession } from "@oh-my-pi/pi-natives";
+ import { isBuiltinComposerStyle, type KeyId } from "@oh-my-pi/pi-tui";
+ import { hasFsCode, isEacces, isEnoent, logger } from "@oh-my-pi/pi-utils";
+ import { type ExtensionModule, extensionModuleCapability } from "../../capability/extension-module";
+@@ -171,6 +172,10 @@
+ 		public readonly events: EventBus,
+ 	) {}
+ 
++	supportsEditPrepared(): boolean {
++		return EditSession.supportsPreparedGuard?.() === true;
++	}
++
+ 	on<F extends HandlerFn>(event: string, handler: F): void {
+ 		const list = this.extension.handlers.get(event) ?? [];
+ 		list.push(handler);
+diff --git a/packages/coding-agent/src/extensibility/extensions/runner.ts b/packages/coding-agent/src/extensibility/extensions/runner.ts
+--- a/packages/coding-agent/src/extensibility/extensions/runner.ts
++++ b/packages/coding-agent/src/extensibility/extensions/runner.ts
+@@ -35,6 +35,8 @@
+ 	ContextEvent,
+ 	ContextEventResult,
+ 	ContextUsage,
++	EditPreparedEvent,
++	EditPreparedEventResult,
+ 	Extension,
+ 	ExtensionActions,
+ 	ExtensionCommandContext,
+@@ -1510,6 +1512,54 @@
+ 		return result;
+ 	}
+ 
++	/** Deny-only native edit boundary; every handler sees the same immutable preparation. */
++	async emitEditPrepared(
++		event: EditPreparedEvent,
++		signal?: AbortSignal,
++	): Promise<EditPreparedEventResult | undefined> {
++		const freeze = (value: unknown): void => {
++			if (value === null || typeof value !== "object" || Object.isFrozen(value)) return;
++			for (const child of Object.values(value)) freeze(child);
++			Object.freeze(value);
++		};
++		freeze(event);
++		const ctx = this.createContext();
++		const timeoutMs = normalizeHandlerTimeout(
++			this.settings?.get("extensionHandlers.toolCallTimeoutMs") ?? extensionHandlerTimeoutMs,
++		);
++		for (const ext of this.extensions) {
++			for (const handler of ext.handlers.get("edit_prepared") ?? []) {
++				const result = await this.#runHandlerWithTimeout<EditPreparedEvent, unknown>(
++					handler,
++					event,
++					ctx,
++					ext,
++					timeoutMs,
++					(kind, message) => ({ block: true, reason: `Edit held: extension ${ext.path} ${kind}: ${message}` }),
++					signal,
++				);
++				if (signal?.aborted) return { block: true, reason: "Edit held: checking was cancelled" };
++				if (result === undefined) continue;
++				if (
++					typeof result !== "object" ||
++					result === null ||
++					("block" in result && typeof result.block !== "boolean") ||
++					("reason" in result && result.reason !== undefined && typeof result.reason !== "string")
++				) {
++					return { block: true, reason: `Edit held: invalid guard result from ${ext.path}` };
++				}
++				if ("block" in result && result.block) {
++					return {
++						block: true,
++						reason: "reason" in result && typeof result.reason === "string" ? result.reason : undefined,
++					};
++				}
++			}
++		}
++		if (signal?.aborted) return { block: true, reason: "Edit held: checking was cancelled" };
++		return undefined;
++	}
++
+ 	async emitUserBash(event: UserBashEvent): Promise<UserBashEventResult | undefined> {
+ 		return this.emitUserEvent<UserBashEventResult>(event, "user_bash");
+ 	}
+diff --git a/packages/coding-agent/src/extensibility/extensions/types.ts b/packages/coding-agent/src/extensibility/extensions/types.ts
+--- a/packages/coding-agent/src/extensibility/extensions/types.ts
++++ b/packages/coding-agent/src/extensibility/extensions/types.ts
+@@ -20,6 +20,7 @@
+ 	ToolLoadMode,
+ } from "@oh-my-pi/pi-agent-core";
+ import type { CompactionResult } from "@oh-my-pi/pi-agent-core/compaction";
++import type { EditPreparedOperation } from "@oh-my-pi/pi-natives";
+ import type {
+ 	Api,
+ 	AssistantMessageEvent,
+@@ -1028,6 +1029,20 @@
+ 	details: unknown;
+ }
+ 
++/** Whole native edit, after scheduling and final argument changes, before any write. */
++export interface EditPreparedEvent {
++	readonly type: "edit_prepared";
++	readonly toolCallId: string;
++	readonly mode: string;
++	readonly input: Readonly<Record<string, unknown>>;
++	readonly operations: readonly Readonly<EditPreparedOperation>[];
++}
++
++export interface EditPreparedEventResult {
++	block?: boolean;
++	reason?: string;
++}
++
+ /** Fired after a tool executes. Can modify result. */
+ export type ToolResultEvent =
+ 	| BashToolResultEvent
+@@ -1106,6 +1121,7 @@
+ 	| UserPythonEvent
+ 	| InputEvent
+ 	| ToolCallEvent
++	| EditPreparedEvent
+ 	| ToolResultEvent
+ 	| ToolApprovalRequestedEvent
+ 	| ToolApprovalResolvedEvent;
+@@ -1294,6 +1310,9 @@
+ 	on(event: "tool_approval_requested", handler: ExtensionHandler<ToolApprovalRequestedEvent>): void;
+ 	on(event: "tool_approval_resolved", handler: ExtensionHandler<ToolApprovalResolvedEvent>): void;
+ 	on(event: "tool_call", handler: ExtensionHandler<ToolCallEvent, ToolCallEventResult>): void;
++	on(event: "edit_prepared", handler: ExtensionHandler<EditPreparedEvent, EditPreparedEventResult>): void;
++	/** True only when this SDK and the loaded native addon implement `edit_prepared`. */
++	supportsEditPrepared(): boolean;
+ 	on(event: "tool_result", handler: ExtensionHandler<ToolResultEvent, ToolResultEventResult>): void;
+ 	on(event: "user_bash", handler: ExtensionHandler<UserBashEvent, UserBashEventResult>): void;
+ 	on(event: "user_python", handler: ExtensionHandler<UserPythonEvent, UserPythonEventResult>): void;
+diff --git a/packages/coding-agent/src/lsp/writethrough.ts b/packages/coding-agent/src/lsp/writethrough.ts
+--- a/packages/coding-agent/src/lsp/writethrough.ts
++++ b/packages/coding-agent/src/lsp/writethrough.ts
+@@ -124,12 +124,15 @@
+ 	id: string,
+ 	cwd: string,
+ 	signal?: AbortSignal,
++	/** Drain already-committed diagnostics without authorizing another write. */
++	diagnosticsOnly = false,
+ ): Promise<FileDiagnosticsResult | undefined> {
+ 	const state = writethroughBatches.get(id);
+ 	if (!state) {
+ 		return undefined;
+ 	}
+ 	writethroughBatches.delete(id);
++	if (diagnosticsOnly) state.options.enableFormat = false;
+ 	return (await flushWritethroughBatch(Array.from(state.entries.values()), "", cwd, state.options, signal))
+ 		.diagnostics;
+ }
+diff --git a/packages/coding-agent/src/sdk.ts b/packages/coding-agent/src/sdk.ts
+--- a/packages/coding-agent/src/sdk.ts
++++ b/packages/coding-agent/src/sdk.ts
+@@ -2810,6 +2810,10 @@
+ 			localProtocolOptions,
+ 			() => (hasSession ? session.getAsyncJobSnapshot() : null),
+ 		);
++		toolSession.getBeforeEditApply = () =>
++			extensionRunner.hasHandlers("edit_prepared")
++				? (event, signal) => extensionRunner.emitEditPrepared(event, signal)
++				: undefined;
+ 
+ 		credentialDisabledTarget = extensionRunner;
+ 		for (const event of startupCredentialDisabledEvents.splice(0)) {
+diff --git a/packages/coding-agent/src/tools/index.ts b/packages/coding-agent/src/tools/index.ts
+--- a/packages/coding-agent/src/tools/index.ts
++++ b/packages/coding-agent/src/tools/index.ts
+@@ -11,7 +11,7 @@
+ import { EditTool } from "../edit";
+ import { checkPythonKernelAvailability } from "../eval/py/kernel";
+ import type { ToolPathWithSource } from "../extensibility/custom-tools";
+-import type { PreparedExtension } from "../extensibility/extensions/types";
++import type { EditPreparedEvent, EditPreparedEventResult, PreparedExtension } from "../extensibility/extensions/types";
+ import type { Skill } from "../extensibility/skills";
+ import type { GoalModeState, GoalRuntime } from "../goals";
+ import { GoalTool } from "../goals/tools/goal-tool";
+@@ -223,6 +223,10 @@
+ 	customToolPaths?: ToolPathWithSource[];
+ 	/** Whether LSP integrations are enabled */
+ 	enableLsp?: boolean;
++	/** Resolve lazily: no edit_prepared listeners means the ordinary unguarded edit path. */
++	getBeforeEditApply?: () =>
++		| ((event: EditPreparedEvent, signal?: AbortSignal) => Promise<EditPreparedEventResult | undefined>)
++		| undefined;
+ 	/** Whether LSP is limited to navigation and diagnostics. */
+ 	lspReadOnly?: boolean;
+ 	/** Whether this invocation may expose IRC. `false` removes it even for subagents. */
+diff --git a/packages/coding-agent/test/edit-prepared.test.ts b/packages/coding-agent/test/edit-prepared.test.ts
+new file mode 100644
+--- /dev/null
++++ b/packages/coding-agent/test/edit-prepared.test.ts
+@@ -0,0 +1,252 @@
++import { afterAll, beforeAll, expect, it } from "bun:test";
++import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
++import * as os from "node:os";
++import * as path from "node:path";
++import { hashlineFileHash } from "@oh-my-pi/pi-natives";
++import { ModelRegistry } from "@oh-my-pi/pi-coding-agent/config/model-registry";
++import { Settings } from "@oh-my-pi/pi-coding-agent/config/settings";
++import type { EditPreparedEvent, ExtensionFactory } from "@oh-my-pi/pi-coding-agent/extensibility/extensions/types";
++import { flushLspWritethroughBatch } from "@oh-my-pi/pi-coding-agent/lsp";
++import { getConfig } from "@oh-my-pi/pi-coding-agent/lsp/config";
++import { createAgentSession } from "@oh-my-pi/pi-coding-agent/sdk";
++import { SessionManager } from "@oh-my-pi/pi-coding-agent/session/session-manager";
++import { createInMemoryAuthStorage } from "./helpers/agent-session-setup";
++
++let root: string;
++const auth = createInMemoryAuthStorage();
++let registry: ModelRegistry;
++beforeAll(async () => {
++	root = await mkdtemp(path.join(os.tmpdir(), "omp-edit-prepared-"));
++	registry = new ModelRegistry(auth, path.join(root, "models.yml"));
++});
++afterAll(async () => {
++	auth.close();
++	await rm(root, { recursive: true, force: true });
++});
++
++async function createWorkspace(extensions: ExtensionFactory[], settings: Settings, enableLsp = false) {
++	const cwd = await mkdtemp(path.join(root, "workspace-"));
++	const result = await createAgentSession({
++		cwd,
++		agentDir: cwd,
++		modelRegistry: registry,
++		sessionManager: SessionManager.inMemory(cwd),
++		settings,
++		extensions,
++		disableExtensionDiscovery: true,
++		toolNames: ["edit"],
++		enableMCP: false,
++		enableLsp,
++		skipPythonPreflight: true,
++		skills: [],
++		rules: [],
++		contextFiles: [],
++		promptTemplates: [],
++		slashCommands: [],
++		preloadedCustomToolPaths: [],
++		workspaceTree: { rootPath: cwd, rendered: "", truncated: false, totalLines: 0, agentsMdFiles: [] },
++	});
++	return { ...result, cwd };
++}
++
++it("guards final rewritten native input rather than retained custom-wire preview", async () => {
++	let permit = false;
++	let prepared: EditPreparedEvent | undefined;
++	const original = "old\n";
++	const header = `[target.txt#${hashlineFileHash(original)}]`;
++	const authored = { input: `${header}\nPUT 1.=1:\n+streamed` };
++	const rewritten = { input: `${header}\nPUT 1.=1:\n+effective` };
++	const { session, cwd } = await createWorkspace(
++		[
++			api => {
++				expect(api.supportsEditPrepared()).toBe(true);
++				api.on("tool_call", event => (event.toolName === "edit" ? { input: rewritten } : undefined));
++				api.on("edit_prepared", event => {
++					prepared = event;
++					expect(Object.isFrozen(event.operations[0])).toBe(true);
++					return { block: !permit, reason: "quality finding" };
++				});
++			},
++		],
++		Settings.isolated({ "edit.enforceSeenLines": false }),
++	);
++	try {
++		const target = path.join(cwd, "target.txt");
++		await writeFile(target, original);
++		const edit = session.getToolByName("edit")!;
++		const stream = edit.openArgStream!({
++			toolCallId: "guarded-stream",
++			toolName: "edit",
++			customWireName: "edit",
++			emit: () => {},
++		})!;
++		stream.push(authored.input);
++		stream.end(authored);
++		const denied = await edit.execute("guarded-stream", authored);
++		expect(denied.isError).toBe(true);
++		expect(prepared?.input).toEqual(rewritten);
++		expect(prepared?.operations[0]?.after).toBe("effective\n");
++		expect(await readFile(target, "utf8")).toBe(original);
++		permit = true;
++		const allowed = await edit.execute("guarded-retry", authored);
++		expect(allowed.isError).not.toBe(true);
++		expect(await readFile(target, "utf8")).toBe("effective\n");
++	} finally {
++		await session.dispose();
++	}
++});
++
++it("extension failure and abort while awaiting the native guard never release writes", async () => {
++	let action: "throw" | "wait" = "throw";
++	const entered = Promise.withResolvers<void>();
++	const { session, cwd } = await createWorkspace(
++		[
++			api => {
++				api.on("edit_prepared", async () => {
++					if (action === "throw") throw new Error("required analyzer unavailable");
++					entered.resolve();
++					return Promise.withResolvers<{ block: boolean }>().promise;
++				});
++			},
++		],
++		Settings.isolated({ "edit.enforceSeenLines": false }),
++	);
++	try {
++		const target = path.join(cwd, "target.txt");
++		await writeFile(target, "old\n");
++		const edit = session.getToolByName("edit")!;
++		const input = { input: `[target.txt#${hashlineFileHash("old\n")}]\nPUT 1.=1:\n+new` };
++		const failure = await edit.execute("guard-throw", input);
++		expect(failure.isError).toBe(true);
++		expect(await readFile(target, "utf8")).toBe("old\n");
++		action = "wait";
++		const controller = new AbortController();
++		const executing = edit.execute("guard-abort", input, controller.signal);
++		await entered.promise;
++		controller.abort();
++		await executing;
++		expect(await readFile(target, "utf8")).toBe("old\n");
++	} finally {
++		await session.dispose();
++	}
++});
++
++it("no listeners retain ordinary writer configuration; a registered guard holds conflicts", async () => {
++	for (const guarded of [false, true]) {
++		const settings = Settings.isolated({ "lsp.formatOnWrite": true, "edit.enforceSeenLines": false });
++		const { session, cwd } = await createWorkspace(
++			guarded
++				? [
++						api => {
++							api.on("edit_prepared", () => ({ block: false }));
++						},
++					]
++				: [],
++			settings,
++		);
++		try {
++			const target = path.join(cwd, "target.txt");
++			await writeFile(target, "old\n");
++			const result = await session.getToolByName("edit")!.execute(`configuration-${guarded}`, {
++				input: `[target.txt#${hashlineFileHash("old\n")}]\nPUT 1.=1:\n+new`,
++			});
++			expect(result.isError === true).toBe(guarded);
++			expect(await readFile(target, "utf8")).toBe(guarded ? "old\n" : "new\n");
++			expect(settings.get("lsp.formatOnWrite")).toBe(true);
++		} finally {
++			await session.dispose();
++		}
++	}
++});
++
++it("a denied final edit drains prior permitted diagnostics without formatting or retaining the batch", async () => {
++	const { session, cwd } = await createWorkspace(
++		[
++			api => {
++				api.on("edit_prepared", event => ({ block: event.toolCallId === "batch-final" }));
++			},
++		],
++		Settings.isolated({ "edit.enforceSeenLines": false, "lsp.diagnosticsOnEdit": true }),
++		true,
++	);
++	const linted: string[] = [];
++	let formats = 0;
++	getConfig(cwd).servers = {
++		"edit-guard-batch": {
++			command: "edit-guard-batch",
++			fileTypes: [".guarddiag"],
++			rootMarkers: [],
++			createClient: () => ({
++				format: async () => {
++					formats++;
++					return "UNAUTHORIZED FORMAT\n";
++				},
++				lint: async file => {
++					linted.push(file);
++					expect(await readFile(file, "utf8")).toBe("permitted\n");
++					return [
++						{
++							range: { start: { line: 0, character: 0 }, end: { line: 0, character: 1 } },
++							severity: 1,
++							message: "diagnostic from the earlier permitted edit",
++						},
++					];
++				},
++			}),
++		},
++	};
++	try {
++		const first = path.join(cwd, "first.guarddiag");
++		const last = path.join(cwd, "last.guarddiag");
++		await writeFile(first, "old\n");
++		await writeFile(last, "old\n");
++		const toolCalls = [
++			{ id: "batch-first", name: "edit" },
++			{ id: "batch-final", name: "edit" },
++		];
++		const edit = session.getToolByName("edit")!;
++		const context = {
++			sessionManager: session.sessionManager,
++			modelRegistry: registry,
++			model: session.model,
++			isIdle: () => !session.isStreaming,
++			hasQueuedMessages: () => session.queuedMessageCount > 0,
++			abort: () => session.agent.abort(),
++			settings: session.settings,
++		};
++		const firstResult = await edit.execute(
++			"batch-first",
++			{
++				input: `[first.guarddiag#${hashlineFileHash("old\n")}]\nPUT 1.=1:\n+permitted`,
++			},
++			undefined,
++			undefined,
++			{ ...context, toolCall: { batchId: cwd, index: 0, total: 2, toolCalls } },
++		);
++		expect(firstResult.isError).not.toBe(true);
++		expect(await readFile(first, "utf8")).toBe("permitted\n");
++		expect(linted).toEqual([]);
++		const denied = await edit.execute(
++			"batch-final",
++			{
++				input: `[last.guarddiag#${hashlineFileHash("old\n")}]\nPUT 1.=1:\n+denied`,
++			},
++			undefined,
++			undefined,
++			{ ...context, toolCall: { batchId: cwd, index: 1, total: 2, toolCalls } },
++		);
++		expect(denied.isError).toBe(true);
++		expect(await readFile(first, "utf8")).toBe("permitted\n");
++		expect(await readFile(last, "utf8")).toBe("old\n");
++		expect(linted).toEqual([first]);
++		expect(formats).toBe(0);
++		expect(
++			denied.content.some(
++				block => block.type === "text" && block.text.includes("diagnostic from the earlier permitted edit"),
++			),
++		).toBe(true);
++		expect(await flushLspWritethroughBatch(cwd, cwd)).toBeUndefined();
++	} finally {
++		await session.dispose();
++	}
++});
+diff --git a/packages/natives/native/index.d.ts b/packages/natives/native/index.d.ts
+--- a/packages/natives/native/index.d.ts
++++ b/packages/natives/native/index.d.ts
+@@ -100,6 +100,8 @@
+ 
+ /** One edit tool call's streaming session. */
+ export declare class EditSession {
++  /** Whether this loaded native addon implements the pre-write guard. */
++  static supportsPreparedGuard(): boolean
+   /**
+    * Open a session. `onPreview` (optional) receives every settled preview
+    * batch; batches are delivered one at a time, in generation order.
+@@ -112,11 +114,12 @@
+   /** Arguments are complete; triggers the final untrimmed preview. */
+   finish(): void
+   /**
+-   * Stage and apply the finished edit through `writer`. Never rejects for
+-   * engine failures: those come back as `isError` outcomes carrying the
+-   * model-facing message.
+-   */
+-  apply(request: EditApplyRequest, writer: (error: Error | null, request: EditWriteRequest) => Promise<EditWriteResponse>): Promise<EditApplyOutcome>
++   * Consume this session once: stage, optionally check the complete edit,
++   * then write. Engine/guard failures return `isError` outcomes with the
++   * model-facing reason. Close cancels an awaited guard, never rolls back
++   * writes.
++   */
++  apply(request: EditApplyRequest, writer: (error: Error | null, request: EditWriteRequest) => Promise<EditWriteResponse>, guard?: ((error: Error | null, operations: EditPreparedOperation[]) => Promise<EditGuardResult>) | undefined | null): Promise<EditApplyOutcome>
+   /** Stop the preview pump and release buffers. */
+   close(): void
+ }
+@@ -1303,6 +1306,11 @@
+ /** Lark grammar for `mode`, when it has a custom wire format. */
+ export declare function editGrammar(mode: string): string | null
+ 
++export interface EditGuardResult {
++  block: boolean
++  reason?: string
++}
++
+ /**
+  * Inspect `argsJson` (the JSON-serialized, possibly partial tool args)
+  * without touching the filesystem.
+@@ -1342,6 +1350,17 @@
+   homeDir: string
+   /** The payload is a verbatim custom-format string, not JSON. */
+   rawInput: boolean
++}
++
++/** Complete persisted operation with actual pre-call source/destination images. */
++export interface EditPreparedOperation {
++  op: string
++  path: string
++  displayPath: string
++  moveTo: string | null
++  before: string | null
++  after: string | null
++  moveBefore: string | null
+ }
+ 
+ /** A batch of previews for one session generation. */

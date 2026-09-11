@@ -20,12 +20,27 @@
     "evidence": ".loopx/materials/omp-local-baseline.json",
     "acceptance": "Director accepted the unmodified local native build, actual source CLI launch and ordinary native EditSession proof; not native veto or Turnstile acceptance."
   },
+  "omp-edit-veto": {
+    "status": "ACCEPTED",
+    "handoff": ".omp/handoffs/omp-edit-veto.md",
+    "author": "omp-native-edit-veto",
+    "reviewer": "native-veto-review",
+    "author_receipt": ".loopx/materials/omp-edit-veto-verification.json",
+    "review_receipt": ".loopx/materials/omp-edit-veto-independent-review.json",
+    "acceptance_receipt": ".loopx/materials/omp-edit-veto-acceptance.json",
+    "snapshot_id": "a90b6cb5c57023574b3a73e6a685e7cc6e1df6dd20c9679d7f969fece4525f77",
+    "addon_sha256": "676bd3c3699e8a7c0f5ca350939d4340b32be64e7e6a38a873d7d2c259658b0f",
+    "acceptance": "Director accepted the exact independently reviewed bounded native prerequisite; not original Sprint 4 model hold/feedback/repair integration."
+  },
   "sprint-04": {
-    "status": "APPROVED_PREREQUISITES_IN_PROGRESS",
+    "status": "PREREQUISITES_ACCEPTED_READY_FOR_SPRINT_04",
     "handoff": ".omp/handoffs/sprint-04.md",
     "approval": "The current user explicitly approved the patched project-local OMP runtime with no overbuilding; this supersedes the pending deployment decision.",
     "prerequisite_materials": ".loopx/materials/index.json",
     "accepted_baseline": ".omp/handoffs/omp-local-baseline.md",
+    "accepted_native": ".omp/handoffs/omp-edit-veto.md",
+    "native_acceptance_receipt": ".loopx/materials/omp-edit-veto-acceptance.json",
+    "readiness_receipt": ".loopx/materials/sprint04-prerequisites-readiness.json",
     "prerequisite_python_acceptance": {
       "status": "ACCEPTED",
       "scope": "Completed Python staged Cargo-context prerequisite for Sprint 4",
@@ -34,6 +49,8 @@
       "review_receipt": ".loopx/materials/rust-staged-context-freshness-independent-review.json",
       "author_receipt": ".loopx/materials/rust-staged-context-freshness-proof.json",
       "snapshot_id": "7fd744183c9cfb79504b1db6048bde374ed24e985c798e05f547d296fa65bf29",
+      "acceptance_receipt": ".loopx/materials/rust-staged-context-acceptance.json",
+      "commit": "4d82a733b5e884b112979830a6809eee21562240",
       "governing_contract_sha256": "d5e26103c79eea7af1b2288cf88f2facd7146a1c2eec9e9cff2d03773e9d3856",
       "accepted_files": [
         "tools/rust_candidates.py",
@@ -42,17 +59,16 @@
         "docs/rust-staged-context-results.json"
       ],
       "limits": [
-        "No native OMP gate, model hold/feedback/repair proof, or native-edit veto implementation is accepted here.",
+        "Python acceptance does not substitute for separate native prerequisite acceptance or original Sprint 4 model hold/feedback/repair proof.",
         "Windows filesystem native-case-sensitivity behavior and original directory-flag drift remain scoped to the reviewed Python prerequisite contracts.",
         "Transient write-and-restore, post-return mutation, and non-local filesystem sandboxing remain out of scope."
       ],
       "outstanding_dependencies": [
-        "Same-owner native-edit veto boundary",
         "Complete same-scope Sprint 4 native integration hold/feedback/repair proof"
       ],
-      "next_action": "Return to original Sprint 4 native integration once native prerequisites are finished and accepted."
+      "next_action": "Return to original Sprint 4 under /vibe; all prerequisites are accepted."
     },
-    "next_action": "Complete the same-owner native-edit veto boundary and complete staged Cargo-context prerequisites, then return to original Sprint 4 integration and real-model hold/feedback/repair proof under /vibe.",
-    "acceptance": "Director accepted the pinned unmodified project-local OMP baseline. Native veto and staged Cargo-context prerequisites remain outstanding. Sprint 4 is not implemented or accepted; all original eleven sprint deliverables and acceptance criteria remain unchanged."
+    "next_action": "Notify the user that all three prerequisites are accepted and return to /vibe for original Sprint 4 native integration and real-model hold/feedback/repair proof.",
+    "acceptance": "PREREQUISITES_ACCEPTED_READY_FOR_SPRINT_04: pinned local baseline, Python staged Cargo context, and bounded native veto are director-accepted. Original Sprint 4 real model hold/feedback/repair is NOT implemented or accepted; all eleven deliverables, later sprint scopes, and acceptance criteria remain unchanged."
   }
 }

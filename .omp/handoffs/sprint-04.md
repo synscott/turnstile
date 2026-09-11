@@ -1,8 +1,12 @@
 # Sprint 04: native OMP edit gate
 
-Status: **APPROVED_PREREQUISITES_IN_PROGRESS.** Sprints 1–3 are
-accepted; Sprint 3 was locally committed as
-`c19c6f1515d38e0fdb2ab708eed3f8937155b7ff`. Sprint 4 Python staged-context prerequisite is director-accepted (`7fd744183c9cfb79504b1db6048bde374ed24e985c798e05f547d296fa65bf29`), native-veto prerequisite remains outstanding. Sprint 4 itself is not implemented or fully accepted.
+Status: **PREREQUISITES_ACCEPTED_READY_FOR_SPRINT_04.** All three prerequisites
+are director-accepted: the pinned local baseline, Python staged Cargo context, and
+same-owner native edit veto. Python is committed as
+`4d82a733b5e884b112979830a6809eee21562240` (reviewed snapshot
+`7fd744183c9cfb79504b1db6048bde374ed24e985c798e05f547d296fa65bf29`).
+Sprints 1–3 remain accepted. Original Sprint 4 integration and real model
+hold/feedback/repair are **not implemented or accepted**.
 
 The current user explicitly approved maintaining and building a patched
 project-local OMP runtime: “no overbuilding, keep to our design principles.”
@@ -10,10 +14,9 @@ This supersedes `BLOCKED_PENDING_USER_DEPLOYMENT_DECISION`; the prior
 research-only restriction is historical, not a current prohibition. Project-local
 runtime source acquisition, toolchain and dependency builds are now authorized.
 Leave global OMP, reference repositories, and global safety settings untouched;
-no publication. The director has accepted the unmodified local OMP baseline;
-complete staged Cargo-context prerequisite is director-accepted, native-veto prerequisite remains outstanding.
+no publication. The director has accepted all three prerequisites.
 
-## Native boundary and evidence
+## Historical stock boundary and evidence
 
 The inspected installed agent and native packages are `18.1.16`. The upstream tag
 and npm provenance payloads identify source commit
@@ -23,8 +26,8 @@ bit-reproducible native output have not been independently verified. The later
 unmodified local build and runtime proof are accepted; see the
 [baseline handoff](omp-local-baseline.md).
 
-The actual `EditTool` owns its native `EditSession`, policy, and shared `EditStore`.
-Supported extension context can invoke the same native tool but cannot inspect its
+In the originally inspected stock runtime, `EditTool` owns its native `EditSession`,
+policy, and shared `EditStore`. Stock supported extension context can invoke the same native tool but cannot inspect its
 complete prepared edit or veto that preparation at the write boundary. The native
 API exposes `apply(writer)`; even its final, non-streaming preview contains diff
 metadata rather than complete candidate bytes.
@@ -65,20 +68,22 @@ remain in the existing local-only receipts, reachable through the private materi
 index. This public handoff intentionally omits private receipt paths and machine
 metadata.
 
-## Approved prerequisites — in progress
+## Accepted prerequisites and next scope
 
-The user's approval authorizes fresh bounded implementation scopes for:
+The authorized bounded prerequisite work is now accepted:
 
 1. **Accepted:** unmodified, pinned project-local OMP baseline build, actual source
    CLI launch with normal FCC/plugin context, and ordinary native `EditSession`
    behavior. See the [baseline handoff](omp-local-baseline.md).
-2. Implementing a same-owner complete native-edit veto boundary before canonical
-   mutation, preserving native reconstruction and execution semantics.
+2. **Accepted:** the same-owner complete native-edit veto before canonical mutation,
+   preserving native reconstruction and execution semantics. See the
+   [native handoff](omp-edit-veto.md) for separate author/reviewer identities,
+   exact snapshot/addon, independent controls, evidence correction, and limits.
 3. **Accepted:** Extending the existing Rust candidate owner to analyze one complete staged Cargo
    context, including jointly dependent updates, moves, deletes, creates, and
    relevant context changes. Preserve current APIs and meaningful probes;
    per-file analysis against unstaged siblings is not equivalent.
-4. Returning to original Sprint 4 integration and real-model acceptance proof.
+4. **Next, not implemented or accepted:** original Sprint 4 integration and real-model proof.
 
 Keep the change bounded: no new parser, duplicate `EditStore`, generic policy
 framework, speculative configurability, or unrelated fixes.
@@ -90,6 +95,14 @@ Windows Cargo/N-API host route succeeded. The actual local addon identity and
 pristine Rust/TypeScript manifest are recorded in the baseline receipt. Historical
 source/build research remains unchanged; its missing-tool observations no longer
 describe the accepted baseline. No native veto or Turnstile gate is proved by it.
+
+The native prerequisite exposes complete persisted operations through `edit_prepared`
+and detects actual loaded-addon support through `supportsEditPrepared()`. Required
+integrations must hold on a missing/false capability rather than trust stock unknown-event
+registration. The accepted direct-writer contract requires formatting and auto-repair
+disabled, no relevant transforming ACP route, and no older formatting batch; prior
+permitted diagnostics still drain when the final edit is denied. These are the accepted
+integration conditions, not permission to narrow the original multi-file/model proof.
 
 ## Unchanged acceptance and continuation
 
@@ -103,10 +116,7 @@ from scope.
 
 Write-tool integration and the remaining retry, disclosure, exception, commit,
 PR, and final installed-test work remain in their existing later sprints. This
-handoff records a director-accepted Python prerequisite and accepted baseline; the
-native-veto prerequisite remains outstanding, and the native-model integration
-proof is not yet accepted. The current user approval, accepted baseline, and three
-historical prerequisite receipts are reachable through the private material index;
-historical approval-pending restrictions are superseded while observations and
-hashes remain preserved. Notify the user when the remaining prerequisites are verified and
-original Sprint 4 can resume under `/vibe`.
+handoff records prerequisite acceptance only, not native-model integration acceptance.
+Both navigation indices resolve current accepted evidence while preserving historical
+receipts and superseded approval restrictions as history. The requested readiness
+notification is now due: **ready to return to `/vibe` and resume original Sprint 4**.
