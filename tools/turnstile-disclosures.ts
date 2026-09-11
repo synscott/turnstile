@@ -195,6 +195,46 @@ export function appendPendingDisclosure(workspace: string, value: DisclosureInpu
 	}
 }
 
+/** Exact published records only; the Git owner must establish fulfillment before calling. */
+export function acknowledgePendingDisclosures(
+	workspace: string,
+	published: PendingDisclosure[],
+): { removed: string[]; retained: number } {
+	const expected = new Map(
+		published.map(value => {
+			const record = validatePendingDisclosure(value);
+			return [record.id, JSON.stringify(record)];
+		}),
+	);
+	let db: Database | undefined;
+	try {
+		db = open(workspace, true);
+		return db
+			.transaction(() => {
+				const live = records(db!);
+				const removed: string[] = [];
+				for (const record of live) {
+					if (expected.get(record.id) !== JSON.stringify(record)) continue;
+					const stored = db!
+						.query<{ record: string }, [string]>("SELECT record FROM pending WHERE id = ?")
+						.get(record.id);
+					const deleted = db!
+						.query("DELETE FROM pending WHERE id = ? AND record = ?")
+						.run(record.id, stored!.record);
+					if (deleted.changes !== 1 || db!.query("SELECT 1 FROM pending WHERE id = ?").get(record.id))
+						throw new DisclosureStorageError("corrupt", "acknowledge");
+					removed.push(record.id);
+				}
+				return { removed, retained: live.length - removed.length };
+			})
+			.immediate();
+	} catch (error) {
+		throw storageError(error, "acknowledge");
+	} finally {
+		db?.close();
+	}
+}
+
 /** Explicit provisioning, never startup recovery. A failed init leaves its file visibly invalid. */
 export function initializeDisclosures(workspace: string): void {
 	try {

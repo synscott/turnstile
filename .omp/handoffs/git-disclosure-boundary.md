@@ -5,6 +5,10 @@ This is bounded prerequisite A, not completed Sprint 9. Main owns sequencing,
 shared indices, acceptance and commit authorization. Author `sprint-nine-commits`
 used no children. Base: `0444d1c0c168a87309067520795830fbe9c9afc6`.
 Accepted snapshot: `5d14033824233ffa9d8db954b0878bef3b69fb8d07f126ec494d647fa82ff5b7`.
+Current successor: Main accepted [bounded B and original full Sprint 9](sprint-09.md)
+at exact `0b0273e2b46dfe5edc9716af3e55f64b89d70e46eef8bd2a49d7c8bf854ae952`.
+The historical A-only proof and remaining-work descriptions below retain their
+original scope; the Sprint 9 handoff owns current progression.
 
 ## Scope and contract
 
@@ -188,6 +192,7 @@ intended public-only commit. Exact receipts are
 to the reviewed snapshot, proof and rejection/adjudication chain. No production
 or operator-guide logic edit or formatting followed review.
 
-Next is Main's **fresh B worker** for complete canonical-coverage acknowledgment
-and real S8/fresh OMP end-to-end proof. Full Sprint 9 remains unfinished. This
-worker does not implement B or begin Sprint 10.
+Main subsequently accepted the fresh B worker's complete canonical-coverage
+acknowledgment and real S8/fresh OMP end-to-end proof; original Sprint 9 is complete.
+Follow [Sprint 9](sprint-09.md) for exact successor review and the fresh Sprint 10
+transition. This handoff remains the historical A-only evidence and policy record.

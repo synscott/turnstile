@@ -1,4 +1,24 @@
 {
+  "sprint-09": {
+    "status": "ACCEPTED",
+    "handoff": ".omp/handoffs/sprint-09.md",
+    "acceptance_owner": "Main",
+    "snapshot_id": "0b0273e2b46dfe5edc9716af3e55f64b89d70e46eef8bd2a49d7c8bf854ae952",
+    "reviewer": "sprint-nine-fulfillment-review",
+    "review_receipt": ".loopx/s9-fulfillment-review/review-0b0273e2.json",
+    "review_receipt_sha256": "aeb02662bcb7eead3342f2dd1710a982343617852d3bdc076410ab2ecde5d986",
+    "acceptance_receipt": ".loopx/materials/sprint09-acceptance.json",
+    "commit_receipt": ".loopx/materials/sprint09-commit.json",
+    "immutable_review": ".loopx/sprint09-fulfillment/materials/review.json",
+    "author_verification": ".loopx/sprint09-fulfillment/verification.json",
+    "rejected_snapshot": "ad015a00379ab4d080325e139b86b7dd21e24896c5550b1f60eedc8d5968f65d",
+    "rejected_review": ".loopx/s9-fulfillment-review/review-ad015a00.json",
+    "prerequisite": ".omp/handoffs/git-disclosure-boundary.md",
+    "verification": "21 reviewer-authored groups plus14 attributed author adversaries,406 logged fixture commands, scoped typecheck and fresh actual source/native OMP chain; R1/R2 resolved with real Windows handles, OS aliases, immutable Git and independent SQL oracles.",
+    "qualification": "No wholesale independent7-component rerun, provider/model inference, installed Sprint11, PR check, OS sandbox or cross-resource atomicity claim. Accepted A private-witness bypass/dissent and rejected ad015a00/naive Bun lookup failure remain preserved.",
+    "acceptance": "Main read the complete exact successor review, accepted only0b0273e2 for B and original full Sprint9 under documented A/Windows boundaries, and authorized exclusive bookkeeping and public-only commit. No open findings.",
+    "next_action": "Main starts a fresh bounded Sprint10 worker for ordinary server-side PR disclosure reporting; this worker does not begin Sprint10."
+  },
   "git-disclosure-boundary": {
     "status": "ACCEPTED",
     "handoff": ".omp/handoffs/git-disclosure-boundary.md",
@@ -17,7 +37,7 @@
     "verification": "53 independently authored outcome groups/613 real commands; R1a/R2/R3 resolved; exact immutable messages/trees, SQLite, complete private artifact family, process generations, partial commits and rollback.",
     "qualification": "Prerequisite A only. Synthetic S7 records; no retirement or real S8/fresh OMP integration. Direct private-witness deletion remains demonstrated unclassified/unchecked operator-state bypass, not fixed or validated.",
     "acceptance": "Main read the full exact successor review and accepted only5d140338 under the explicitly adjudicated operator-state boundary; authorized exclusive bookkeeping and public-only commit. Rejected2106 and dissent preserved.",
-    "next_action": "Main starts a fresh B worker for complete canonical-coverage acknowledgment and real S8/fresh OMP end-to-end proof. Full Sprint9 remains unfinished; no Sprint10."
+    "next_action": "Historical prerequisite A is complete. Main subsequently accepted bounded B and original full Sprint9; follow sprint-09 for current evidence and the fresh Sprint10 transition. A-only proof and operator-state bypass remain qualified as recorded."
   },
   "sprint-01": {
     "handoff": ".omp/handoffs/sprint-01.md",

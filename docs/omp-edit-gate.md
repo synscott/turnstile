@@ -275,8 +275,8 @@ returning permission to native code**. Missing, corrupt, triggered, locked or
 otherwise unavailable storage holds visibly. A row conservatively describes
 **attempted exception authorization**, not confirmed application: a later native
 freshness guard or ordinary I/O failure may leave that row pending without
-applying the candidate. There is no automatic retirement or rollback claim.
-Existing rows are disclosure data only, including after fresh-session recovery.
+applying the candidate. Ordinary Git fulfillment below acknowledges publication,
+not application or rollback. Existing rows remain disclosure data only.
 
 ## Pending disclosure storage
 
@@ -291,8 +291,8 @@ commit installer below records the explicit workspace-to-Git prefix separately.
 `appendPendingDisclosure(workspace, input)` writes exception **data**, not
 authorization. The prepared release owner derives the exact live held attempt,
 selected finding and actual effects before recording. It does not release if
-recording fails. The optional ordinary Git boundary below carries records without
-retiring them; automatic acknowledgment is not implemented.
+recording fails. The optional ordinary Git boundary below carries full records
+and acknowledges only verified successful, completely covered disclosures.
 
 The validated input contains:
 
@@ -355,6 +355,12 @@ are corrupt schema. Append validates that schema inside its write transaction,
 then requires one inserted row and an exact stored-record readback before the
 transaction commits. Competing supported writers serialize; readers see a
 committed snapshot. A failed append throws and does not acknowledge success.
+Acknowledgment uses the same validated immediate transaction. It compares the
+entire live record, including timestamp, with the exact published record, deletes
+only that exact row, and checks the deletion/readback before committing. A late
+new row or same-ID replacement with different full data remains pending. All
+rows and the owned schema are validated even when nothing qualifies. There is
+no CLI deletion command or caller-supplied success boolean.
 
 Initialization reserves a new path exclusively and then commits the schema.
 That entire provisioning sequence is **not atomic publication**: interruption
@@ -368,9 +374,9 @@ consistent backup facilities.
 ## Ordinary Git disclosure boundary
 
 This opt-in boundary carries real pending records into ordinary `git commit`
-messages; it does **not** retire any record. It is the bounded Git prerequisite,
-not completed Sprint 9, a PR check, or a special commit tool. Native quality
-gating and `no_rly` remain unchanged.
+messages and acknowledges only verified successful full-message publication with
+complete canonical coverage. It is not a PR check or a special commit tool.
+Native quality gating and `no_rly` remain unchanged.
 
 The installer is qualified for native **Windows Git for Windows and Bun**, with
 Windows PowerShell available. The exercised Git version is `2.44.0.windows.1`.
@@ -430,7 +436,7 @@ partial images can qualify. Any qualifying effect carries the full record.
 Hashes cannot identify which hunk of a later image came from an attempted
 exception: same-file unrelated hunks may conservatively disclose the intent.
 Untouched files, empty/unrelated commits, and complete return to a recorded
-preimage do not automatically acquire disclosures. Nothing is retired.
+preimage do not automatically acquire disclosures.
 Case-disagreeing effect/index spellings are refused as ambiguous, including on
 case-sensitive directories; paths are never silently equated by case-folding.
 
@@ -452,9 +458,9 @@ fail visibly before the ref update. A record arriving after injection is
 therefore rechecked; after the final read, later records remain pending.
 There is no cross-Git/SQLite atomicity claim.
 
-An amendment must retain relevant disclosures from the replaced commit, even
-when those records eventually cease to be pending. Git does not identify
-`--amend -m/-F` as amend in prepare-hook arguments. If a replacement message would
+An ordinary amendment must retain **every** full disclosure from the replaced
+commit, even if its row has retired or its resulting tree equals its parent.
+Git does not identify `--amend -m/-F` as amend in prepare-hook arguments. If a replacement message would
 drop required disclosures, the final hook refuses it. Use ordinary
 `--amend -c HEAD`, `--amend --no-edit`, or explicitly retain the complete lines.
 There is no guess that pollutes unrelated commits and no post-success amend.
@@ -468,10 +474,19 @@ commit validation. Transactions with no witness or a mismatched process identity
 are **unclassified and unchecked**, never validated by the final-object gate.
 Healthy reset/fetch and rebase replay are not a new command policy.
 `AUTO_MERGE` housekeeping, including its abort callback after successful HEAD
-update, cannot clear the meaningful witness. `post-commit` removes that witness.
+update, cannot clear the meaningful witness. A validated immutable new commit OID
+is recorded only after the prepared gate passes; the matching successful HEAD
+callback records that exact OID as committed. `post-commit` requires both OIDs,
+the same process generation and current HEAD agreement before acknowledgment,
+then removes the witness. Preparation-only witnesses never establish success.
 Pre-ref failures retain all pending records; a failed editor may leave an inert
 private witness until later preparation cleans it. Post-ref errors cannot undo
-a successful Git commit and are reported without pretending records were retired.
+a successful Git commit. A known acknowledgment result stays reported as such:
+private-witness cleanup failure is a separate visible filesystem error, not a
+failed acknowledgment or a claim that deleted rows remain. A generic post-success
+error without a known storage result reports the acknowledgment outcome as
+unknown. Inspect the ordinary pending reader and retry only outstanding records;
+there is no automatic amend or fabricated rollback.
 
 Ordinary `--no-verify` does not skip prepare/ref hooks. The surviving final hook
 detects missing/replaced preparation, but deliberately disabling the final hook,
@@ -480,11 +495,60 @@ history rewriting remain operator-controlled boundaries, not a sandbox.
 An editor that only removes message disclosures is denied. An editor that
 directly deletes the valid private invocation witness and strips the message
 demonstrates an excluded operator-state bypass: the resulting unwitnessed update
-is not validated. No acknowledgment may infer success from that absence; B must
-independently require actual successful committed full-message/tree evidence.
+is not validated. Missing or mismatched witnesses visibly skip acknowledgment;
+absence never establishes successful full-message/tree evidence.
 Records cannot retroactively cancel a ref update after the final observation.
 Required external OS/process queries can fail; that is an explicit availability
 failure, not empty disclosure state.
+
+### Successful publication and pending fulfillment
+
+At `post-commit`, the owner rereads the actual immutable successful commit
+message/tree and pending store. A row qualifies only if that message contains its
+**exact complete envelope**, including the installed workspace prefix, and
+**every** affected path's committed Git image matches its current canonical
+workspace image. Moves include both paths; deletion requires absence. Partial
+paths, staged hunks or remaining affected work retain the full record visibly.
+
+Canonical means **Git's representation under the observed attributes and clean
+filters**, not identical raw checkout bytes. The owner uses Git's own
+`hash-object --path --stdin` conversion, without modifying the index, config or
+user content. Thus CRLF working files may match LF blobs, and a configured clean
+filter may intentionally map different raw bytes to the same committed image.
+The original candidate's recorded-after hashes need not match later fully
+committed repairs: rows describe authorization intent, not confirmed application.
+
+Only ordinary local files and ordinary directory ancestors with exact path
+spelling qualify. At every missing directory component, an actual filesystem
+lookup must also report absence. If lookup resolves without the exact listed
+spelling (for example a Windows trailing-dot/space or short-name alias), coverage
+is refused rather than normalized or mistaken for deletion. Symlink/directory
+effects, unreadable paths, casing ambiguity or failed Git conversion retain
+records. Two full-vector observations must
+agree on raw bytes, file/ancestor identities, canonical Git object IDs and
+observed Git configuration/attributes. A final non-converting full observation
+also checks for clean-driver side effects. Unstable filters or observed changes
+retain records rather than guessing. Git clean drivers remain trusted local
+programs; Turnstile does not sandbox them or prove their semantics.
+
+An unapplied/reverted intent can be explicitly disclosed in an ordinary commit:
+retain its complete `Turnstile-Disclosure: ...` line and use `git commit
+--allow-empty` when no code delta remains. An unrelated empty commit alone does
+not fulfill anything. The same ordinary route retries a previously successful
+commit whose acknowledgment failed: restore unavailable storage or complete the
+affected work, then carry the exact outstanding record in another ordinary
+commit. Never delete rows manually or assume Git success cleared them. Inspect
+the store or start a fresh enabled OMP session to see current pending data.
+
+Git refs/objects, filesystem observations and SQLite are **not one transaction**.
+The exact live-row comparison protects supported late writers inside SQLite;
+later rows, arbitrary OS writes after the last observation, transient
+write-and-restore, externally replaced stores/configuration and history rewriting
+remain outside a cross-resource atomicity guarantee. The success notice reports
+the count retained at the acknowledgment transaction, not a promise that no later
+record can arrive. Durability remains bounded by SQLite/OS/filesystem
+synchronization; forced termination may leave a successful disclosure pending
+for an ordinary retry. No power-loss proof or OS sandbox is claimed.
 
 ## Verification and continuation
 

@@ -1,9 +1,19 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { chmodSync, existsSync, readFileSync, readdirSync, realpathSync, unlinkSync, writeFileSync } from "node:fs";
+import {
+	chmodSync,
+	existsSync,
+	lstatSync,
+	readFileSync,
+	readdirSync,
+	realpathSync,
+	unlinkSync,
+	writeFileSync,
+} from "node:fs";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+	acknowledgePendingDisclosures,
 	disclosurePath,
 	readPendingDisclosures,
 	validatePendingDisclosure,
@@ -22,7 +32,14 @@ export type CommitDisclosure = {
 	record: PendingDisclosure;
 };
 type Commit = { tree: string; parents: string[]; message: string };
-type Witness = { pid: number; started: string; head: string | null; tree: string };
+type Witness = {
+	pid: number;
+	started: string;
+	head: string | null;
+	tree: string;
+	validated: string | null;
+	committed: string | null;
+};
 
 function hookContent(hook: (typeof hooks)[number]): string {
 	const module = fileURLToPath(import.meta.url)
@@ -89,7 +106,7 @@ export function formatCommitDisclosure(workspacePrefix: string, record: PendingD
 	);
 }
 
-function git(root: string, args: string[], input?: string): Buffer {
+function git(root: string, args: string[], input?: string | Buffer): Buffer {
 	return execFileSync("git", ["--literal-pathspecs", "-C", root, ...args], {
 		input,
 		maxBuffer: 64 * 1024 * 1024,
@@ -150,7 +167,7 @@ function treeRows(root: string, tree: string, paths: string[]): string[] {
 	return rows;
 }
 /** Reads Git blobs, not checkout bytes: partial index and clean-filter results stay Git-owned. */
-export function treeImages(root: string, tree: string, paths: string[]): Map<string, string | null> {
+function treeBlobs(root: string, tree: string, paths: string[]): Map<string, string | null> {
 	const images = new Map<string, string | null>(paths.map(path => [path, null]));
 	if (!paths.length) return images;
 	const rows = treeRows(root, tree, paths);
@@ -162,14 +179,134 @@ export function treeImages(root: string, tree: string, paths: string[]): Map<str
 		const [mode, type, blob] = row.slice(0, tab).split(" ");
 		if (type !== "blob" || (mode !== "100644" && mode !== "100755"))
 			throw new Error("disclosure effect is not an ordinary Git file");
-		images.set(
-			path,
-			createHash("sha256")
-				.update(git(root, ["cat-file", "blob", oid(blob)]))
-				.digest("hex"),
-		);
+		images.set(path, oid(blob));
 	}
 	return images;
+}
+
+export function treeImages(root: string, tree: string, paths: string[]): Map<string, string | null> {
+	return new Map(
+		[...treeBlobs(root, tree, paths)].map(([path, blob]) => [
+			path,
+			blob === null
+				? null
+				: createHash("sha256")
+						.update(git(root, ["cat-file", "blob", blob]))
+						.digest("hex"),
+		]),
+	);
+}
+
+/** A complete observation, not a filesystem lock or a proof of candidate application. */
+function canonicalImages(root: string, paths: string[], clean = true) {
+	const config = git(root, ["config", "--null", "--list", "--show-origin"]).toString("base64");
+	const attributes = git(root, ["check-attr", "-z", "--all", "--", ...paths]).toString("base64");
+	const images = paths.map(path => {
+		let location = root;
+		const identities: string[] = [];
+		const parts = path.split("/");
+		for (let i = 0; i < parts.length; i++) {
+			const parent = lstatSync(location);
+			if (!parent.isDirectory() || parent.isSymbolicLink())
+				throw new Error("affected ancestor is not an ordinary directory");
+			identities.push(`${parent.dev}:${parent.ino}`);
+			const names = readdirSync(location);
+			if (names.some(name => name !== parts[i] && name.toLowerCase() === parts[i].toLowerCase()))
+				throw new Error("canonical effect path casing is ambiguous");
+			const candidate = join(location, parts[i]);
+			if (!names.includes(parts[i])) {
+				// Bun's exact-name lookup can miss aliases accepted by ordinary Windows callers.
+				const lookup = execFileSync(
+					"powershell.exe",
+					[
+						"-NoProfile",
+						"-NonInteractive",
+						"-Command",
+						"try { [void][System.IO.File]::GetAttributes($env:TURNSTILE_PATH_LOOKUP); 'present' } catch [System.IO.FileNotFoundException] { 'absent' } catch [System.IO.DirectoryNotFoundException] { 'absent' }",
+					],
+					{
+						encoding: "utf8",
+						windowsHide: true,
+						stdio: ["ignore", "pipe", "pipe"],
+						env: { ...process.env, TURNSTILE_PATH_LOOKUP: candidate },
+					},
+				).trim();
+				if (lookup === "absent") return { path, identities, raw: null, blob: null };
+				if (lookup !== "present") throw new Error("native Windows path lookup returned no usable evidence");
+				throw new Error(
+					"canonical effect path resolves without its exact directory spelling; filesystem alias is ambiguous",
+				);
+			}
+			location = candidate;
+		}
+		const before = lstatSync(location);
+		if (!before.isFile() || before.isSymbolicLink())
+			throw new Error("affected canonical path is not an ordinary file");
+		const bytes = readFileSync(location);
+		const after = lstatSync(location);
+		const stamp = (value: typeof before) =>
+			`${value.dev}:${value.ino}:${value.size}:${value.mtimeMs}:${value.ctimeMs}:${value.mode}`;
+		if (stamp(before) !== stamp(after)) throw new Error("canonical file changed while reading");
+		identities.push(stamp(after));
+		return {
+			path,
+			identities,
+			raw: createHash("sha256").update(bytes).digest("hex"),
+			blob: clean
+				? oid(
+						git(root, ["hash-object", `--path=${path}`, "--stdin"], bytes)
+							.toString("utf8")
+							.trim(),
+					)
+				: null,
+		};
+	});
+	return { config, attributes, images };
+}
+
+function fulfill(root: string, workspace: string, workspacePrefix: string, committed: string): void {
+	const commit = readCommit(root, committed);
+	const published = parseCommitDisclosures(commit.message).filter(entry => entry.workspacePrefix === workspacePrefix);
+	const live = readPendingDisclosures(workspace);
+	const candidates = live.filter(record =>
+		published.some(entry => JSON.stringify(entry.record) === JSON.stringify(record)),
+	);
+	const paths = [
+		...new Set(
+			candidates.flatMap(record => record.attempt.files.map(file => effectPath(workspacePrefix, file.path))),
+		),
+	];
+	refusePrivatePaths(
+		treeRows(root, commit.tree, []).map(row => row.slice(row.indexOf("\t") + 1)),
+		privateArtifacts(workspacePrefix),
+	);
+	let covered: PendingDisclosure[] = [];
+	if (paths.length) {
+		const tree = treeBlobs(root, commit.tree, paths);
+		const first = canonicalImages(root, paths);
+		const second = canonicalImages(root, paths);
+		const final = canonicalImages(root, paths, false);
+		const unfiltered = { ...second, images: second.images.map(image => ({ ...image, blob: null })) };
+		if (
+			JSON.stringify(first) !== JSON.stringify(second) ||
+			JSON.stringify(unfiltered) !== JSON.stringify(final) ||
+			head(root) !== committed
+		)
+			throw new Error(
+				"canonical content, Git attributes/configuration or successful HEAD changed during acknowledgment",
+			);
+		const canonical = new Map(second.images.map(image => [image.path, image.blob]));
+		covered = candidates.filter(record =>
+			record.attempt.files.every(file => {
+				const path = effectPath(workspacePrefix, file.path);
+				return tree.get(path) === canonical.get(path);
+			}),
+		);
+	}
+	const result = acknowledgePendingDisclosures(workspace, covered);
+	console.error(
+		`Turnstile commit succeeded: acknowledged ${result.removed.length} complete disclosure(s); ${result.retained} pending record(s) retained at the storage transaction${result.retained ? " (missing exact message or complete canonical coverage, or newer records). Use an ordinary commit carrying each full disclosure; --allow-empty is available when only disclosure remains" : ""}.`,
+	);
 }
 
 /** Conservative intent relevance. Hashes cannot locate an excepted hunk in a later image. */
@@ -237,7 +374,9 @@ function witness(path: string): Witness | undefined {
 	const value = JSON.parse(readFileSync(path, "utf8"));
 	if (
 		!value ||
-		Object.keys(value).sort().join() !== "head,pid,started,tree" ||
+		!["head,pid,started,tree", "committed,head,pid,started,tree,validated"].includes(
+			Object.keys(value).sort().join(),
+		) ||
 		!Number.isSafeInteger(value.pid) ||
 		value.pid <= 1 ||
 		!/^\d{18}$/.test(value.started)
@@ -248,6 +387,9 @@ function witness(path: string): Witness | undefined {
 		started: value.started,
 		head: value.head === null ? null : oid(value.head),
 		tree: oid(value.tree),
+		// Preparation-only witnesses have no success evidence, including after an upgrade.
+		validated: value.validated === null || !("validated" in value) ? null : oid(value.validated),
+		committed: value.committed === null || !("committed" in value) ? null : oid(value.committed),
 	};
 }
 function removeWitness(path: string): void {
@@ -340,17 +482,42 @@ export async function runHook(hook: string, args: string[]): Promise<void> {
 					`${message.slice(0, position).trimEnd()}\n\n${missing.map(entry => formatCommitDisclosure(entry.workspacePrefix, entry.record)).join("\n")}\n${message.slice(position)}`,
 				);
 			}
-			writeFileSync(statePath, JSON.stringify({ ...current, head: previous, tree }), { mode: 0o600 });
+			writeFileSync(
+				statePath,
+				JSON.stringify({ ...current, head: previous, tree, validated: null, committed: null }),
+				{ mode: 0o600 },
+			);
 			return;
 		}
 		const prepared = witness(statePath);
-		if (!prepared) return;
+		if (!prepared) {
+			if (hook === "post-commit")
+				throw new Error(
+					"Git commit succeeded but acknowledgment skipped: missing invocation success evidence; retry with an ordinary commit carrying the complete disclosure (--allow-empty if needed)",
+				);
+			return;
+		}
 		if (prepared.pid !== current.pid || prepared.started !== current.started) {
 			removeWitness(statePath);
+			if (hook === "post-commit")
+				throw new Error("Git commit succeeded but acknowledgment skipped: invocation identity mismatch");
 			return;
 		}
 		if (hook === "post-commit") {
-			removeWitness(statePath);
+			try {
+				if (!prepared.committed || prepared.committed !== prepared.validated || head(root) !== prepared.committed)
+					throw new Error("missing or inconsistent successful HEAD evidence");
+				fulfill(root, workspace, workspacePrefix, prepared.committed);
+			} finally {
+				try {
+					removeWitness(statePath);
+				} catch (error) {
+					console.error(
+						`Turnstile Git commit succeeded; private witness cleanup failed: ${String(error)}. This does not change the separately reported acknowledgment outcome. Release the file lock or resolve the filesystem error; later preparation can remove the ended invocation witness.`,
+					);
+					process.exitCode = 1;
+				}
+			}
 			return;
 		}
 		if (hook !== "reference-transaction" || !transition) throw new Error("unknown commit hook");
@@ -361,7 +528,12 @@ export async function runHook(hook: string, args: string[]): Promise<void> {
 			removeWitness(statePath);
 			return;
 		}
-		if (args[0] === "committed") return; // B owns acknowledgment; no row is retired here.
+		if (args[0] === "committed") {
+			if (prepared.validated !== oid(next) || head(root) !== next)
+				throw new Error("successful HEAD callback lacks matching validated commit evidence");
+			writeFileSync(statePath, JSON.stringify({ ...prepared, committed: next }), { mode: 0o600 });
+			return;
+		}
 		const commit = readCommit(root, next),
 			previous = prepared.head ? readCommit(root, prepared.head) : undefined;
 		refusePrivatePaths(
@@ -375,14 +547,18 @@ export async function runHook(hook: string, args: string[]): Promise<void> {
 			throw new Error("effective commit index changed after message preparation; retry the ordinary commit");
 		const beforeTree = commit.parents.length ? readCommit(root, commit.parents[0]).tree : emptyTree(root);
 		const required = relevantDisclosures(root, beforeTree, commit.tree, pending(workspace, workspacePrefix));
-		if (amend)
-			required.push(
-				...relevantDisclosures(root, beforeTree, commit.tree, parseCommitDisclosures(previous!.message)),
-			);
+		if (amend) required.push(...parseCommitDisclosures(previous!.message));
 		requireEntries(commit.message, required);
+		writeFileSync(statePath, JSON.stringify({ ...prepared, validated: oid(next), committed: null }), { mode: 0o600 });
 	} catch (error) {
+		const outcome =
+			hook === "post-commit" ? "Git commit succeeded; acknowledgment outcome unknown" : "commit boundary";
+		const recovery =
+			hook === "post-commit"
+				? "Inspect pending disclosures with the ordinary reader; resolve the error and retry only outstanding full records in an ordinary commit (--allow-empty if needed)."
+				: "Pending disclosure records were not retired.";
 		console.error(
-			`Turnstile commit boundary: ${error instanceof Error ? error.message : String(error)}. Pending disclosure records were not retired.`,
+			`Turnstile ${outcome}: ${error instanceof Error ? error.message : String(error)}${error instanceof Error && error.cause ? `: ${String(error.cause)}` : ""}. ${recovery}`,
 		);
 		process.exitCode = 1;
 	}
@@ -445,7 +621,7 @@ export function installCommitHooks(workspace: string): void {
 		throw new Error("hook installation failed; exclusively created owned files were rolled back", { cause: error });
 	}
 	console.log(
-		`Turnstile ordinary Git hooks installed for workspacePrefix=${JSON.stringify(workspacePrefix)}; pending records are retained until separately verified acknowledgment is implemented.`,
+		`Turnstile ordinary Git hooks installed for workspacePrefix=${JSON.stringify(workspacePrefix)}; only verified successful full-message and complete canonical coverage acknowledges pending records.`,
 	);
 }
 
