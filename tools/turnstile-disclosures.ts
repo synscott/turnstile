@@ -87,6 +87,21 @@ function input(value: unknown): DisclosureInput {
 function id(value: DisclosureInput): string {
 	return createHash("sha256").update(JSON.stringify(value)).digest("hex");
 }
+
+/** Shared validation for stored rows and self-contained commit disclosure data. */
+export function validatePendingDisclosure(value: unknown): PendingDisclosure {
+	const raw = object(value, ["id", "kind", "recordedAt", "attempt", "finding", "reason"]);
+	const payload = input({ attempt: raw.attempt, finding: raw.finding, reason: raw.reason });
+	if (
+		raw.kind !== "no_rly" ||
+		raw.id !== id(payload) ||
+		typeof raw.recordedAt !== "string" ||
+		new Date(raw.recordedAt).toISOString() !== raw.recordedAt
+	)
+		throw new Error("invalid disclosure record");
+	return { id: raw.id as string, kind: "no_rly", recordedAt: raw.recordedAt, ...payload };
+}
+
 function records(db: Database): PendingDisclosure[] {
 	try {
 		if (
@@ -101,17 +116,9 @@ function records(db: Database): PendingDisclosure[] {
 			.query<{ id: string; record: string }, []>("SELECT id, record FROM pending ORDER BY id")
 			.all()
 			.map(row => {
-				const raw = object(JSON.parse(row.record), ["id", "kind", "recordedAt", "attempt", "finding", "reason"]);
-				const payload = input({ attempt: raw.attempt, finding: raw.finding, reason: raw.reason });
-				if (
-					raw.kind !== "no_rly" ||
-					raw.id !== row.id ||
-					raw.id !== id(payload) ||
-					typeof raw.recordedAt !== "string" ||
-					new Date(raw.recordedAt).toISOString() !== raw.recordedAt
-				)
-					throw new Error("invalid disclosure record");
-				return { id: row.id, kind: "no_rly", recordedAt: raw.recordedAt, ...payload };
+				const record = validatePendingDisclosure(JSON.parse(row.record));
+				if (record.id !== row.id) throw new Error("invalid disclosure record key");
+				return record;
 			});
 	} catch (error) {
 		if (error instanceof Error && "code" in error) throw error;

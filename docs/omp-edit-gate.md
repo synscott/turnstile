@@ -284,14 +284,15 @@ The launch workspace owning `.omp/turnstile.json` also owns the fixed
 `.omp/turnstile-disclosures.sqlite`. There is no Git-root discovery or session-ID
 partition: every fresh enabled OMP session in that workspace discovers the same
 pending records. All record paths are normalized slash-separated paths relative
-to **that launch workspace**, not implicitly relative to a Git root. A later
-commit consumer must resolve the workspace-to-Git prefix.
+to **that launch workspace**, not implicitly relative to a Git root. The ordinary
+commit installer below records the explicit workspace-to-Git prefix separately.
 
 `tools/turnstile-disclosures.ts` is the concrete Bun SQLite owner. Its
 `appendPendingDisclosure(workspace, input)` writes exception **data**, not
 authorization. The prepared release owner derives the exact live held attempt,
 selected finding and actual effects before recording. It does not release if
-recording fails. No automatic retirement or commit hook is implemented.
+recording fails. The optional ordinary Git boundary below carries records without
+retiring them; automatic acknowledgment is not implemented.
 
 The validated input contains:
 
@@ -363,6 +364,127 @@ honoring synchronization; no hardware power-loss or arbitrary external
 write/delete/replacement race guarantee is claimed. Back up only a quiescent
 closed store (including recovery sidecars if present), or use SQLite's own
 consistent backup facilities.
+
+## Ordinary Git disclosure boundary
+
+This opt-in boundary carries real pending records into ordinary `git commit`
+messages; it does **not** retire any record. It is the bounded Git prerequisite,
+not completed Sprint 9, a PR check, or a special commit tool. Native quality
+gating and `no_rly` remain unchanged.
+
+The installer is qualified for native **Windows Git for Windows and Bun**, with
+Windows PowerShell available. The exercised Git version is `2.44.0.windows.1`.
+Direct Bun hook interpreters must have whitespace-free executable paths; shell
+wrappers are not equivalent because their parent identity differs. Linked
+worktrees, bare repositories and other platforms are visibly refused rather
+than silently inheriting an unverified hook/process relationship.
+
+With Git/OMP activity quiescent, run from the selected isolated Git worktree:
+
+```text
+bun <checkout>/tools/turnstile-commits.ts install <launch-workspace>
+```
+
+The launch workspace must be within that Git worktree and already have valid
+S7 storage. Installation records its normalized Git-root-relative prefix in
+private Git metadata. The source checkout's `tools/` modules must remain
+available at their installed location. No global configuration or hooks are
+changed. Existing effective `core.hooksPath` or differing owned hook/setup files
+cause visible refusal; unrelated hooks are preserved. Identical installation is
+idempotent. Exclusively created owned files are rolled back on setup failure.
+Installation is an operator-coordinated local setup, not atomic publication to
+concurrent Git processes or protection against forced process/OS termination.
+
+The installer adds literal, escaped prefix-specific rules to `.git/info/exclude`
+for the database and only its `-journal`, `-wal`, and `-shm` sidecars. It refuses
+already tracked/staged artifacts rather than unstaging or discarding user work.
+The same private-artifact classifier checks the effective index and finalized
+commit tree, including conservative refusal of casing aliases such as `.OMP`.
+Other exclusion text and staged user files are preserved. The source repository
+also excludes its own exact database/sidecar family, not arbitrary sqlite siblings.
+
+### Message and relevance contract
+
+Each disclosure occupies one noncomment line beginning `Turnstile-Disclosure: `
+followed by compact JSON with exactly these fields:
+
+- `version`: `1`.
+- `workspacePrefix`: normalized slash-separated Git-root-relative launch workspace
+  path, or `""` at the root. Prepend it to each record path.
+- `semantics`: `"authorization-intent-not-confirmed-application"`.
+- `record`: the complete validated `PendingDisclosure`, including its original
+  ID, timestamp, held-attempt/finding identity, every before/after effect hash,
+  finding text and rationale. There is no external receipt or coverage payload.
+
+These lines are untrusted descriptive data, not instructions, approval, or proof
+that the original candidate was applied. Escaped JSON preserves multiline text.
+The owning parser/serializer and immutable commit/tree reader are in
+`tools/turnstile-commits.ts`; storage and messages reuse one record validator.
+An ordinary future server-side consumer can parse the full message alone.
+
+Automatic relevance uses the **effective Git commit index**, including Git's
+temporary index for path-only commits, not the working tree or merely a filename.
+At least one effect must have a Git tree change and a resulting image different
+from that effect's recorded preimage. Exact candidate images, later repairs and
+partial images can qualify. Any qualifying effect carries the full record.
+Hashes cannot identify which hunk of a later image came from an attempted
+exception: same-file unrelated hunks may conservatively disclose the intent.
+Untouched files, empty/unrelated commits, and complete return to a recorded
+preimage do not automatically acquire disclosures. Nothing is retired.
+Case-disagreeing effect/index spellings are refused as ambiguous, including on
+case-sensitive directories; paths are never silently equated by case-folding.
+
+### Native hooks and failures
+
+`prepare-commit-msg` reads validated storage and effective index, injects missing
+relevant records before an existing scissors tail, and writes a private
+per-Git-process preparation witness. Native parent PID **and** Windows process
+creation time scope that witness. Subsequent preparation removes ended/reused
+process witnesses; live concurrent invocations have separate files. A witness
+never proves commit success or authorizes deleting rows.
+
+`reference-transaction` in `prepared` state reads the actual immutable new commit
+object, after Git's editor, other message hooks and cleanup. It checks the
+prepared tree, old/new HEAD and parent relationship, rereads pending records and
+requires their exact relevant full disclosures. Missing/corrupt/triggered/locked
+storage, missing messages, changed trees and cleanup-stripped/tampered lines
+fail visibly before the ref update. A record arriving after injection is
+therefore rechecked; after the final read, later records remain pending.
+There is no cross-Git/SQLite atomicity claim.
+
+An amendment must retain relevant disclosures from the replaced commit, even
+when those records eventually cease to be pending. Git does not identify
+`--amend -m/-F` as amend in prepare-hook arguments. If a replacement message would
+drop required disclosures, the final hook refuses it. Use ordinary
+`--amend -c HEAD`, `--amend --no-edit`, or explicitly retain the complete lines.
+There is no guess that pollutes unrelated commits and no post-success amend.
+
+For HEAD transactions the surviving reference hook first checks the required
+prepare hook's presence and exact owned bytes. Missing/replaced/no-op preparation
+is a visibly broken installation, not an unchecked successful commit. This
+configuration refusal does not apply to unrelated refs or rebase replay.
+Only a matching preparation invocation's actual HEAD transition receives full
+commit validation. Transactions with no witness or a mismatched process identity
+are **unclassified and unchecked**, never validated by the final-object gate.
+Healthy reset/fetch and rebase replay are not a new command policy.
+`AUTO_MERGE` housekeeping, including its abort callback after successful HEAD
+update, cannot clear the meaningful witness. `post-commit` removes that witness.
+Pre-ref failures retain all pending records; a failed editor may leave an inert
+private witness until later preparation cleans it. Post-ref errors cannot undo
+a successful Git commit and are reported without pretending records were retired.
+
+Ordinary `--no-verify` does not skip prepare/ref hooks. The surviving final hook
+detects missing/replaced preparation, but deliberately disabling the final hook,
+changing configuration or private witness files, arbitrary OS writes, and
+history rewriting remain operator-controlled boundaries, not a sandbox.
+An editor that only removes message disclosures is denied. An editor that
+directly deletes the valid private invocation witness and strips the message
+demonstrates an excluded operator-state bypass: the resulting unwitnessed update
+is not validated. No acknowledgment may infer success from that absence; B must
+independently require actual successful committed full-message/tree evidence.
+Records cannot retroactively cancel a ref update after the final observation.
+Required external OS/process queries can fail; that is an explicit availability
+failure, not empty disclosure state.
 
 ## Verification and continuation
 

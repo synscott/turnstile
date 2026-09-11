@@ -1,4 +1,24 @@
 {
+  "git-disclosure-boundary": {
+    "status": "ACCEPTED",
+    "handoff": ".omp/handoffs/git-disclosure-boundary.md",
+    "acceptance_owner": "Main",
+    "snapshot_id": "5d14033824233ffa9d8db954b0878bef3b69fb8d07f126ec494d647fa82ff5b7",
+    "reviewer": "git-disclosure-boundary-review",
+    "review_receipt": ".loopx/s9-boundary-review/review-5d140338.json",
+    "review_receipt_sha256": "ca8e49ab2bcfb5c3bc0c586933159a4a0b6156a624bfcfaf8530873b4234bd08",
+    "acceptance_receipt": ".loopx/materials/git-disclosure-boundary-acceptance.json",
+    "commit_receipt": ".loopx/materials/git-disclosure-boundary-commit.json",
+    "immutable_review": ".loopx/sprint09-boundary/materials/review.json",
+    "author_verification": ".loopx/sprint09-boundary/verification.json",
+    "rejected_snapshot": "2106e25afaaa0267eabd47462ef031f8a19424c94991ab150ad72127399959df",
+    "rejected_review": ".loopx/s9-boundary-review/review-2106e25a.json",
+    "scope_adjudication": ".loopx/s9-boundary-review/adjudication-2106e25a.json",
+    "verification": "53 independently authored outcome groups/613 real commands; R1a/R2/R3 resolved; exact immutable messages/trees, SQLite, complete private artifact family, process generations, partial commits and rollback.",
+    "qualification": "Prerequisite A only. Synthetic S7 records; no retirement or real S8/fresh OMP integration. Direct private-witness deletion remains demonstrated unclassified/unchecked operator-state bypass, not fixed or validated.",
+    "acceptance": "Main read the full exact successor review and accepted only5d140338 under the explicitly adjudicated operator-state boundary; authorized exclusive bookkeeping and public-only commit. Rejected2106 and dissent preserved.",
+    "next_action": "Main starts a fresh B worker for complete canonical-coverage acknowledgment and real S8/fresh OMP end-to-end proof. Full Sprint9 remains unfinished; no Sprint10."
+  },
   "sprint-01": {
     "handoff": ".omp/handoffs/sprint-01.md",
     "evidence": "docs/sprint-01-results.json",

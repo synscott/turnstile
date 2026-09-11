@@ -4,3 +4,7 @@
 /target/
 /node_modules/
 /tools/__pycache__/
+/.omp/turnstile-disclosures.sqlite
+/.omp/turnstile-disclosures.sqlite-journal
+/.omp/turnstile-disclosures.sqlite-wal
+/.omp/turnstile-disclosures.sqlite-shm
