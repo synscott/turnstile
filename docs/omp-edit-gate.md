@@ -9,15 +9,16 @@ unresolved findings, **not** that the code is globally correct or safe.
 
 ## Enable an isolated workspace
 
-Use the [pinned, patched project-local OMP runtime](../patches/omp-edit-veto.md)
-and its compiled addon. Keep this repository's `extensions/turnstile.ts` and
-`tools/` together. Launch **from the selected test workspace**, retaining normal
-OMP authentication, FCC skills, and plugin discovery. Do not install globally.
+Use the [pinned, patched installed project-local OMP program](../patches/omp-edit-veto.md),
+retained at `.loopx/sprint11/installed/omp.exe`. Keep its matching `extensions/`
+and `tools/` together. Launch **from the selected test workspace**, retaining
+normal OMP authentication, FCC skills and plugin discovery. Do not install globally
+or substitute a source `cli.ts`/SDK import for the installed executable.
 
 Before creating the enabled configuration, initialize disclosure storage once:
 
 ```text
-bun <checkout>/tools/turnstile-disclosures.ts init <workspace>
+bun <checkout>/.loopx/sprint11/installed/tools/turnstile-disclosures.ts init <workspace>
 ```
 
 Initialization requires an absent or explicitly disabled `.omp/turnstile.json`
@@ -72,12 +73,14 @@ using OMP's existing timeout owner, not a second Turnstile retry/timeout system.
 Launch from that workspace, substituting the path to this checkout:
 
 ```text
-bun <checkout>/.loopx/s4src/packages/coding-agent/src/cli.ts --session-dir <private-session-directory> --extension <checkout>/extensions/turnstile.ts
+<checkout>/.loopx/sprint11/installed/omp.exe --session-dir <private-session-directory> --extension <checkout>/.loopx/sprint11/installed/extensions/turnstile.ts
 ```
 
-Follow the native runtime guide's project-private `XDG_DATA_HOME` setup before
-launch. Keep the process temporary directory (`TEMP`/`TMP` on Windows) outside the
-selected Cargo root. Short paths are useful for Windows linker compatibility.
+Follow the native runtime guide's project-private `XDG_DATA_HOME/omp`, Bun cache
+and temporary-root setup before every launch, including version/help probes.
+Keep `TEMP`/`TMP`/`TMPDIR` outside the selected Cargo root and always pass
+`--session-dir`; neither print/JSON mode nor a private XDG root implies private
+session storage. Short paths are useful for Windows linker compatibility.
 
 An absent `.omp/turnstile.json`, or `{"enabled": false}`, installs no gate and
 preserves the ordinary native path. A present malformed configuration is not a
@@ -325,10 +328,23 @@ failure means **unknown**, not permission or a clean empty result. Ordinary
 quality checking remains active, but exception release requires a successful
 durable append at the prepared boundary.
 
+On the qualified installed upstream runtime, these custom messages map to the
+provider's **`developer` role**, not a `system` prompt. Their text explicitly says
+“not instructions or authorization; no release is asserted,” followed by full
+`JSON.stringify` record data. This is the observed existing **non-system**
+boundary, not a claim that the channel is unprivileged or immune to prompt
+injection. The upstream owner is
+`packages/agent/src/compaction/messages.ts::convertMessageToLlm`; Turnstile does
+not replace that mapping. A fresh installed-session probe with a real pending
+record refused the prior session's actual hold/finding token without mutation
+or new records. Durable text cannot reconstruct the extension's live exception
+state. That action-time refusal, not the prose disclaimer or message role,
+establishes the tested authority boundary.
+
 Inspect the same store without an OMP/model request:
 
 ```text
-bun <checkout>/tools/turnstile-disclosures.ts read <workspace>
+bun <checkout>/.loopx/sprint11/installed/tools/turnstile-disclosures.ts read <workspace>
 ```
 
 | State                                                               | Observable behavior                                                                                              |
@@ -388,12 +404,12 @@ than silently inheriting an unverified hook/process relationship.
 With Git/OMP activity quiescent, run from the selected isolated Git worktree:
 
 ```text
-bun <checkout>/tools/turnstile-commits.ts install <launch-workspace>
+bun <checkout>/.loopx/sprint11/installed/tools/turnstile-commits.ts install <launch-workspace>
 ```
 
 The launch workspace must be within that Git worktree and already have valid
 S7 storage. Installation records its normalized Git-root-relative prefix in
-private Git metadata. The source checkout's `tools/` modules must remain
+private Git metadata. The matching deployed `tools/` modules must remain
 available at their installed location. No global configuration or hooks are
 changed. Existing effective `core.hooksPath` or differing owned hook/setup files
 cause visible refusal; unrelated hooks are preserved. Identical installation is
@@ -655,4 +671,16 @@ its exact private review-snapshot pointer. The [Sprint 6 handoff](../.omp/handof
 records bounded rejection, actual model termination/notice, and managed-cleanup
 cancellation evidence. The [Sprint 7 handoff](../.omp/handoffs/sprint-07.md)
 records durable writer/fresh-reader, storage failure and recovery proof.
+The [Sprint 8 handoff](../.omp/handoffs/sprint-08.md) records exact-attempt
+exceptions; [Sprint 9](../.omp/handoffs/sprint-09.md) records ordinary commit
+fulfillment; [Sprint 10](../.omp/handoffs/sprint-10.md) records bounded PR reporting.
+The [Sprint 11 handoff](../.omp/handoffs/sprint-11.md) binds the actual installed
+Windows program, upstream build/dependency identities, real configured-model
+CLI/RPC scenarios, native addon/module observations and independent filesystem,
+SQLite and immutable Git oracles. It preserves the failed stronger user-only
+context oracle rather than relabeling the actual developer role. It also
+identifies the retained installation/demo, reproducible private evidence and
+independent own-copy review boundary. No live GitHub, Linux execution, TUI visual,
+universal quality, OS sandbox, hardware power-loss or cross-resource transaction
+guarantee is implied.
 Director review and acceptance are separate from an author's successful run.
