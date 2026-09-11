@@ -503,7 +503,7 @@ index 578a001..9c6fc00 100644
  	}
  }
  
-diff --git a/b/crates/pi-edit/tests/guard.rs b/crates/pi-edit/tests/guard.rs
+diff --git a/crates/pi-edit/tests/guard.rs b/crates/pi-edit/tests/guard.rs
 new file mode 100644
 index 0000000..9fa9d34
 --- /dev/null
@@ -873,14 +873,15 @@ index b3cf639..b00d54e 100644
  				return None;
  			}
 diff --git a/docs/extensions.md b/docs/extensions.md
-index 057cb67..ca290de 100644
+index 057cb67..3c6c4c2 100644
 --- a/docs/extensions.md
 +++ b/docs/extensions.md
-@@ -305,12 +305,96 @@ Cancelable pre-events:
+@@ -305,12 +305,132 @@ Cancelable pre-events:
  ### Tool lifecycle
  
  - `tool_call` (pre-exec, may block, or revise the tool's execution `input`; for model-issued calls it fires at arg-prep time in the agent loop, so a revision is revalidated and seen by concurrency scheduling, execution events, the persisted assistant message, and the approval gate alike)
 +- `edit_prepared` (optional deny-only check of a complete native edit, at execute time after final arguments and scheduling)
++- `write_prepared` (optional deny-only check of native WriteTool final local-file bytes after content cleaning)
  - `tool_result` (post-exec, may patch content/details/isError)
  - `tool_execution_start` / `tool_execution_update` / `tool_execution_end` (observability)
  - `tool_approval_requested` / `tool_approval_resolved` (observability; emitted by `wrapper.ts` only when a tool requires approval and an approval handler is registered)
@@ -970,17 +971,52 @@ index 057cb67..ca290de 100644
 +permission can leave earlier files applied. It covers the native edit tool, including
 +same-tool delegation, not arbitrary extension writes or other tools.
 +
++### Native write veto (`write_prepared`)
++
++Check `api.supportsWritePrepared?.() === true` before registering a required write
++guard. If missing/false, install a `tool_call` blocker for `write`; stock SDKs may
++silently accept unknown events. The capability belongs to the SDK WriteTool,
++not the compiled edit addon.
++
++The immutable event is `{ type, toolCallId, input, operations }`. `input` is the
++final effective execute input. `operations` contains one `create` or `update`
++with the same seven keys described above: exact UTF-8 preimage (or null), and
++complete final `after` content following the WriteTool's native display-prefix
++cleaning. That cleaning is permitted native semantics; later ACP/formatter
++transformations are not. BOM and line endings are retained. Invalid UTF-8
++preimages and unpaired UTF-16 surrogates hold rather than silently changing bytes.
++
++The same deny-only emitter and managed `ctx.exec` contract apply to both prepared
++events, including timeout, abort, shutdown, concurrent isolation and late launch
++rejection. Guarded WriteTool completion awaits its runner even on cancellation,
++including inside same-tool `ctx.invokeTool` delegation.
++
++A listener opts the session into the direct local-file boundary. Before permission
++there is no mkdir, file write, snapshot update or chmod. Arguments, resolved target,
++preimage and file/ancestor identities (including missing components) are reobserved
++before release. Formatting-enabled writers, relevant ACP routes and older pending
++formatting batches are refused. Earlier permitted batch diagnostics still drain
++without formatting if the final write is held.
++
++Remote/internal handler writes, archive members, database rows, conflict splicing
++and `xd://` device dispatch are refused before dispatch when a listener is present:
++they do not supply a supported complete local-file candidate. `local://` paths
++resolved to ordinary local files use the local boundary. An analyzer must enforce
++its own context scope/freshness. No listeners preserves all ordinary write routes.
++These observations are not a filesystem transaction or an arbitrary-extension
++sandbox; trusted fallback writers retain their native byte-preservation contract.
++
  ### Reliability/runtime signals
  
  - `auto_compaction_start` / `auto_compaction_end`
-@@ -382,8 +466,9 @@ It runs the **native** built-in of the same name as your tool (delegation is sam
+@@ -382,8 +502,9 @@ It runs the **native** built-in of the same name as your tool (delegation is sam
  cannot reach an arbitrary target or escalate past the approval already granted for this call) and
  returns its result, including the native tool's own side effects and internal bookkeeping. It is
  present only when a native built-in of that name exists — `ctx.invokeTool` is `undefined` for a
 -net-new tool that shadows no built-in. The native call is not re-gated, since it is the same tool you
 -are already approved as, and delegation depth is guarded against accidental self-recursion.
 +net-new tool that shadows no built-in. Approval is not re-requested, since it is the same
-+tool already approved for this call; native `edit_prepared` listeners still run.
++tool already approved for this call; native `edit_prepared` / `write_prepared` listeners still run.
 +Delegation depth is guarded against accidental self-recursion.
  
  Template:
@@ -1297,7 +1333,7 @@ index d429a85..a138031 100644
 +	}
  }
 diff --git a/packages/coding-agent/src/extensibility/extensions/loader.ts b/packages/coding-agent/src/extensibility/extensions/loader.ts
-index a94f67e..3b934bd 100644
+index a94f67e..91b452c 100644
 --- a/packages/coding-agent/src/extensibility/extensions/loader.ts
 +++ b/packages/coding-agent/src/extensibility/extensions/loader.ts
 @@ -16,6 +16,7 @@ import type {
@@ -1308,7 +1344,7 @@ index a94f67e..3b934bd 100644
  import { isBuiltinComposerStyle, type KeyId } from "@oh-my-pi/pi-tui";
  import { hasFsCode, isEacces, isEnoent, logger } from "@oh-my-pi/pi-utils";
  import { type ExtensionModule, extensionModuleCapability } from "../../capability/extension-module";
-@@ -171,6 +172,10 @@ class ConcreteExtensionAPI implements ExtensionAPI, IExtensionRuntime {
+@@ -171,6 +172,14 @@ class ConcreteExtensionAPI implements ExtensionAPI, IExtensionRuntime {
  		public readonly events: EventBus,
  	) {}
  
@@ -1316,11 +1352,15 @@ index a94f67e..3b934bd 100644
 +		return EditSession.supportsPreparedGuard?.() === true;
 +	}
 +
++	supportsWritePrepared(): boolean {
++		return true;
++	}
++
  	on<F extends HandlerFn>(event: string, handler: F): void {
  		const list = this.extension.handlers.get(event) ?? [];
  		list.push(handler);
 diff --git a/packages/coding-agent/src/extensibility/extensions/runner.ts b/packages/coding-agent/src/extensibility/extensions/runner.ts
-index e2bbea8..4ab9092 100644
+index e2bbea8..eb1f0bc 100644
 --- a/packages/coding-agent/src/extensibility/extensions/runner.ts
 +++ b/packages/coding-agent/src/extensibility/extensions/runner.ts
 @@ -14,6 +14,7 @@ import type { KeyId } from "@oh-my-pi/pi-tui";
@@ -1331,16 +1371,17 @@ index e2bbea8..4ab9092 100644
  import type { LocalProtocolOptions } from "../../internal-urls/local-protocol";
  import type { MemoryRuntimeContext } from "../../memory-backend";
  import { type Theme, theme } from "../../modes/theme/theme";
-@@ -35,6 +36,8 @@ import type {
+@@ -35,6 +36,9 @@ import type {
  	ContextEvent,
  	ContextEventResult,
  	ContextUsage,
 +	EditPreparedEvent,
 +	EditPreparedEventResult,
++	WritePreparedEvent,
  	Extension,
  	ExtensionActions,
  	ExtensionCommandContext,
-@@ -217,6 +220,7 @@ function createHandlerContext(
+@@ -217,6 +221,7 @@ function createHandlerContext(
  	ctx: ExtensionContext,
  	handlerSignal: AbortSignal,
  	timeoutBudget?: HandlerTimeoutBudget,
@@ -1348,7 +1389,7 @@ index e2bbea8..4ab9092 100644
  ): ExtensionContext {
  	const scoped: ExtensionContext = Object.create(ctx);
  	Object.defineProperty(scoped, "ui", {
-@@ -224,6 +228,7 @@ function createHandlerContext(
+@@ -224,6 +229,7 @@ function createHandlerContext(
  		enumerable: true,
  		configurable: true,
  	});
@@ -1356,7 +1397,7 @@ index e2bbea8..4ab9092 100644
  	return scoped;
  }
  
-@@ -395,6 +400,7 @@ export async function emitSessionShutdownEvent(extensionRunner: ExtensionRunner
+@@ -395,6 +401,7 @@ export async function emitSessionShutdownEvent(extensionRunner: ExtensionRunner
  	} finally {
  		extensionRunner.disposeFileFallbacks();
  		extensionRunner.clearManagedTimers();
@@ -1364,7 +1405,7 @@ index e2bbea8..4ab9092 100644
  	}
  }
  
-@@ -458,6 +464,8 @@ export class ExtensionRunner {
+@@ -458,6 +465,8 @@ export class ExtensionRunner {
  	#toolRegistrationScope = new AsyncLocalStorage<ToolRegistrationScope>();
  	#toolRegistrationBarrier: Promise<void> | undefined;
  	#initialized = false;
@@ -1373,7 +1414,7 @@ index e2bbea8..4ab9092 100644
  	/**
  	 * Buffer for `credential_disabled` events received via {@link emitCredentialDisabled}
  	 * before {@link initialize} has run. Drained through {@link emit} once initialize sets
-@@ -1234,6 +1242,14 @@ export class ExtensionRunner {
+@@ -1234,6 +1243,14 @@ export class ExtensionRunner {
  		for (const dispose of this.#fileFallbackDisposers.splice(0)) dispose();
  	}
  
@@ -1388,12 +1429,12 @@ index e2bbea8..4ab9092 100644
  	createCommandContext(): ExtensionCommandContext {
  		return {
  			...this.createContext(),
-@@ -1279,20 +1295,33 @@ export class ExtensionRunner {
+@@ -1279,20 +1296,33 @@ export class ExtensionRunner {
  		const signals = [outerSignal, sessionStopSignal].filter((s): s is AbortSignal => s !== undefined);
  		const signal = signals.length === 0 ? undefined : signals.length === 1 ? signals[0] : AbortSignal.any(signals);
  		if (signal?.aborted) return undefined;
-+		if (event.type === "edit_prepared" && this.#managedExecClosed) {
-+			return onFailure?.("error", "managed edit checking is shut down");
++		if ((event.type === "edit_prepared" || event.type === "write_prepared") && this.#managedExecClosed) {
++			return onFailure?.("error", "managed prepared checking is shut down");
 +		}
  		const registrationScope: ToolRegistrationScope = { pending: new Set(), closed: false };
  		let handlerResult: R | typeof EXTENSION_HANDLER_TIMEOUT | typeof EXTENSION_HANDLER_ABORTED | undefined;
@@ -1404,7 +1445,7 @@ index e2bbea8..4ab9092 100644
  				raceHandlerWithTimeout(
  					async (handlerSignal, budget) => {
  						registrationScope.signal = handlerSignal;
-+						if (event.type === "edit_prepared") {
++						if (event.type === "edit_prepared" || event.type === "write_prepared") {
 +							execScope = new ManagedExecScope(handlerSignal, ctx.cwd);
 +							this.#managedExecScopes.add(execScope);
 +						}
@@ -1423,7 +1464,7 @@ index e2bbea8..4ab9092 100644
  								),
  							);
  						} catch (error) {
-@@ -1315,6 +1344,13 @@ export class ExtensionRunner {
+@@ -1315,6 +1345,13 @@ export class ExtensionRunner {
  			handlerFailure = { error };
  		} finally {
  			registrationScope.closed = true;
@@ -1437,15 +1478,30 @@ index e2bbea8..4ab9092 100644
  		}
  		if (handlerResult === EXTENSION_HANDLER_ABORTED) return undefined;
  		if (handlerResult === EXTENSION_HANDLER_TIMEOUT) {
-@@ -1510,6 +1546,54 @@ export class ExtensionRunner {
+@@ -1510,6 +1547,69 @@ export class ExtensionRunner {
  		return result;
  	}
  
-+	/** Deny-only native edit boundary; every handler sees the same immutable preparation. */
++	/** Deny-only boundaries share immutable delivery and the managed handler lifetime. */
 +	async emitEditPrepared(
 +		event: EditPreparedEvent,
 +		signal?: AbortSignal,
 +	): Promise<EditPreparedEventResult | undefined> {
++		return this.#emitPrepared(event, signal);
++	}
++
++	async emitWritePrepared(
++		event: WritePreparedEvent,
++		signal?: AbortSignal,
++	): Promise<EditPreparedEventResult | undefined> {
++		return this.#emitPrepared(event, signal);
++	}
++
++	async #emitPrepared(
++		event: EditPreparedEvent | WritePreparedEvent,
++		signal?: AbortSignal,
++	): Promise<EditPreparedEventResult | undefined> {
++		const label = event.type === "edit_prepared" ? "Edit" : "Write";
 +		const freeze = (value: unknown): void => {
 +			if (value === null || typeof value !== "object" || Object.isFrozen(value)) return;
 +			for (const child of Object.values(value)) freeze(child);
@@ -1457,17 +1513,17 @@ index e2bbea8..4ab9092 100644
 +			this.settings?.get("extensionHandlers.toolCallTimeoutMs") ?? extensionHandlerTimeoutMs,
 +		);
 +		for (const ext of this.extensions) {
-+			for (const handler of ext.handlers.get("edit_prepared") ?? []) {
-+				const result = await this.#runHandlerWithTimeout<EditPreparedEvent, unknown>(
++			for (const handler of ext.handlers.get(event.type) ?? []) {
++				const result = await this.#runHandlerWithTimeout<EditPreparedEvent | WritePreparedEvent, unknown>(
 +					handler,
 +					event,
 +					ctx,
 +					ext,
 +					timeoutMs,
-+					(kind, message) => ({ block: true, reason: `Edit held: extension ${ext.path} ${kind}: ${message}` }),
++					(kind, message) => ({ block: true, reason: `${label} held: extension ${ext.path} ${kind}: ${message}` }),
 +					signal,
 +				);
-+				if (signal?.aborted) return { block: true, reason: "Edit held: checking was cancelled" };
++				if (signal?.aborted) return { block: true, reason: `${label} held: checking was cancelled` };
 +				if (result === undefined) continue;
 +				if (
 +					typeof result !== "object" ||
@@ -1475,7 +1531,7 @@ index e2bbea8..4ab9092 100644
 +					("block" in result && typeof result.block !== "boolean") ||
 +					("reason" in result && result.reason !== undefined && typeof result.reason !== "string")
 +				) {
-+					return { block: true, reason: `Edit held: invalid guard result from ${ext.path}` };
++					return { block: true, reason: `${label} held: invalid guard result from ${ext.path}` };
 +				}
 +				if ("block" in result && result.block) {
 +					return {
@@ -1485,7 +1541,7 @@ index e2bbea8..4ab9092 100644
 +				}
 +			}
 +		}
-+		if (signal?.aborted) return { block: true, reason: "Edit held: checking was cancelled" };
++		if (signal?.aborted) return { block: true, reason: `${label} held: checking was cancelled` };
 +		return undefined;
 +	}
 +
@@ -1493,7 +1549,7 @@ index e2bbea8..4ab9092 100644
  		return this.emitUserEvent<UserBashEventResult>(event, "user_bash");
  	}
 diff --git a/packages/coding-agent/src/extensibility/extensions/types.ts b/packages/coding-agent/src/extensibility/extensions/types.ts
-index a4f7e75..0556b52 100644
+index a4f7e75..6f59f0e 100644
 --- a/packages/coding-agent/src/extensibility/extensions/types.ts
 +++ b/packages/coding-agent/src/extensibility/extensions/types.ts
 @@ -20,6 +20,7 @@ import type {
@@ -1509,15 +1565,15 @@ index a4f7e75..0556b52 100644
  	/** Current working directory */
  	cwd: string;
 +	/**
-+	 * Present only for edit_prepared handlers. Commands inherit this handler's
++	 * Present only for edit_prepared and write_prepared handlers. Commands inherit this handler's
 +	 * timeout/abort and are drained, including isolated temporary roots, before
-+	 * native edit completion. A closed scope rejects late launches.
++	 * native tool completion. A closed scope rejects late launches.
 +	 */
 +	exec?: (command: string, args: string[], options?: ExecOptions) => Promise<ExecResult>;
  	/** Session manager (read-only) */
  	sessionManager: ReadonlySessionManager;
  	/** Model registry for API key resolution */
-@@ -1028,6 +1035,20 @@ export interface CustomToolResultEvent extends ToolResultEventBase {
+@@ -1028,6 +1035,28 @@ export interface CustomToolResultEvent extends ToolResultEventBase {
  	details: unknown;
  }
  
@@ -1530,6 +1586,14 @@ index a4f7e75..0556b52 100644
 +	readonly operations: readonly Readonly<EditPreparedOperation>[];
 +}
 +
++/** Final local write bytes after native content cleaning, before any mutation. */
++export interface WritePreparedEvent {
++	readonly type: "write_prepared";
++	readonly toolCallId: string;
++	readonly input: Readonly<Record<string, unknown>>;
++	readonly operations: readonly Readonly<EditPreparedOperation>[];
++}
++
 +export interface EditPreparedEventResult {
 +	block?: boolean;
 +	reason?: string;
@@ -1538,29 +1602,46 @@ index a4f7e75..0556b52 100644
  /** Fired after a tool executes. Can modify result. */
  export type ToolResultEvent =
  	| BashToolResultEvent
-@@ -1106,6 +1127,7 @@ export type ExtensionEvent =
+@@ -1106,6 +1135,8 @@ export type ExtensionEvent =
  	| UserPythonEvent
  	| InputEvent
  	| ToolCallEvent
 +	| EditPreparedEvent
++	| WritePreparedEvent
  	| ToolResultEvent
  	| ToolApprovalRequestedEvent
  	| ToolApprovalResolvedEvent;
-@@ -1294,6 +1316,9 @@ export interface ExtensionAPI {
+@@ -1294,6 +1325,12 @@ export interface ExtensionAPI {
  	on(event: "tool_approval_requested", handler: ExtensionHandler<ToolApprovalRequestedEvent>): void;
  	on(event: "tool_approval_resolved", handler: ExtensionHandler<ToolApprovalResolvedEvent>): void;
  	on(event: "tool_call", handler: ExtensionHandler<ToolCallEvent, ToolCallEventResult>): void;
 +	on(event: "edit_prepared", handler: ExtensionHandler<EditPreparedEvent, EditPreparedEventResult>): void;
 +	/** True only when this SDK and the loaded native addon implement `edit_prepared`. */
 +	supportsEditPrepared(): boolean;
++	on(event: "write_prepared", handler: ExtensionHandler<WritePreparedEvent, EditPreparedEventResult>): void;
++	/** True only when this SDK guards the native WriteTool's final local bytes. */
++	supportsWritePrepared(): boolean;
  	on(event: "tool_result", handler: ExtensionHandler<ToolResultEvent, ToolResultEventResult>): void;
  	on(event: "user_bash", handler: ExtensionHandler<UserBashEvent, UserBashEventResult>): void;
  	on(event: "user_python", handler: ExtensionHandler<UserPythonEvent, UserPythonEventResult>): void;
 diff --git a/packages/coding-agent/src/lsp/writethrough.ts b/packages/coding-agent/src/lsp/writethrough.ts
-index eebdfe0..b324e48 100644
+index eebdfe0..3a248d4 100644
 --- a/packages/coding-agent/src/lsp/writethrough.ts
 +++ b/packages/coding-agent/src/lsp/writethrough.ts
-@@ -124,12 +124,15 @@ export async function flushLspWritethroughBatch(
+@@ -104,6 +104,12 @@ interface LspWritethroughBatchState {
+ 
+ const writethroughBatches = new Map<string, LspWritethroughBatchState>();
+ 
++/** A guarded direct writer cannot release bytes into an older transforming batch. */
++export function hasPendingLspFormatting(): boolean {
++	for (const state of writethroughBatches.values()) if (state.options.enableFormat) return true;
++	return false;
++}
++
+ function getOrCreateWritethroughBatch(id: string, options: ResolvedWritethroughOptions): LspWritethroughBatchState {
+ 	const existing = writethroughBatches.get(id);
+ 	if (existing) {
+@@ -124,12 +130,15 @@ export async function flushLspWritethroughBatch(
  	id: string,
  	cwd: string,
  	signal?: AbortSignal,
@@ -1577,10 +1658,10 @@ index eebdfe0..b324e48 100644
  		.diagnostics;
  }
 diff --git a/packages/coding-agent/src/sdk.ts b/packages/coding-agent/src/sdk.ts
-index 4353d35..d33e86d 100644
+index 4353d35..1d60d23 100644
 --- a/packages/coding-agent/src/sdk.ts
 +++ b/packages/coding-agent/src/sdk.ts
-@@ -2810,6 +2810,10 @@ async function createAgentSessionScoped(options: CreateAgentSessionOptions): Pro
+@@ -2810,6 +2810,14 @@ async function createAgentSessionScoped(options: CreateAgentSessionOptions): Pro
  			localProtocolOptions,
  			() => (hasSession ? session.getAsyncJobSnapshot() : null),
  		);
@@ -1588,23 +1669,32 @@ index 4353d35..d33e86d 100644
 +			extensionRunner.hasHandlers("edit_prepared")
 +				? (event, signal) => extensionRunner.emitEditPrepared(event, signal)
 +				: undefined;
++		toolSession.getBeforeWriteApply = () =>
++			extensionRunner.hasHandlers("write_prepared")
++				? (event, signal) => extensionRunner.emitWritePrepared(event, signal)
++				: undefined;
  
  		credentialDisabledTarget = extensionRunner;
  		for (const event of startupCredentialDisabledEvents.splice(0)) {
 diff --git a/packages/coding-agent/src/tools/index.ts b/packages/coding-agent/src/tools/index.ts
-index d52292e..806d15b 100644
+index d52292e..6c74802 100644
 --- a/packages/coding-agent/src/tools/index.ts
 +++ b/packages/coding-agent/src/tools/index.ts
-@@ -11,7 +11,7 @@ import type { Settings } from "../config/settings";
+@@ -11,7 +11,12 @@ import type { Settings } from "../config/settings";
  import { EditTool } from "../edit";
  import { checkPythonKernelAvailability } from "../eval/py/kernel";
  import type { ToolPathWithSource } from "../extensibility/custom-tools";
 -import type { PreparedExtension } from "../extensibility/extensions/types";
-+import type { EditPreparedEvent, EditPreparedEventResult, PreparedExtension } from "../extensibility/extensions/types";
++import type {
++	EditPreparedEvent,
++	EditPreparedEventResult,
++	PreparedExtension,
++	WritePreparedEvent,
++} from "../extensibility/extensions/types";
  import type { Skill } from "../extensibility/skills";
  import type { GoalModeState, GoalRuntime } from "../goals";
  import { GoalTool } from "../goals/tools/goal-tool";
-@@ -223,6 +223,10 @@ export interface ToolSession {
+@@ -223,6 +228,14 @@ export interface ToolSession {
  	customToolPaths?: ToolPathWithSource[];
  	/** Whether LSP integrations are enabled */
  	enableLsp?: boolean;
@@ -1612,10 +1702,274 @@ index d52292e..806d15b 100644
 +	getBeforeEditApply?: () =>
 +		| ((event: EditPreparedEvent, signal?: AbortSignal) => Promise<EditPreparedEventResult | undefined>)
 +		| undefined;
++	/** Resolve lazily: no write_prepared listeners means the ordinary unguarded write path. */
++	getBeforeWriteApply?: () =>
++		| ((event: WritePreparedEvent, signal?: AbortSignal) => Promise<EditPreparedEventResult | undefined>)
++		| undefined;
  	/** Whether LSP is limited to navigation and diagnostics. */
  	lspReadOnly?: boolean;
  	/** Whether this invocation may expose IRC. `false` removes it even for subagents. */
-diff --git a/b/packages/coding-agent/test/edit-prepared.test.ts b/packages/coding-agent/test/edit-prepared.test.ts
+diff --git a/packages/coding-agent/src/tools/write.ts b/packages/coding-agent/src/tools/write.ts
+index 46cb5b9..f82369a 100644
+--- a/packages/coding-agent/src/tools/write.ts
++++ b/packages/coding-agent/src/tools/write.ts
+@@ -28,6 +28,7 @@ import { parseInternalUrl } from "../internal-urls/parse";
+ import { couldBecomeXdUrl, parseXdUrl } from "../internal-urls/xd-protocol";
+ import { createLspWritethrough, type FileDiagnosticsResult, type WritethroughCallback, writethroughNoop } from "../lsp";
+ import { DeferredDiagnostics } from "../lsp/deferred-diagnostics";
++import { flushLspWritethroughBatch, hasPendingLspFormatting } from "../lsp/writethrough";
+ import { getDiagnosticsLedger } from "../lsp/diagnostics-ledger";
+ import { getLanguageFromPath, highlightCode, type Theme } from "../modes/theme/theme";
+ import writeDescription from "../prompts/tools/write.md" with { type: "text" };
+@@ -35,7 +36,7 @@ import writeDeviceOnlyDescription from "../prompts/tools/write-device-only.md" w
+ import type { ToolSession } from "../sdk";
+ import { fileHyperlink, framedBlock, renderStatusLine } from "../tui";
+ import { resolveFileDisplayMode } from "../utils/file-display-mode";
+-import { routeWriteThroughBridge } from "./acp-bridge";
++import { routeWriteThroughBridge, shouldRouteWriteThroughBridge } from "./acp-bridge";
+ import { resolveToolTier, truncateForPrompt } from "./approval";
+ import { assertEditableFile } from "./auto-generated-guard";
+ import { formatHashlineHeader, stripHashlinePrefixes } from "./hashline-format";
+@@ -585,10 +586,12 @@ export class WriteTool implements AgentTool<typeof writeSchema, WriteToolDetails
+ 
+ 	readonly #writethrough: WritethroughCallback;
+ 	readonly #deferredDiagnostics: DeferredDiagnostics | undefined;
++	readonly #formatsWrites: boolean;
+ 
+ 	constructor(private readonly session: ToolSession) {
+ 		const enableLsp = session.enableLsp ?? true;
+ 		const enableFormat = enableLsp && session.settings.get("lsp.formatOnWrite");
++		this.#formatsWrites = enableFormat;
+ 		const enableDiagnostics = enableLsp && session.settings.get("lsp.diagnosticsOnWrite");
+ 		const dedup = enableDiagnostics && session.settings.get("lsp.diagnosticsDeduplicate");
+ 		this.#deferredDiagnostics =
+@@ -1103,13 +1106,69 @@ export class WriteTool implements AgentTool<typeof writeSchema, WriteToolDetails
+ 		};
+ 	}
+ 
++	#assertGuardedWriter(displayPath: string, absolutePath: string): void {
++		if (this.#formatsWrites || this.session.settings.get("lsp.formatOnWrite") || hasPendingLspFormatting()) {
++			throw new ToolError("Write held: write_prepared requires formatting disabled and no pending formatting batch");
++		}
++		const bridge = this.session.getClientBridge?.();
++		if (
++			bridge?.capabilities.writeTextFile &&
++			bridge.writeTextFile &&
++			shouldRouteWriteThroughBridge(this.session, displayPath, absolutePath)
++		) {
++			throw new ToolError(
++				"Write held: ACP writeTextFile cannot guarantee the checked bytes; use a direct-writer session",
++			);
++		}
++	}
++
++	/** Observe without creating parents; missing components and ancestor identities must remain unchanged. */
++	async #observeWriteTarget(absolutePath: string): Promise<{ identity: string; before: string | null }> {
++		const ancestors: unknown[] = [];
++		let current = absolutePath;
++		let before: string | null = null;
++		for (;;) {
++			try {
++				const stat = await fs.lstat(current, { bigint: true });
++				if (stat.isSymbolicLink())
++					throw new ToolError("Write held: linked write paths are outside the direct-file boundary");
++				if (current === absolutePath) {
++					if (!stat.isFile()) throw new ToolError("Write held: target is not a regular file");
++					const bytes = await fs.readFile(current);
++					before = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(bytes);
++				} else if (!stat.isDirectory()) {
++					throw new ToolError("Write held: target ancestor is not a directory");
++				}
++				ancestors.push([
++					current,
++					String(stat.dev),
++					String(stat.ino),
++					String(stat.mode),
++					await fs.realpath(current),
++				]);
++			} catch (error) {
++				if (!isEnoent(error)) throw error;
++				ancestors.push([current, null]);
++			}
++			const parent = path.dirname(current);
++			if (parent === current) break;
++			current = parent;
++		}
++		return { identity: JSON.stringify(ancestors), before };
++	}
++
+ 	async execute(
+ 		_toolCallId: string,
+-		{ path: rawPath, content }: WriteParams,
++		params: WriteParams,
+ 		signal?: AbortSignal,
+ 		onUpdate?: AgentToolUpdateCallback<WriteToolDetails>,
+ 		context?: AgentToolContext,
+ 	): Promise<AgentToolResult<WriteToolDetails>> {
++		const { path: rawPath, content } = params;
++		const beforeApply = this.session.getBeforeWriteApply?.();
++		const inputJson = beforeApply ? JSON.stringify(params) : undefined;
++		const batchRequest = getLspBatchRequest(context?.toolCall);
++		let writeStarted = false;
+ 		// Strip a hashline `[path#TAG]` wrapper up front so every downstream
+ 		// decision (scheme routing, internal-URL handler dispatch, plan-mode
+ 		// guard, plan path resolution, ACP bridge routing) sees the same
+@@ -1135,7 +1194,7 @@ export class WriteTool implements AgentTool<typeof writeSchema, WriteToolDetails
+ 				"This `write` tool is limited to the xd:// device transport: call it with path `xd://<tool>` and the device's JSON arguments in `content` (`read xd://` lists mounted devices). Active plan mode additionally permits local:// sandbox drafts. Filesystem writes are not available elsewhere.",
+ 			);
+ 		}
+-		return untilAborted(signal, async () => {
++		const run = async (): Promise<AgentToolResult<WriteToolDetails>> => {
+ 			// Strip hashline display prefixes ([PATH#HASH] + LINE:) if the model copied them from read output
+ 			const { text: cleanContent, stripped } = stripWriteContent(this.session, content);
+ 			const internalRouter = InternalUrlRouter.instance();
+@@ -1145,6 +1204,8 @@ export class WriteTool implements AgentTool<typeof writeSchema, WriteToolDetails
+ 				const scheme = parsed.protocol.replace(/:$/, "").toLowerCase();
+ 				const handler = internalRouter.getHandler(scheme);
+ 				if (handler?.write) {
++					if (beforeApply)
++						throw new ToolError(`Write held: ${scheme} handler writes have no Cargo-checkable final local bytes`);
+ 					// Handler-owned writes mutate user data outside the local
+ 					// sandbox. xd:// dispatches retain each wrapped tool's tier.
+ 					if (scheme !== "xd") {
+@@ -1212,13 +1273,19 @@ export class WriteTool implements AgentTool<typeof writeSchema, WriteToolDetails
+ 					}
+ 					return { content: [{ type: "text", text: resultText }], details: {} };
+ 				}
+-				if (scheme !== "local") await internalRouter.write(path, cleanContent);
++				if (scheme !== "local") {
++					if (beforeApply)
++						throw new ToolError(`Write held: ${scheme} writes are outside the direct-file boundary`);
++					await internalRouter.write(path, cleanContent);
++				}
+ 				// local:// is backed by the session-local artifact sandbox and is
+ 				// resolved by resolvePlanPath below so write/read share the same root.
+ 			}
+ 
+ 			const conflictUri = parseConflictUri(path);
+ 			if (conflictUri) {
++				if (beforeApply)
++					throw new ToolError("Write held: conflict resolution has no complete prepared write vector");
+ 				if (conflictUri.scope) {
+ 					throw new ToolError(
+ 						`Conflict URI scope '/${conflictUri.scope}' is read-only — read \`conflict://${conflictUri.id}/${conflictUri.scope}\` to inspect that side. To write, drop the scope (\`conflict://${conflictUri.id}\`) and put the chosen content (or shorthand like \`@${conflictUri.scope}\`) in \`content\`.`,
+@@ -1239,6 +1306,8 @@ export class WriteTool implements AgentTool<typeof writeSchema, WriteToolDetails
+ 			}
+ 			const resolvedArchivePath = await this.#resolveArchiveWritePath(path);
+ 			if (resolvedArchivePath) {
++				if (beforeApply)
++					throw new ToolError("Write held: archive member writes cannot be checked as a local Cargo file");
+ 				enforcePlanModeWrite(this.session, resolvedArchivePath.archivePath, {
+ 					op: resolvedArchivePath.exists ? "update" : "create",
+ 				});
+@@ -1266,6 +1335,8 @@ export class WriteTool implements AgentTool<typeof writeSchema, WriteToolDetails
+ 
+ 			const resolvedSqlitePath = await this.#resolveSqliteWritePath(path);
+ 			if (resolvedSqlitePath) {
++				if (beforeApply)
++					throw new ToolError("Write held: database row writes cannot be checked as a local Cargo file");
+ 				enforcePlanModeWrite(this.session, resolvedSqlitePath.sqlitePath, { op: "update" });
+ 
+ 				emitWriteProgress(onUpdate, cleanContent, path, resolvedSqlitePath.absolutePath);
+@@ -1285,7 +1356,6 @@ export class WriteTool implements AgentTool<typeof writeSchema, WriteToolDetails
+ 			await assertNotReadSelectorMisfire(path, cleanContent, this.session.cwd);
+ 			enforcePlanModeWrite(this.session, path, { op: "create" });
+ 			const absolutePath = resolvePlanPath(this.session, path);
+-			const batchRequest = getLspBatchRequest(context?.toolCall);
+ 
+ 			// Check if file exists and is auto-generated before overwriting
+ 			if (await fs.exists(absolutePath)) {
+@@ -1293,11 +1363,55 @@ export class WriteTool implements AgentTool<typeof writeSchema, WriteToolDetails
+ 			}
+ 
+ 			const displayPath = formatPathRelativeToCwd(absolutePath, this.session.cwd);
++			if (beforeApply) {
++				signal?.throwIfAborted();
++				this.#assertGuardedWriter(path, absolutePath);
++				// Reject strings that cannot represent the actual UTF-8 bytes written by Bun.
++				if (!cleanContent.isWellFormed())
++					throw new ToolError("Write held: content contains unpaired UTF-16 surrogates");
++				const original = await this.#observeWriteTarget(absolutePath);
++				signal?.throwIfAborted();
++				const result = await beforeApply(
++					{
++						type: "write_prepared",
++						toolCallId: _toolCallId,
++						input: JSON.parse(inputJson!),
++						operations: [
++							{
++								op: original.before === null ? "create" : "update",
++								path: absolutePath,
++								displayPath,
++								moveTo: null,
++								before: original.before,
++								after: cleanContent,
++								moveBefore: null,
++							},
++						],
++					},
++					signal,
++				);
++				signal?.throwIfAborted();
++				if (result?.block) throw new ToolError(result.reason ?? "Write held by prepared check");
++				this.#assertGuardedWriter(path, absolutePath);
++				const current = await this.#observeWriteTarget(absolutePath);
++				if (
++					JSON.stringify(params) !== inputJson ||
++					resolvePlanPath(this.session, path) !== absolutePath ||
++					current.identity !== original.identity ||
++					current.before !== original.before
++				) {
++					throw new ToolError("Write held: effective arguments, target path or preimage changed while checking");
++				}
++				signal?.throwIfAborted();
++				this.#assertGuardedWriter(path, absolutePath);
++			}
+ 			emitWriteProgress(onUpdate, cleanContent, displayPath, absolutePath);
+ 
+ 			// Try ACP bridge first for editor-visible filesystem paths. Internal
+ 			// artifacts such as local:// plans are owned by OMP, not the editor.
+-			const bridgeWrite = await routeWriteThroughBridge(this.session, path, absolutePath, cleanContent, signal);
++			const bridgeWrite = beforeApply
++				? undefined
++				: await routeWriteThroughBridge(this.session, path, absolutePath, cleanContent, signal);
+ 			if (bridgeWrite) {
+ 				// `write` always replaces the whole file, so (unlike hashline's
+ 				// hunk-scoped diff) there's no size cost to keying the header/
+@@ -1320,6 +1434,7 @@ export class WriteTool implements AgentTool<typeof writeSchema, WriteToolDetails
+ 				};
+ 			}
+ 
++			writeStarted = true;
+ 			const diagnostics = await this.#writethrough(
+ 				absolutePath,
+ 				cleanContent,
+@@ -1362,7 +1477,23 @@ export class WriteTool implements AgentTool<typeof writeSchema, WriteToolDetails
+ 						.get(),
+ 				},
+ 			};
+-		});
++		};
++		if (!beforeApply) return untilAborted(signal, run);
++		// Do not race away from a started managed check: its runner drains before this tool returns.
++		try {
++			return await run();
++		} catch (error) {
++			if (!writeStarted && batchRequest?.flush) {
++				const diagnostics = await flushLspWritethroughBatch(batchRequest.id, this.session.cwd, undefined, true);
++				if (diagnostics)
++					return {
++						isError: true,
++						content: [{ type: "text", text: error instanceof Error ? error.message : String(error) }],
++						details: { diagnostics },
++					};
++			}
++			throw error;
++		}
+ 	}
+ }
+ 
+diff --git a/packages/coding-agent/test/edit-prepared.test.ts b/packages/coding-agent/test/edit-prepared.test.ts
 new file mode 100644
 index 0000000..6ecd49e
 --- /dev/null

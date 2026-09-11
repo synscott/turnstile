@@ -1,14 +1,15 @@
-# Project-local OMP native edit veto
+# Project-local OMP native edit and write veto
 
 This patch is for upstream `can1357/oh-my-pi` commit
 `61b1b8aef634334eaf1412afd003a763e1d1b9c1` (18.1.16), not a global OMP installation.
-It adds an optional `edit_prepared` extension event at the native whole-call write
-boundary. It does **not** implement Turnstile's analyzer integration or model repair loop.
-It also gives `edit_prepared` handlers a managed `ctx.exec` process owner. The
-current patch is cumulative against the pristine pin: do not apply it over an
-older patched tree. Earlier accepted patch/source identities remain historical
-in their immutable review archives. The managed-exec correction changes only
-TypeScript SDK/process ownership; Rust source and the compiled addon are unchanged.
+It adds optional `edit_prepared` and `write_prepared` extension events at the native
+tools' pre-mutation boundaries. It does **not** implement Turnstile's analyzer
+integration or model repair loop. Both events share the existing prepared emitter
+and managed `ctx.exec` process owner. The current patch is cumulative against the
+pristine pin: do not apply it over an older patched tree. Earlier accepted
+patch/source identities remain historical in their immutable review archives.
+Write support changes only TypeScript SDK ownership; Rust source and the accepted
+compiled addon are unchanged, so an existing accepted addon does not need rebuilding.
 
 ## Restore and build
 
@@ -144,6 +145,38 @@ The analyzer must separately revalidate the surrounding Cargo context it used.
 Permission consumes the same staged operations. Unrelated I/O failures after release
 can leave earlier files applied: there is no filesystem rollback promise.
 
-This boundary covers native `edit`, including same-tool delegation. It does not
-police other tools or arbitrary extension writes. Native/SDK/CLI smoke evidence is
-not proof of the later Turnstile model feedback-and-repair acceptance criterion.
+This boundary covers native `edit` and local native `write`, including same-tool
+delegation. It does not police other tools or arbitrary extension writes.
+
+### Native write veto
+
+Register `write_prepared` only after `api.supportsWritePrepared?.() === true`;
+otherwise use the existing `tool_call` blocker for `write`. Integrations requiring
+both tools must check both capabilities and block both on missing support.
+The write marker is an SDK capability; the unchanged native addon supplies edit
+support only. Required external checkers must still detect managed `ctx.exec`.
+
+The event contains `{ type, toolCallId, input, operations }`. The single operation
+is a create or update with the same seven explicit keys as native edit. `input`
+is the final execute input; `after` is the complete native-cleaned write content.
+The WriteTool applies its existing display-prefix cleaning before preparation,
+then refuses formatting/ACP transformations rather than analyzing authored text
+and later persisting different bytes. Exact UTF-8/BOM/line endings are retained.
+Missing-target parents are observed without creating them. The tool revalidates
+arguments, target resolution, preimage and path/ancestor identities before release.
+
+With a listener, handler/remote writes, archive members, database rows, conflict
+resolution and device dispatch are explicitly refused before mutation because
+they have no supported complete local-file preparation. Ordinary local and
+`local://`-resolved files use the same boundary; an analyzer can additionally
+refuse paths outside its selected context. Without listeners all existing routes
+remain unchanged. A listener is not a filesystem transaction or a sandbox:
+trusted extensions/fallback writers can perform arbitrary work, and mutation
+after the final observation remains outside the guarantee.
+
+Write shares the runner's prepared process lifetime, including inner same-tool
+delegation, late-executor rejection and shutdown drain. It does not return from
+an abort while its prepared runner is still draining. Guarded writes refuse an
+older formatting-enabled batch; a held batch-final write drains prior diagnostics
+through the existing diagnostics-only path. See the
+[Turnstile operator contract](../docs/omp-edit-gate.md) for explicit coverage.

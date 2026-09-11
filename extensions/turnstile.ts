@@ -2,14 +2,14 @@ import { readFile, realpath } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { ExtensionAPI } from "@oh-my-pi/pi-coding-agent";
+import type { ExtensionAPI, ExtensionContext, EditPreparedEvent, WritePreparedEvent } from "@oh-my-pi/pi-coding-agent";
 
 function object(value: unknown): Record<string, unknown> {
 	if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("expected an object");
 	return value as Record<string, unknown>;
 }
 
-/** Explicit workspace opt-in; native OMP remains the only edit parser/writer. */
+/** Explicit workspace opt-in; native OMP owns edit reconstruction and final write bytes. */
 export default async function turnstile(api: ExtensionAPI) {
 	const workspace = process.cwd();
 	const configPath = join(workspace, ".omp", "turnstile.json");
@@ -37,18 +37,22 @@ export default async function turnstile(api: ExtensionAPI) {
 		try {
 			if (api.supportsEditPrepared?.() !== true)
 				failure = "loaded OMP SDK/addon lacks edit_prepared; use the patched project-local runtime";
+			else if (api.supportsWritePrepared?.() !== true)
+				failure = "loaded OMP SDK lacks write_prepared; use the patched project-local runtime";
 		} catch (error) {
 			failure = `native capability unavailable: ${error instanceof Error ? error.message : String(error)}`;
 		}
 	}
 	const held = (reason: string) => ({
 		block: true,
-		reason: `Turnstile held native edit: ${reason}. No permission was issued.`,
+		reason: `Turnstile held native mutation: ${reason}. No permission was issued.`,
 	});
 	if (failure) {
-		api.on("tool_call", event => (event.toolName === "edit" ? held(failure!) : undefined));
+		api.on("tool_call", event =>
+			event.toolName === "edit" || event.toolName === "write" ? held(failure!) : undefined,
+		);
 		api.on("session_start", (_event, ctx) =>
-			ctx.ui.notify(`Turnstile: ${failure}; native edits are blocked`, "error"),
+			ctx.ui.notify(`Turnstile: ${failure}; native edits and writes are blocked`, "error"),
 		);
 		return;
 	}
@@ -56,11 +60,11 @@ export default async function turnstile(api: ExtensionAPI) {
 
 	api.on("session_start", (_event, ctx) =>
 		ctx.ui.notify(
-			"Turnstile enabled: native edits require clippy::await_holding_lock analysis. Passing is not global correctness or safety.",
+			"Turnstile enabled: native edits and writes require clippy::await_holding_lock analysis. Passing is not global correctness or safety.",
 			"info",
 		),
 	);
-	api.on("edit_prepared", async (event, ctx) => {
+	const check = async (event: EditPreparedEvent | WritePreparedEvent, ctx: ExtensionContext) => {
 		if (resolve(ctx.cwd) !== resolve(workspace))
 			return held("workspace changed; restart to load its explicit configuration");
 		if (typeof ctx.exec !== "function")
@@ -95,5 +99,7 @@ export default async function turnstile(api: ExtensionAPI) {
 		} catch (error) {
 			return held(`required check unavailable: ${error instanceof Error ? error.message : String(error)}`);
 		}
-	});
+	};
+	api.on("edit_prepared", check);
+	api.on("write_prepared", check);
 }
