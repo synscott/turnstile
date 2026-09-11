@@ -1,0 +1,36 @@
+name: Turnstile disclosure reporting
+
+on:
+   pull_request_target:
+      types: [opened, reopened, synchronize, edited]
+
+permissions:
+   contents: read
+   pull-requests: read
+   checks: write
+
+jobs:
+   report:
+      name: Publish exact PR head disclosure snapshot
+      runs-on: ubuntu-latest
+      timeout-minutes: 10
+      steps:
+         - name: Check out trusted reporting code only
+           uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+           with:
+              ref: ${{ github.sha }}
+              persist-credentials: false
+              set-safe-directory: false
+              submodules: false
+              lfs: false
+         - name: Set up Bun
+           uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+           with:
+              bun-version: 1.4.2
+              no-cache: true
+         - name: Read full commit messages and publish head check
+           run: bun tools/turnstile-pr-check.ts github
+           env:
+              GITHUB_TOKEN: ${{ github.token }}
+              GIT_NO_REPLACE_OBJECTS: "1"
+              GIT_TERMINAL_PROMPT: "0"

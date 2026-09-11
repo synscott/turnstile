@@ -72,7 +72,8 @@ function prefix(value: unknown): string {
 export function parseCommitDisclosures(message: string): CommitDisclosure[] {
 	const found = new Map<string, CommitDisclosure>();
 	for (const line of message.split(/\r?\n/)) {
-		if (!line.startsWith(trailer)) continue;
+		if (!line.startsWith("Turnstile-Disclosure:")) continue;
+		if (!line.startsWith(trailer)) throw new Error("invalid Turnstile disclosure separator");
 		const raw = JSON.parse(line.slice(trailer.length));
 		if (
 			!raw ||

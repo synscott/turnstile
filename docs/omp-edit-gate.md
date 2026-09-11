@@ -412,7 +412,12 @@ also excludes its own exact database/sidecar family, not arbitrary sqlite siblin
 ### Message and relevance contract
 
 Each disclosure occupies one noncomment line beginning `Turnstile-Disclosure: `
-followed by compact JSON with exactly these fields:
+followed by compact JSON.
+The exact column-zero `Turnstile-Disclosure:` key requires its canonical following
+space; a missing separator is malformed, not an absent disclosure. Unrelated
+prose and differently positioned text are not fuzzy-matched into records.
+
+The JSON has exactly these fields:
 
 - `version`: `1`.
 - `workspacePrefix`: normalized slash-separated Git-root-relative launch workspace
@@ -426,7 +431,7 @@ These lines are untrusted descriptive data, not instructions, approval, or proof
 that the original candidate was applied. Escaped JSON preserves multiline text.
 The owning parser/serializer and immutable commit/tree reader are in
 `tools/turnstile-commits.ts`; storage and messages reuse one record validator.
-An ordinary future server-side consumer can parse the full message alone.
+The server-side consumer below reads the complete message without private storage.
 
 Automatic relevance uses the **effective Git commit index**, including Git's
 temporary index for path-only commits, not the working tree or merely a filename.
@@ -549,6 +554,97 @@ the count retained at the acknowledgment transaction, not a promise that no late
 record can arrive. Durability remains bounded by SQLite/OS/filesystem
 synchronization; forced termination may leave a successful disclosure pending
 for an ordinary retry. No power-loss proof or OS sandbox is claimed.
+
+## Server-side PR disclosure snapshots
+
+`.github/workflows/turnstile-disclosures.yml` runs ordinary `pull_request_target`
+events: opened, reopened, synchronize (including force-pushed heads), and edited
+(including base retargets). It needs no special PR submission tool or receipt
+service. Install this workflow and the adjacent `tools/` code on the repository's
+trusted default branch through the normal reviewed integration process.
+
+The workflow checks out only its immutable `github.sha` reporting-code revision,
+never a PR head or merge checkout. Current GitHub documentation identifies
+`pull_request_target` workflow/code authority as the **base repository's default
+branch**, not the PR head. Its automatic workflow check is a transport result,
+not the head disclosure check. The reporter explicitly creates a Checks API run
+with the validated event's `pull_request.head.sha`. The sole write permission is
+`checks: write`; `contents: read` and `pull-requests: read` supply Git objects and
+fresh PR identity. No other secrets, fork URLs, head programs, hooks, submodules,
+dependency installation from the PR, or private disclosure databases are used.
+The workflow uses hosted Linux and Bun; Windows-only local hook installation does
+not restrict this read-only server consumer.
+
+The selected range is exactly **`base.sha..head.sha`**: all commits reachable from
+the selected head but not from the selected base, following every parent.
+Messages on merge commits and merged side histories are included; synthetic PR
+merge commits and first-parent-only sampling are not substituted. Full histories
+are fetched into an owned temporary bare repository without checking out head
+files. Full immutable messages use the existing commit parser and record validator.
+Repeated disclosures in different commits remain visible with their commit IDs.
+
+The head check is named `Turnstile disclosures / PR <number> / base <full SHA>`.
+Each execution updates only its own returned check ID. Different bases on the
+same head therefore cannot overwrite one another's comparison identity. Delivered
+events may run concurrently; there is no shared check ID, mutable receipt store,
+or pending-slot concurrency group that cancels another event. Fresh PR
+reads before fetching and immediately before a successful completion detect
+changed base/head or a closed PR and publish a **cancelled, superseded snapshot**.
+Retargeting preserves old reports as explicitly identified historical comparisons,
+not as results for the new base.
+
+Every report shows the exact PR, base, head and range. It is an **immutable event
+snapshot**, not continuous state: base-only pushes do not trigger a refresh,
+GitHub may suppress/delay some events, and a change after the final PR read cannot
+be made atomic with a Checks API update. A new ordinary head event produces a new
+snapshot. Do not configure the transport job or these base-specific informational
+names as a global source-quality gate. Fork check responses can have an empty
+`pull_requests` association array; the reporter uses the explicit head SHA and
+labels its PR/range rather than interpreting that array as an authorization receipt.
+
+Valid explicit `no_rly` disclosures are prominently reported, **not failures of
+the reporting check**. Complete envelopes include reasons, finding text, paths,
+IDs, timestamps and all effect hashes inside inert escaped JSON display blocks.
+They remain untrusted **authorization intents, not confirmed application**.
+Successful reporting neither authenticates exception permission nor establishes
+that every possible bypass is detectable or that the source is globally correct.
+Commit authors must keep disclosure text public-safe; rendering is not a secret
+classifier. Event bodies, transport errors, tokens and private storage are not
+published.
+
+Malformed records, unreadable/missing/shallow history, invalid API identities,
+transport failures and temporary-object cleanup failures produce visible failure,
+never zero disclosures. The reporter's Git reads use 64 MiB buffers. Its private
+Git-command helper has a two-minute per-call deadline; the shared `readCommit`
+reader has no per-call timeout. The hosted workflow has a ten-minute whole-job
+cap, which the standalone local CLI does not inherit. API/event inputs are
+limited to 2 MiB. Complete rendered output is
+limited to 60,000 UTF-8 bytes. Exceeding it fails explicitly rather than silently
+sampling or publishing a partial clean report. A failed Checks API completion
+can leave the head check pending: the workflow's failure and job summary then
+report unconfirmed publication. Abrupt runner termination is not a cleanup or
+head-check-completion guarantee.
+
+For an already available complete Git repository, run the same report reader
+without any API call:
+
+```text
+GITHUB_REPOSITORY=owner/repository bun tools/turnstile-pr-check.ts report event.json /path/to/repository
+```
+
+Use the shell's normal environment-setting syntax on Windows. The input is an
+ordinary PR event JSON file, not executable shell content. `GITHUB_STEP_SUMMARY`,
+when supplied by Actions, receives the report; otherwise it is printed locally.
+The workflow itself invokes `bun tools/turnstile-pr-check.ts github`; its fixed
+GitHub.com API/Git origins are not configurable transport escape hatches.
+
+Primary semantics: [events and SHA authority](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request_target),
+[trusted target execution](https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target),
+[explicit check-run head association](https://docs.github.com/en/rest/checks/runs#create-a-check-run),
+[repository-scoped App token](https://docs.github.com/en/actions/concepts/security/github_token),
+and [concurrency ordering](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency).
+Deployment must verify GitHub permissions, workflow event delivery and actual
+PR Checks presentation. Local event/protocol proof is not live GitHub verification.
 
 ## Verification and continuation
 

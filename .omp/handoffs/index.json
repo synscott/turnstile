@@ -1,4 +1,24 @@
 {
+  "sprint-10": {
+    "status": "ACCEPTED",
+    "handoff": ".omp/handoffs/sprint-10.md",
+    "acceptance_owner": "Main",
+    "snapshot_id": "e804aeabc4b1c57a56565012df13fdded0fb65f5f8e6aad5c59a99904b83c383",
+    "reviewer": "sprint-ten-pr-review",
+    "review_receipt": ".loopx/s10-review/review-e804aeab.json",
+    "review_receipt_sha256": "bf420f4d172ebeb827d226f678d78aca7da5a7d33b0742f560fba12a517edb6b",
+    "acceptance_receipt": ".loopx/materials/sprint10-acceptance.json",
+    "commit_receipt": ".loopx/materials/sprint10-commit.json",
+    "immutable_review": ".loopx/sprint10/materials/review.json",
+    "author_verification": ".loopx/sprint10/verification.json",
+    "prior_snapshot": "2dc9c866cfd99f098f39bc38139f5306b045bd42f9c37e3872ae55fa25ec82fe",
+    "prior_review": ".loopx/s10-review/review-2dc9c866.json",
+    "doc_correction": ".loopx/sprint10/doc-correction-S10-R1.json",
+    "verification": "Reviewer own-copy author-recipe replay plus seven independent groups, two genuine guard-mutant red/green oracles, five transport-refusal scenarios, scoped types and local inert Chromium rendering. Exact doc-only successor preserves all410 unchanged prior source/proof payloads; S10-R1 resolved.",
+    "qualification": "Informational exact-event snapshots, native Windows and local protocol only. No live GitHub, Linux runtime, provider inference, installed Sprint11, fixed required branch check, global quality or atomic continuously-current claim; original review/reds/dissent/sourceproof preserved.",
+    "acceptance": "Main read full initial review and exact successor identity/resolution/inherited-proof/limits and accepted onlye804aeab for original Sprint10. No open findings. Exclusive bookkeeping and exact public-only commit authorized; production/workflow/guide remain reviewed bytes.",
+    "next_action": "Main starts a fresh bounded Sprint11 worker for the actual installed test build. This completed Sprint10 worker does not begin Sprint11."
+  },
   "sprint-09": {
     "status": "ACCEPTED",
     "handoff": ".omp/handoffs/sprint-09.md",
@@ -17,7 +37,7 @@
     "verification": "21 reviewer-authored groups plus14 attributed author adversaries,406 logged fixture commands, scoped typecheck and fresh actual source/native OMP chain; R1/R2 resolved with real Windows handles, OS aliases, immutable Git and independent SQL oracles.",
     "qualification": "No wholesale independent7-component rerun, provider/model inference, installed Sprint11, PR check, OS sandbox or cross-resource atomicity claim. Accepted A private-witness bypass/dissent and rejected ad015a00/naive Bun lookup failure remain preserved.",
     "acceptance": "Main read the complete exact successor review, accepted only0b0273e2 for B and original full Sprint9 under documented A/Windows boundaries, and authorized exclusive bookkeeping and public-only commit. No open findings.",
-    "next_action": "Main starts a fresh bounded Sprint10 worker for ordinary server-side PR disclosure reporting; this worker does not begin Sprint10."
+    "next_action": "Historical Sprint9 is complete; original Sprint10 is now accepted. Follow sprint-10 for exact PR-reporting evidence and Main's fresh Sprint11 transition."
   },
   "git-disclosure-boundary": {
     "status": "ACCEPTED",
