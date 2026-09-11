@@ -112,6 +112,11 @@ it does not correlate cleanup through outer `tool_result` IDs.
 `ctx.exec` accepts `input` (UTF-8 text or bytes over stdin) and `isolatedTemp:true`.
 The existing executor owns a short temporary root, sets child-only
 `TEMP`/`TMP`/`TMPDIR`, and removes that root after the process tree settles.
+The managed executor rechecks its merged cancellation signal **after** this
+cleanup before delivering the result: cancellation during cleanup reports
+`killed=true` even if the child exited successfully. Ordinary unscoped `api.exec`
+behavior is unchanged. Cancellation after the managed result has fully settled
+is outside this observation guarantee.
 Put copied checker contexts there; keep it outside the selected Cargo root.
 Runner shutdown drains these managed processes too. Noncooperative handler
 promises remain bounded by the existing handler timeout; only registered managed

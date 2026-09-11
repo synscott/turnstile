@@ -1224,7 +1224,7 @@ index a622221..79d445f 100644
  		try {
  			return editInspect(this.mode, JSON.stringify(args ?? {}));
 diff --git a/packages/coding-agent/src/exec/exec.ts b/packages/coding-agent/src/exec/exec.ts
-index d429a85..a138031 100644
+index d429a85..e392f52 100644
 --- a/packages/coding-agent/src/exec/exec.ts
 +++ b/packages/coding-agent/src/exec/exec.ts
 @@ -1,6 +1,9 @@
@@ -1248,7 +1248,7 @@ index d429a85..a138031 100644
  }
  
  /**
-@@ -35,19 +42,70 @@ export async function execCommand(
+@@ -35,19 +42,74 @@ export async function execCommand(
  	cwd: string,
  	options?: ExecOptions,
  ): Promise<ExecResult> {
@@ -1308,7 +1308,11 @@ index d429a85..a138031 100644
 +	exec = (command: string, args: string[], options?: ExecOptions): Promise<ExecResult> => {
 +		if (this.#closing) return Promise.reject(new Error("Managed edit check execution scope is closed"));
 +		const signal = options?.signal ? AbortSignal.any([this.#signal, options.signal]) : this.#signal;
-+		const work = execCommand(command, args, options?.cwd ?? this.cwd, { ...options, signal });
++		const work = execCommand(command, args, options?.cwd ?? this.cwd, { ...options, signal }).then(result => {
++			// Cancellation during temporary-root cleanup is still part of this managed check.
++			if (signal.aborted) result.killed = true;
++			return result;
++		});
 +		this.#pending.add(work);
 +		void work.then(
 +			() => this.#pending.delete(work),
@@ -1971,10 +1975,10 @@ index 46cb5b9..f82369a 100644
  
 diff --git a/packages/coding-agent/test/edit-prepared.test.ts b/packages/coding-agent/test/edit-prepared.test.ts
 new file mode 100644
-index 0000000..6ecd49e
+index 0000000..868b2f8
 --- /dev/null
 +++ b/packages/coding-agent/test/edit-prepared.test.ts
-@@ -0,0 +1,252 @@
+@@ -0,0 +1,301 @@
 +import { afterAll, beforeAll, expect, it } from "bun:test";
 +import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 +import * as os from "node:os";
@@ -2226,6 +2230,55 @@ index 0000000..6ecd49e
 +	} finally {
 +		await session.dispose();
 +	}
++});
++
++it("managed checks report cancellation during cleanup even after a successful child exit", async () => {
++	// Isolate the filesystem fault injection from other tests and SDK consumers.
++	const script = `
++		import { strict as assert } from "node:assert";
++		import { mock } from "bun:test";
++		import * as fs from "node:fs/promises";
++		const remove = fs.rm;
++		let entered, release;
++		mock.module("node:fs/promises", () => ({ ...fs, rm: async (path, options) => {
++			if (String(path).includes("oe-")) {
++				entered.resolve(path);
++				await release.promise;
++			}
++			return remove(path, options);
++		}}));
++		// Load after installing the isolated filesystem fault injection.
++		const { ManagedExecScope } = await import(${JSON.stringify(new URL("../src/exec/exec.ts", import.meta.url).href)});
++		for (const cancellation of ["parent", "command", "close"]) {
++			entered = Promise.withResolvers();
++			release = Promise.withResolvers();
++			const parent = new AbortController(), command = new AbortController();
++			const scope = new ManagedExecScope(parent.signal, process.cwd());
++			const pending = scope.exec(process.execPath, ["-e", 'console.log("checked")'], {
++				isolatedTemp: true, signal: command.signal,
++			});
++			const temporary = await entered.promise;
++			assert.equal((await fs.stat(temporary)).isDirectory(), true);
++			let closing;
++			if (cancellation === "parent") parent.abort();
++			else if (cancellation === "command") command.abort();
++			else closing = scope.close();
++			release.resolve();
++			const result = await pending;
++			assert.equal(result.stdout.trim(), "checked");
++			assert.equal(result.code, 0);
++			assert.equal(result.killed, true, cancellation);
++			await assert.rejects(fs.stat(temporary), { code: "ENOENT" });
++			await (closing ?? scope.close());
++		}
++	`;
++	const child = Bun.spawn([process.execPath, "--eval", script], {
++		cwd: import.meta.dir,
++		stdout: "pipe",
++		stderr: "pipe",
++	});
++	const [code, stderr] = await Promise.all([child.exited, new Response(child.stderr).text()]);
++	expect({ code, stderr }).toEqual({ code: 0, stderr: "" });
 +});
 diff --git a/packages/natives/native/index.d.ts b/packages/natives/native/index.d.ts
 index e7120cc..153752d 100644

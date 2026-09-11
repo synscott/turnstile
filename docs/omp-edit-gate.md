@@ -3,9 +3,9 @@
 Turnstile gates the native OMP **edit** and **write** tools with the selected
 `clippy::await_holding_lock` check. A held attempt does not change canonical targets.
 The native tool returns the actual checker finding or failure to the model; the
-model can author a replacement, which is checked again. Passing means this
-configured check completed without introduced or unresolved findings, **not**
-that the code is globally correct or safe.
+model can author a replacement, which is checked again within a finite rejection
+budget. Passing means this configured check completed without introduced or
+unresolved findings, **not** that the code is globally correct or safe.
 
 ## Enable an isolated workspace
 
@@ -19,6 +19,7 @@ Create `.omp/turnstile.json` in that workspace:
 ```json
 {
   "enabled": true,
+  "maxRejections": 3,
   "context": {
     "root": ".",
     "manifest": "Cargo.toml",
@@ -73,8 +74,8 @@ existing `tool_call` blocker for both tools, rather than trusting unknown event
 registration or merely failing extension loading. Enabled checks also require
 `ctx.exec` on the prepared handler context. An older SDK without this managed
 executor is held before starting a checker.
-Configuration is a session-start snapshot. Restart after changing it or switching
-workspaces; this sprint adds no hot reload or persistent policy store.
+Configuration is a loaded-extension snapshot. Restart/reload after changing it or
+switching workspaces; there is no hot reload or persistent policy store.
 
 ## Execution and failure contract
 
@@ -106,6 +107,10 @@ workspaces; this sprint adds no hot reload or persistent policy store.
   context, malformed output, and process failure do not permit a mutation. Actual
   diagnostic spans, rendered Clippy guidance, and required-failure causes remain
   in tool feedback.
+  The bridge validates the analyzer's existing success witness: final
+  `no_findings`, an empty final `findings` array, and `candidate_check` with
+  `exit_code=0` and `build_finished=[true]`. Preexisting candidate findings and
+  no-op/non-Rust vectors retain their existing successful-check semantics.
 - OMP owns the existing handler timeout and each handler's managed process scope.
   Timeout, abort, and shutdown cancel and drain registered commands and their
   temporary roots before native completion. Same-tool delegated calls also wait
@@ -115,6 +120,10 @@ workspaces; this sprint adds no hot reload or persistent policy store.
   awaited. Ordinary `api.exec` retains its caller-owned lifetime and is not used
   for this checker. OS-level forced termination of the entire host remains
   outside this cleanup guarantee.
+  Cancellation during the managed command's temporary-root cleanup still reports
+  `killed=true`, even when the child already exited successfully. It cannot refund
+  a rejected check. Arbitrary cancellation after the command has fully settled is
+  not retrospectively detected.
 - The analyzer prepares its response and removes its copied context before its
   final original-file and observed directory-semantics freshness check. Native
   edit independently revalidates its paths, bytes, arguments and store revision.
@@ -153,14 +162,48 @@ inner delegated completion. Timeout/abort/shutdown drain live checker children a
 temporary roots first. A held batch-final write drains earlier permitted writes'
 queued diagnostics without formatting; a hold does not roll back earlier writes.
 
-Bounded revision attempts, `no_rly`, durable disclosures and commit/PR policy
-remain later sprints. The current hold/revise loop is not an override or an
-approval-ticket system.
+## Bounded revision attempts
+
+`maxRejections` is an optional positive safe integer, default **3**. One loaded
+extension instance owns cumulative rejection debt across native edit/write tools,
+paths, argument changes and same-tool delegation. A rejection is an admitted
+prepared check that does not establish permission, including required-check
+failure, malformed output and cancellation during managed checking/cleanup.
+Native parsing or unsupported-route refusals before preparation do not run a
+checker or spend a prepared-check slot.
+
+Each check reserves a remaining slot synchronously before asynchronous work.
+Concurrent calls cannot spend the same slot: if all remaining slots are reserved,
+another call is held for capacity without launching a checker or declaring
+exhaustion. A successful check releases only its reservation, never earlier debt.
+No-op calls, successful repairs, new model turns, `/new`, switching, branching and
+compaction do not reset debt. Thus a repair before the limit can execute, but
+interleaving successes cannot extend a sequence of rejected checks indefinitely.
+
+The rejection reaching the limit latches exhaustion. That held action and every
+later edit/write attempt stay unapplied; later attempts do not launch a checker.
+The gate invokes OMP's real abort operation to stop the offending retry turn,
+not merely an instruction asking the model to stop. Read-only/explanatory work
+remains available; attempting another mutation stops that turn again.
+
+The notice uses ordinary interactive/RPC notifications, stderr in print/JSON mode
+(leaving JSON stdout parseable), and a displayable custom session message after
+the agent is idle. It does not queue a continuation. Fatal startup configuration
+or capability failures stop an attempted mutation immediately with a distinct
+zero-check failure reason, not a fabricated exhausted candidate count.
+
+Restarting/reloading intentionally constructs a fresh budget. Separate loaded
+agents have separate budgets. Nothing persists or globally coordinates this
+counter, so it is not an authority boundary against deliberate reloads or other
+tools. Exhaustion is never an override. `no_rly`, durable disclosures and
+commit/PR policy remain later sprints.
 
 ## Verification and continuation
 
 The dedicated [Sprint 4 handoff](../.omp/handoffs/sprint-04.md) preserves accepted
 native edit/model evidence. The [Sprint 5 handoff](../.omp/handoffs/sprint-05.md)
 records actual native WriteTool/Cargo consumer proof, lifecycle/route controls and
-its exact private review-snapshot pointer. Sprint 5 does not claim a new real-model
-run. Director review and acceptance are separate from an author's successful run.
+its exact private review-snapshot pointer. The [Sprint 6 handoff](../.omp/handoffs/sprint-06.md)
+records bounded rejection, actual model termination/notice, and managed-cleanup
+cancellation evidence. Director review and acceptance are separate from an
+author's successful run.

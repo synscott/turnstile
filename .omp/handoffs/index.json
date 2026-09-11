@@ -102,5 +102,24 @@
     "focused_sdk_qualification": "128 pass / 2 fail, 437 expectations across 6 files; NOT GREEN. Exact Windows colon-path ENOENT cases attributed to pristine WriteTool or pre-tool fixture setup. Raw failures and corrections preserved.",
     "acceptance": "Main accepted only exact independently reviewed bounded Sprint5 write creation/replacement gate. Production source/patch, Python/Rust/addon and frozen evidence unchanged during acceptance. Prior accepted/rejected evidence preserved.",
     "next_action": "Under /vibe, start a fresh bounded Sprint 6 worker to bound the revision loop. No Sprint6 implementation or overall build completion is authorized by this acceptance."
+  },
+  "sprint-06": {
+    "status": "ACCEPTED",
+    "handoff": ".omp/handoffs/sprint-06.md",
+    "acceptance_owner": "Main",
+    "snapshot_id": "a3e13fed39d89ff66a3d355384083745bcdf251db31fc20755d21930057cb34e",
+    "reviewer": "sprint-six-review",
+    "review_receipt": ".loopx/s6-review/review-a3e13fed.json",
+    "review_receipt_sha256": "72664558ed57dfcd64d014b510e7f04b9f15c7998453a3dd9b89e5b956e89c9a",
+    "acceptance_receipt": ".loopx/materials/sprint06-acceptance.json",
+    "commit_receipt": ".loopx/materials/sprint06-commit.json",
+    "immutable_review": ".loopx/materials/sprint06-review.json",
+    "author_verification": ".loopx/sprint06/verification.json",
+    "cumulative_patch_sha256": "03dcbb379b32d8e07f994e7bda6966426ee37b6d5f8c5e9e198f0c2b2248c9cd",
+    "addon_sha256": "676bd3c3699e8a7c0f5ca350939d4340b32be64e7e6a38a873d7d2c259658b0f",
+    "verification": "Independent 22 consumer, 4 cleanup-window, 9 adversarial and 7 prior lifecycle cases; 5 retained tests. Exact old-owner red/new-owner green including actual native cancellation budget. Author model evidence independently parsed and persisted notice read through actual SessionManager.",
+    "qualification": "Actual third model tool result is Interrupted by user; exhaustion separately visible in 2 stderr notices and 1 persisted notice. No reviewer model request or TUI visual claim. Known pristine Windows colon failures not rerun/suppressed; session-storage correction and red evidence preserved.",
+    "acceptance": "Main accepted exact bounded Sprint6 and narrow managed-cleanup cancellation fix, then authorized serialized acceptance bookkeeping/public-only commit. Frozen source and evidence unchanged.",
+    "next_action": "Under /vibe, start a fresh bounded Sprint 7 worker to preserve pending disclosures. Do not start Sprint7 in this worker."
   }
 }
