@@ -4,7 +4,7 @@ Status: owner-approved product contract and sprint sequence. Execution uses nati
 
 ## Product contract
 
-Turnstile (Harness Contradictionary) is a source-quality gate for proposed coding-agent edits. Rust is the first analyzed language; OMP is the first harness. The analysis target is written Rust code, not Bash command authorization.
+Turnstile is a source-quality gate for proposed coding-agent edits. Rust is the first analyzed language; OMP is the first harness. The analysis target is written Rust code, not Bash command authorization.
 
 - Reconstruct the resulting Rust file from the original and proposed edit/write. Use the original/diff to distinguish introduced findings. The checker may need surrounding crate context even though the review unit is one resulting file.
 - Reuse an existing analyzer. Begin with one explicitly enabled quality check demonstrated against a bad example and its acceptable near-match. A syntax error or process success alone does not establish quality-rule coverage.
