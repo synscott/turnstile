@@ -4,6 +4,11 @@ This patch is for upstream `can1357/oh-my-pi` commit
 `61b1b8aef634334eaf1412afd003a763e1d1b9c1` (18.1.16), not a global OMP installation.
 It adds an optional `edit_prepared` extension event at the native whole-call write
 boundary. It does **not** implement Turnstile's analyzer integration or model repair loop.
+It also gives `edit_prepared` handlers a managed `ctx.exec` process owner. The
+current patch is cumulative against the pristine pin: do not apply it over an
+older patched tree. Earlier accepted patch/source identities remain historical
+in their immutable review archives. The managed-exec correction changes only
+TypeScript SDK/process ownership; Rust source and the compiled addon are unchanged.
 
 ## Restore and build
 
@@ -94,6 +99,24 @@ A stock SDK can accept unknown event registration without ever emitting it: when
 the capability method is missing or false, install an existing `tool_call` blocker
 for `edit`, rather than merely registering `edit_prepared` or failing extension load.
 The upstream API documentation includes the fail-closed registration pattern.
+
+Required subprocess checks must additionally hold when the prepared handler's
+`ctx.exec` is absent. `supportsEditPrepared()` proves native staging support, not
+this SDK process-lifetime contract. Use `ctx.exec`, not ordinary `api.exec`, for
+managed checks: it inherits this handler's existing timeout/abort, rejects late
+launches, and cancels/drains only its own process trees before native completion.
+This includes same-tool `ctx.invokeTool` delegation and separate concurrent calls;
+it does not correlate cleanup through outer `tool_result` IDs.
+
+`ctx.exec` accepts `input` (UTF-8 text or bytes over stdin) and `isolatedTemp:true`.
+The existing executor owns a short temporary root, sets child-only
+`TEMP`/`TMP`/`TMPDIR`, and removes that root after the process tree settles.
+Put copied checker contexts there; keep it outside the selected Cargo root.
+Runner shutdown drains these managed processes too. Noncooperative handler
+promises remain bounded by the existing handler timeout; only registered managed
+command work is awaited. Native TypeScript completion awaits the started runner
+check even when native cancellation wins first. No extra timeout, generic cleanup
+callback, arbitrary cleanup-path API, parser, or Rust/addon change is involved.
 
 The listener receives immutable final execute `input` and ordered `operations`, each
 with `op`, `path`, `displayPath`, `moveTo`, `before`, `after`, and `moveBefore`.

@@ -1,7 +1,8 @@
 diff --git a/crates/pi-edit/src/engine.rs b/crates/pi-edit/src/engine.rs
+index 126e3d8..adc7fbb 100644
 --- a/crates/pi-edit/src/engine.rs
 +++ b/crates/pi-edit/src/engine.rs
-@@ -133,6 +133,8 @@
+@@ -133,6 +133,8 @@ pub struct StagedFile {
  	/// Clipboard state to publish once this file's write lands (hashline
  	/// `CUT`/`PUT` registers).
  	pub clipboard_after:    Option<crate::store::Clipboard>,
@@ -10,7 +11,7 @@ diff --git a/crates/pi-edit/src/engine.rs b/crates/pi-edit/src/engine.rs
  }
  
  impl StagedFile {
-@@ -158,6 +160,7 @@
+@@ -158,6 +160,7 @@ impl StagedFile {
  			text_override: None,
  			record_snapshot: false,
  			clipboard_after: None,
@@ -19,9 +20,10 @@ diff --git a/crates/pi-edit/src/engine.rs b/crates/pi-edit/src/engine.rs
  	}
  }
 diff --git a/crates/pi-edit/src/files.rs b/crates/pi-edit/src/files.rs
+index 0f47321..53e27f9 100644
 --- a/crates/pi-edit/src/files.rs
 +++ b/crates/pi-edit/src/files.rs
-@@ -15,7 +15,7 @@
+@@ -15,7 +15,7 @@ use std::{
  };
  
  use crate::{
@@ -30,7 +32,7 @@ diff --git a/crates/pi-edit/src/files.rs b/crates/pi-edit/src/files.rs
  	error::{EditError, EditResult},
  	notebook,
  	path_policy::{PathPolicy, canonical_key},
-@@ -99,20 +99,139 @@
+@@ -99,20 +99,139 @@ fn stamp(absolute: &Path) -> Option<Stamp> {
  	Some(Stamp { mtime: meta.modified().ok(), len: meta.len() })
  }
  
@@ -171,7 +173,7 @@ diff --git a/crates/pi-edit/src/files.rs b/crates/pi-edit/src/files.rs
  		let Some(current) = stamp(&resolved.absolute) else {
  			return Ok(None);
  		};
-@@ -187,7 +306,11 @@
+@@ -187,7 +306,11 @@ impl FileSource for FileCache {
  	}
  
  	fn exists(&mut self, absolute: &Path) -> bool {
@@ -184,16 +186,15 @@ diff --git a/crates/pi-edit/src/files.rs b/crates/pi-edit/src/files.rs
  	}
  
  	fn read(&mut self, authored: &str) -> EditResult<Arc<FileRead>> {
-@@ -204,5 +327,6 @@
+@@ -204,5 +327,6 @@ impl FileSource for FileCache {
  	fn clear(&mut self) {
  		self.reads.clear();
  		self.resolutions.clear();
--	}
--}
 +		self.existence.clear();
-+	}
-+}
+ 	}
+ }
 diff --git a/crates/pi-edit/src/lib.rs b/crates/pi-edit/src/lib.rs
+index 7c861e5..8277b70 100644
 --- a/crates/pi-edit/src/lib.rs
 +++ b/crates/pi-edit/src/lib.rs
 @@ -1,6 +1,6 @@
@@ -204,7 +205,7 @@ diff --git a/crates/pi-edit/src/lib.rs b/crates/pi-edit/src/lib.rs
  //! apply through a host-owned writer.
  //!
  //! # Architecture
-@@ -39,8 +39,8 @@
+@@ -39,8 +39,8 @@ pub use engine::{
  pub use error::{EditError, EditResult};
  pub use path_policy::PathPolicy;
  pub use session::{
@@ -216,9 +217,10 @@ diff --git a/crates/pi-edit/src/lib.rs b/crates/pi-edit/src/lib.rs
  pub use store::EditStore;
  pub use stream_json::{ArgSnapshot, ArgStream, EditEntry};
 diff --git a/crates/pi-edit/src/modes/hashline/patcher.rs b/crates/pi-edit/src/modes/hashline/patcher.rs
+index af273f0..3b79039 100644
 --- a/crates/pi-edit/src/modes/hashline/patcher.rs
 +++ b/crates/pi-edit/src/modes/hashline/patcher.rs
-@@ -408,11 +408,14 @@
+@@ -408,11 +408,14 @@ pub fn stage_patch(
  		item.record_snapshot = true;
  		item.clipboard_after = Some(clipboard.fork());
  		if engine_op == EngineFileOp::Noop && patch.sections.len() == 1 {
@@ -235,9 +237,10 @@ diff --git a/crates/pi-edit/src/modes/hashline/patcher.rs b/crates/pi-edit/src/m
  		staged.push(item);
  	}
 diff --git a/crates/pi-edit/src/modes/sloppy/apply.rs b/crates/pi-edit/src/modes/sloppy/apply.rs
+index 8c92454..a592a9a 100644
 --- a/crates/pi-edit/src/modes/sloppy/apply.rs
 +++ b/crates/pi-edit/src/modes/sloppy/apply.rs
-@@ -2497,7 +2497,6 @@
+@@ -2497,7 +2497,6 @@ fn apply_operations(
  	if result == content {
  		return Err(no_op_error(context, payload, None, Some((content, last_match)), None, None));
  	}
@@ -246,14 +249,13 @@ diff --git a/crates/pi-edit/src/modes/sloppy/apply.rs b/crates/pi-edit/src/modes
  	context.notes.extend(deletion_notes.into_values());
  	Ok(result)
 diff --git a/crates/pi-edit/src/session.rs b/crates/pi-edit/src/session.rs
+index c185498..7b55604 100644
 --- a/crates/pi-edit/src/session.rs
 +++ b/crates/pi-edit/src/session.rs
-@@ -72,6 +72,28 @@
- #[async_trait]
- pub trait EditWriter: Send + Sync {
+@@ -74,6 +74,28 @@ pub trait EditWriter: Send + Sync {
  	async fn write(&self, request: WriteRequest) -> EditResult<WriteResponse>;
-+}
-+
+ }
+ 
 +/// Immutable, complete persisted operations. Preimages are always pre-call disk
 +/// images.
 +pub struct PreparedOperation<'a> {
@@ -274,10 +276,12 @@ diff --git a/crates/pi-edit/src/session.rs b/crates/pi-edit/src/session.rs
 +	fn check_active(&self) -> EditResult<()> {
 +		Ok(())
 +	}
- }
- 
++}
++
  /// Apply-time knobs.
-@@ -218,15 +240,18 @@
+ #[derive(Debug, Clone, Default)]
+ pub struct ApplyRequest {
+@@ -218,15 +240,18 @@ impl Session {
  	///
  	/// Order: reread every target fresh, stage all files in memory (any
  	/// failure aborts before the first write), enforce the plan-mode guard
@@ -299,7 +303,7 @@ diff --git a/crates/pi-edit/src/session.rs b/crates/pi-edit/src/session.rs
  		let snapshot = self.args.snapshot();
  		if !snapshot.complete {
  			return Err(EditError::parse("Edit arguments were incomplete"));
-@@ -239,11 +264,62 @@
+@@ -239,11 +264,62 @@ impl Session {
  				file.move_to.as_ref().map(|m| m.display.as_str()),
  			)?;
  		}
@@ -363,9 +367,10 @@ diff --git a/crates/pi-edit/src/session.rs b/crates/pi-edit/src/session.rs
  				WriteResponse::default()
  			} else {
 diff --git a/crates/pi-edit/src/store.rs b/crates/pi-edit/src/store.rs
+index a6a217d..85fc752 100644
 --- a/crates/pi-edit/src/store.rs
 +++ b/crates/pi-edit/src/store.rs
-@@ -111,6 +111,7 @@
+@@ -111,6 +111,7 @@ struct PathHistory {
  }
  
  struct StoreState {
@@ -373,7 +378,7 @@ diff --git a/crates/pi-edit/src/store.rs b/crates/pi-edit/src/store.rs
  	histories:       HashMap<PathBuf, PathHistory>,
  	clipboard:       Clipboard,
  	noop:            HashMap<PathBuf, (u64, u32)>,
-@@ -123,6 +124,7 @@
+@@ -123,6 +124,7 @@ struct StoreState {
  impl Default for StoreState {
  	fn default() -> Self {
  		Self {
@@ -381,7 +386,7 @@ diff --git a/crates/pi-edit/src/store.rs b/crates/pi-edit/src/store.rs
  			histories:       HashMap::new(),
  			clipboard:       Clipboard::default(),
  			noop:            HashMap::new(),
-@@ -141,6 +143,21 @@
+@@ -141,6 +143,21 @@ pub struct EditStore {
  }
  
  impl EditStore {
@@ -403,7 +408,7 @@ diff --git a/crates/pi-edit/src/store.rs b/crates/pi-edit/src/store.rs
  	/// Construct a store with production retention limits.
  	pub fn new() -> Self {
  		Self::default()
-@@ -156,6 +173,7 @@
+@@ -156,6 +173,7 @@ impl EditStore {
  	pub fn record(&self, path: &Path, text: &str, seen_lines: Option<&[u32]>) -> String {
  		let hash = file_hash(text);
  		let mut state = self.inner.lock();
@@ -411,7 +416,7 @@ diff --git a/crates/pi-edit/src/store.rs b/crates/pi-edit/src/store.rs
  		state.clock = state.clock.wrapping_add(1);
  		let touched = state.clock;
  		let max_versions = state.max_versions;
-@@ -205,6 +223,7 @@
+@@ -205,6 +223,7 @@ impl EditStore {
  	/// Union displayed lines into the most recent version matching a tag.
  	pub fn record_seen_lines(&self, path: &Path, hash: &str, lines: &[u32]) {
  		let mut state = self.inner.lock();
@@ -419,7 +424,7 @@ diff --git a/crates/pi-edit/src/store.rs b/crates/pi-edit/src/store.rs
  		touch(&mut state, path);
  		if let Some(version) = state
  			.histories
-@@ -262,12 +281,15 @@
+@@ -262,12 +281,15 @@ impl EditStore {
  
  	/// Remove one path's history.
  	pub fn invalidate(&self, path: &Path) {
@@ -436,7 +441,7 @@ diff --git a/crates/pi-edit/src/store.rs b/crates/pi-edit/src/store.rs
  		state.clock = state.clock.wrapping_add(1);
  		let touched = state.clock;
  		let max_versions = state.max_versions;
-@@ -292,7 +314,9 @@
+@@ -292,7 +314,9 @@ impl EditStore {
  
  	/// Remove all snapshots, clipboard state, and no-op counters.
  	pub fn clear(&self) {
@@ -447,7 +452,7 @@ diff --git a/crates/pi-edit/src/store.rs b/crates/pi-edit/src/store.rs
  	}
  
  	/// Start a clipboard batch with persisted named registers.
-@@ -302,13 +326,16 @@
+@@ -302,13 +326,16 @@ impl EditStore {
  
  	/// Publish named registers from a batch fork.
  	pub fn commit_clipboard(&self, fork: &Clipboard) {
@@ -465,7 +470,7 @@ diff --git a/crates/pi-edit/src/store.rs b/crates/pi-edit/src/store.rs
  		let count = state
  			.noop
  			.get(path)
-@@ -320,7 +347,9 @@
+@@ -320,7 +347,9 @@ impl EditStore {
  
  	/// Clear one path's no-op counter.
  	pub fn reset_noop(&self, path: &Path) {
@@ -477,9 +482,10 @@ diff --git a/crates/pi-edit/src/store.rs b/crates/pi-edit/src/store.rs
  }
  
 diff --git a/crates/pi-edit/tests/common/mod.rs b/crates/pi-edit/tests/common/mod.rs
+index 578a001..9c6fc00 100644
 --- a/crates/pi-edit/tests/common/mod.rs
 +++ b/crates/pi-edit/tests/common/mod.rs
-@@ -157,7 +157,7 @@
+@@ -157,7 +157,7 @@ impl Workspace {
  		let mut session = self.session();
  		session.set_args_json(&args.to_string());
  		session.finish();
@@ -488,7 +494,7 @@ diff --git a/crates/pi-edit/tests/common/mod.rs b/crates/pi-edit/tests/common/mo
  	}
  
  	/// Run a raw-payload apply (custom-format tools).
-@@ -167,7 +167,7 @@
+@@ -167,7 +167,7 @@ impl Workspace {
  		let mut session = Session::new(config, self.store.clone());
  		session.push(input);
  		session.finish();
@@ -497,8 +503,9 @@ diff --git a/crates/pi-edit/tests/common/mod.rs b/crates/pi-edit/tests/common/mo
  	}
  }
  
-diff --git a/crates/pi-edit/tests/guard.rs b/crates/pi-edit/tests/guard.rs
+diff --git a/b/crates/pi-edit/tests/guard.rs b/crates/pi-edit/tests/guard.rs
 new file mode 100644
+index 0000000..9fa9d34
 --- /dev/null
 +++ b/crates/pi-edit/tests/guard.rs
 @@ -0,0 +1,92 @@
@@ -595,9 +602,10 @@ new file mode 100644
 +	assert_eq!(ws.read("a.txt").as_deref(), Some("external\n"));
 +}
 diff --git a/crates/pi-edit/tests/session.rs b/crates/pi-edit/tests/session.rs
+index ec28bc5..a62a862 100644
 --- a/crates/pi-edit/tests/session.rs
 +++ b/crates/pi-edit/tests/session.rs
-@@ -49,7 +49,7 @@
+@@ -49,7 +49,7 @@ async fn streamed_sloppy_previews_grow_and_match_apply() {
  
  	let writer = DiskWriter::default();
  	let outcome = session
@@ -606,7 +614,7 @@ diff --git a/crates/pi-edit/tests/session.rs b/crates/pi-edit/tests/session.rs
  		.await
  		.expect("apply");
  	assert_eq!(outcome.files.len(), 1);
-@@ -101,7 +101,7 @@
+@@ -101,7 +101,7 @@ async fn apply_rereads_files_changed_after_preview() {
  	session.finish();
  	let writer = DiskWriter::default();
  	let outcome = session
@@ -616,9 +624,10 @@ diff --git a/crates/pi-edit/tests/session.rs b/crates/pi-edit/tests/session.rs
  		.expect("apply");
  	assert!(outcome.files[0].diff.contains("+3|BETA"), "{}", outcome.files[0].diff);
 diff --git a/crates/pi-natives/src/edit.rs b/crates/pi-natives/src/edit.rs
+index b3cf639..b00d54e 100644
 --- a/crates/pi-natives/src/edit.rs
 +++ b/crates/pi-natives/src/edit.rs
-@@ -17,13 +17,13 @@
+@@ -17,13 +17,13 @@ use std::{
  	path::{Path, PathBuf},
  	sync::{
  		Arc,
@@ -634,7 +643,7 @@ diff --git a/crates/pi-natives/src/edit.rs b/crates/pi-natives/src/edit.rs
  	threadsafe_function::{ThreadsafeFunction, UnknownReturnValue},
  };
  use napi_derive::napi;
-@@ -32,7 +32,10 @@
+@@ -32,7 +32,10 @@ use pi_edit::{
  	diff_string::{BlockContextSource, generate_diff_string},
  	modes::{hashline, sloppy},
  	path_policy::canonical_key,
@@ -646,7 +655,7 @@ diff --git a/crates/pi-natives/src/edit.rs b/crates/pi-natives/src/edit.rs
  	store,
  	stream_json::snapshot_from_text,
  	text::normalize_to_lf,
-@@ -183,6 +186,24 @@
+@@ -183,6 +186,24 @@ pub struct EditApplyRequest {
  	pub lsp_flush:    bool,
  }
  
@@ -671,7 +680,7 @@ diff --git a/crates/pi-natives/src/edit.rs b/crates/pi-natives/src/edit.rs
  /// One file's apply outcome.
  #[napi(object)]
  pub struct EditFileOutcome {
-@@ -345,6 +366,7 @@
+@@ -345,6 +366,7 @@ impl EditStore {
  
  type PreviewCallback = ThreadsafeFunction<EditPreviewBatch, UnknownReturnValue>;
  type WriterCallback = ThreadsafeFunction<EditWriteRequest, Promise<EditWriteResponse>>;
@@ -679,7 +688,7 @@ diff --git a/crates/pi-natives/src/edit.rs b/crates/pi-natives/src/edit.rs
  
  /// Argument mutations queued on the JS thread and drained into the session
  /// under its lock, preserving arrival order without ever blocking JS.
-@@ -355,15 +377,19 @@
+@@ -355,15 +377,19 @@ enum ArgOp {
  }
  
  struct Shared {
@@ -703,7 +712,7 @@ diff --git a/crates/pi-natives/src/edit.rs b/crates/pi-natives/src/edit.rs
  		let _ = self.wake.try_send(());
  	}
  
-@@ -415,6 +441,66 @@
+@@ -415,6 +441,66 @@ impl EditWriter for TsfnWriter {
  	}
  }
  
@@ -770,7 +779,7 @@ diff --git a/crates/pi-natives/src/edit.rs b/crates/pi-natives/src/edit.rs
  /// One edit tool call's streaming session.
  #[napi]
  pub struct EditSession {
-@@ -423,6 +509,12 @@
+@@ -423,6 +509,12 @@ pub struct EditSession {
  
  #[napi]
  impl EditSession {
@@ -783,7 +792,7 @@ diff --git a/crates/pi-natives/src/edit.rs b/crates/pi-natives/src/edit.rs
  	/// Open a session. `onPreview` (optional) receives every settled preview
  	/// batch; batches are delivered one at a time, in generation order.
  	#[napi(constructor)]
-@@ -436,10 +528,13 @@
+@@ -436,10 +528,13 @@ impl EditSession {
  		let config = policy.into_config()?;
  		let (wake, rx) = flume::bounded::<()>(1);
  		let shared = Arc::new(Shared {
@@ -798,7 +807,7 @@ diff --git a/crates/pi-natives/src/edit.rs b/crates/pi-natives/src/edit.rs
  		});
  		if let Some(on_preview) = on_preview {
  			napi::bindgen_prelude::spawn(preview_pump(Arc::clone(&shared), rx, on_preview));
-@@ -465,9 +560,10 @@
+@@ -465,9 +560,10 @@ impl EditSession {
  		self.shared.enqueue(ArgOp::Finish);
  	}
  
@@ -812,7 +821,7 @@ diff --git a/crates/pi-natives/src/edit.rs b/crates/pi-natives/src/edit.rs
  	#[napi]
  	pub async fn apply(
  		&self,
-@@ -475,17 +571,28 @@
+@@ -475,17 +571,28 @@ impl EditSession {
  		#[napi(ts_arg_type = "(error: Error | null, request: EditWriteRequest) => \
  		                      Promise<EditWriteResponse>")]
  		writer: WriterCallback,
@@ -842,7 +851,7 @@ diff --git a/crates/pi-natives/src/edit.rs b/crates/pi-natives/src/edit.rs
  			)
  			.await;
  		Ok(match outcome {
-@@ -522,6 +629,8 @@
+@@ -522,6 +629,8 @@ impl EditSession {
  	#[napi]
  	pub fn close(&self) {
  		self.shared.closed.store(true, Ordering::Release);
@@ -851,7 +860,7 @@ diff --git a/crates/pi-natives/src/edit.rs b/crates/pi-natives/src/edit.rs
  		let _ = self.shared.wake.try_send(());
  	}
  }
-@@ -539,8 +648,9 @@
+@@ -539,8 +648,9 @@ async fn preview_pump(shared: Arc<Shared>, rx: flume::Receiver<()>, on_preview:
  		}
  		let compute = Arc::clone(&shared);
  		let batch = napi::bindgen_prelude::spawn_blocking(move || {
@@ -864,9 +873,10 @@ diff --git a/crates/pi-natives/src/edit.rs b/crates/pi-natives/src/edit.rs
  				return None;
  			}
 diff --git a/docs/extensions.md b/docs/extensions.md
+index 057cb67..ca290de 100644
 --- a/docs/extensions.md
 +++ b/docs/extensions.md
-@@ -305,11 +305,76 @@
+@@ -305,12 +305,96 @@ Cancelable pre-events:
  ### Tool lifecycle
  
  - `tool_call` (pre-exec, may block, or revise the tool's execution `input`; for model-issued calls it fires at arg-prep time in the agent loop, so a revision is revalidated and seen by concurrency scheduling, execution events, the persisted assistant message, and the approval gate alike)
@@ -876,7 +886,7 @@ diff --git a/docs/extensions.md b/docs/extensions.md
  - `tool_approval_requested` / `tool_approval_resolved` (observability; emitted by `wrapper.ts` only when a tool requires approval and an approval handler is registered)
  
  `tool_result` is middleware-style: handlers run in extension order and each sees prior modifications.
-+
+ 
 +### Native edit veto (`edit_prepared`)
 +
 +Registering a listener opts that session into guarded native edits. With no listeners,
@@ -901,6 +911,25 @@ diff --git a/docs/extensions.md b/docs/extensions.md
 +  return;
 +}
 +```
++
++Required external checkers must also feature-detect `ctx.exec` inside the
++`edit_prepared` handler and hold before launch if it is absent. This handler-bound
++executor inherits the existing handler timeout and native abort signal. Unlike
++ordinary `api.exec`, it registers command work with this exact handler invocation:
++timeout, abort, or runner shutdown cancels and drains its process trees before
++native edit completion, including same-tool delegation. Concurrent handlers have
++separate ownership. The runner never waits for an arbitrary noncooperative handler
++promise, and saved executors reject launches after their scope closes.
++
++`ctx.exec(command, args, { input, isolatedTemp: true })` sends UTF-8 text or bytes
++through stdin using the existing process executor. `isolatedTemp` creates a short
++executor-owned directory, sets child-only `TEMP`, `TMP`, and `TMPDIR` to it, and
++removes it after process-tree settlement. Checkers can put copied contexts there
++without leaking them when killed. The directory must remain outside the selected
++analysis context. Neither option adds a timeout, shell quoting protocol, arbitrary
++cleanup callback, or path-deletion API. Ordinary `api.exec` remains available with
++its existing caller-owned lifetime; it is not a substitute for this managed
++executor when an edit check must drain before completion.
 +
 +Each ordered operation contains `op` (`create`, `update`, `delete`, `move`, or `noop`),
 +absolute `path`, `displayPath`, nullable `moveTo`, and nullable `before`, `after`,
@@ -940,10 +969,11 @@ diff --git a/docs/extensions.md b/docs/extensions.md
 +This is a pre-write veto, not filesystem rollback: unrelated I/O failures after
 +permission can leave earlier files applied. It covers the native edit tool, including
 +same-tool delegation, not arbitrary extension writes or other tools.
- 
++
  ### Reliability/runtime signals
  
-@@ -382,8 +447,9 @@
+ - `auto_compaction_start` / `auto_compaction_end`
+@@ -382,8 +466,9 @@ It runs the **native** built-in of the same name as your tool (delegation is sam
  cannot reach an arbitrary target or escalate past the approval already granted for this call) and
  returns its result, including the native tool's own side effects and internal bookkeeping. It is
  present only when a native built-in of that name exists — `ctx.invokeTool` is `undefined` for a
@@ -956,9 +986,10 @@ diff --git a/docs/extensions.md b/docs/extensions.md
  Template:
  
 diff --git a/packages/coding-agent/src/edit/index.ts b/packages/coding-agent/src/edit/index.ts
+index a622221..79d445f 100644
 --- a/packages/coding-agent/src/edit/index.ts
 +++ b/packages/coding-agent/src/edit/index.ts
-@@ -18,6 +18,7 @@
+@@ -18,6 +18,7 @@ import {
  	type EditFileOutcome,
  	type EditInspection,
  	type EditPolicy,
@@ -966,7 +997,7 @@ diff --git a/packages/coding-agent/src/edit/index.ts b/packages/coding-agent/src
  	type EditWriteRequest,
  	type EditWriteResponse,
  } from "@oh-my-pi/pi-natives";
-@@ -35,7 +36,7 @@
+@@ -35,7 +36,7 @@ import { FileChangeType, notifyWorkspaceWatchedFiles } from "../lsp/client";
  import { DeferredDiagnostics } from "../lsp/deferred-diagnostics";
  import { getDiagnosticsLedger } from "../lsp/diagnostics-ledger";
  import type { ToolSession } from "../tools";
@@ -975,7 +1006,7 @@ diff --git a/packages/coding-agent/src/edit/index.ts b/packages/coding-agent/src
  import { truncateForPrompt } from "../tools/approval";
  import {
  	deleteFileWithFallback,
-@@ -51,7 +52,7 @@
+@@ -51,7 +52,7 @@ import {
  import { outputMeta } from "../tools/output-meta";
  import { resolveFileWriteApprovalTier } from "../tools/path-utils";
  import { planLocalProtocolOptions } from "../tools/plan-mode-guard";
@@ -984,7 +1015,7 @@ diff --git a/packages/coding-agent/src/edit/index.ts b/packages/coding-agent/src
  import { type EditMode, normalizeEditMode, resolveEditMode } from "../utils/edit-mode";
  import { attemptEditAutoRepair, type EditAutoRepairOutcome } from "./auto-repair";
  import { type AppliedEditSnapshot, createEditBlackboxRecorder } from "./blackbox";
-@@ -339,6 +340,7 @@
+@@ -339,6 +340,7 @@ export class EditTool implements AgentTool<TInput> {
  	readonly #writethrough: WritethroughCallback;
  	readonly #editMode?: EditMode;
  	readonly #deferredDiagnostics: DeferredDiagnostics;
@@ -992,7 +1023,7 @@ diff --git a/packages/coding-agent/src/edit/index.ts b/packages/coding-agent/src
  	readonly #sessions = new Map<string, EditSession>();
  
  	constructor(
-@@ -359,6 +361,7 @@
+@@ -359,6 +361,7 @@ export class EditTool implements AgentTool<TInput> {
  			session.settings.get("lsp.diagnosticsDeduplicate");
  		this.#deferredDiagnostics = new DeferredDiagnostics(session, deduplicateDiagnostics);
  		this.#writethrough = createEditWritethrough(session);
@@ -1000,7 +1031,7 @@ diff --git a/packages/coding-agent/src/edit/index.ts b/packages/coding-agent/src
  	}
  
  	get mode(): EditMode {
-@@ -468,34 +471,110 @@
+@@ -468,34 +471,116 @@ export class EditTool implements AgentTool<TInput> {
  		_onUpdate?: AgentToolUpdateCallback<EditToolDetails, TInput>,
  		context?: AgentToolContext,
  	): Promise<AgentToolResult<EditToolDetails, TInput>> {
@@ -1025,6 +1056,7 @@ diff --git a/packages/coding-agent/src/edit/index.ts b/packages/coding-agent/src
  		let outcome;
 +		let writeStarted = false;
 +		let heldDiagnostics: FileDiagnosticsResult | undefined;
++		let preparedCheck: Promise<unknown> | undefined;
 +		const cancel = () => editSession.close();
 +		if (beforeApply) {
 +			signal?.addEventListener("abort", cancel, { once: true });
@@ -1048,7 +1080,7 @@ diff --git a/packages/coding-agent/src/edit/index.ts b/packages/coding-agent/src
 +					? async (_error, operations) => {
 +							signal?.throwIfAborted();
 +							this.#assertGuardedWriter(operations);
-+							const result = await beforeApply(
++							const check = beforeApply(
 +								{
 +									type: "edit_prepared",
 +									toolCallId,
@@ -1058,6 +1090,8 @@ diff --git a/packages/coding-agent/src/edit/index.ts b/packages/coding-agent/src
 +								},
 +								signal,
 +							);
++							preparedCheck = check;
++							const result = await check;
 +							signal?.throwIfAborted();
 +							this.#assertGuardedWriter(operations);
 +							if (
@@ -1098,6 +1132,9 @@ diff --git a/packages/coding-agent/src/edit/index.ts b/packages/coding-agent/src
 +			signal?.removeEventListener("abort", cancel);
  			editSession.close();
  			if (this.#sessions.get(toolCallId) === editSession) this.#sessions.delete(toolCallId);
++			// Native close may win its abort race before the JS runner finishes draining
++			// managed checker work. Await the bounded runner, not an extension handler.
++			await preparedCheck;
  		}
  
  		if (outcome.isError) {
@@ -1118,7 +1155,7 @@ diff --git a/packages/coding-agent/src/edit/index.ts b/packages/coding-agent/src
  		}
  
  		const details = aggregateDetails(outcome.files, this.mode);
-@@ -543,6 +622,31 @@
+@@ -543,6 +628,31 @@ export class EditTool implements AgentTool<TInput> {
  		return result;
  	}
  
@@ -1150,10 +1187,120 @@ diff --git a/packages/coding-agent/src/edit/index.ts b/packages/coding-agent/src
  	#inspect(args: unknown): EditInspection {
  		try {
  			return editInspect(this.mode, JSON.stringify(args ?? {}));
+diff --git a/packages/coding-agent/src/exec/exec.ts b/packages/coding-agent/src/exec/exec.ts
+index d429a85..a138031 100644
+--- a/packages/coding-agent/src/exec/exec.ts
++++ b/packages/coding-agent/src/exec/exec.ts
+@@ -1,6 +1,9 @@
+ /**
+  * Shared command execution utilities for hooks and custom tools.
+  */
++import { mkdtemp, rm } from "node:fs/promises";
++import { tmpdir } from "node:os";
++import { join } from "node:path";
+ import { ptree } from "@oh-my-pi/pi-utils";
+ 
+ /**
+@@ -13,6 +16,10 @@ export interface ExecOptions {
+ 	timeout?: number;
+ 	/** Working directory */
+ 	cwd?: string;
++	/** UTF-8 text or bytes sent to the child's stdin. */
++	input?: string | Uint8Array;
++	/** Own a temporary root for this child's TEMP/TMP/TMPDIR and remove it after tree settlement. */
++	isolatedTemp?: boolean;
+ }
+ 
+ /**
+@@ -35,19 +42,70 @@ export async function execCommand(
+ 	cwd: string,
+ 	options?: ExecOptions,
+ ): Promise<ExecResult> {
+-	const result = await ptree.exec([command, ...args], {
+-		cwd,
+-		signal: options?.signal,
+-		timeout: options?.timeout,
+-		allowNonZero: true,
+-		allowAbort: true,
+-		stderr: "full",
+-	});
++	let temporary: string | undefined;
++	try {
++		if (options?.isolatedTemp && options.signal?.aborted) return { stdout: "", stderr: "", code: 0, killed: true };
++		if (options?.isolatedTemp) temporary = await mkdtemp(join(tmpdir(), "oe-"));
++		if (options?.isolatedTemp && options.signal?.aborted) return { stdout: "", stderr: "", code: 0, killed: true };
++		const result = await ptree.exec([command, ...args], {
++			cwd,
++			signal: options?.signal,
++			timeout: options?.timeout,
++			input: options?.input,
++			...(temporary ? { env: { ...process.env, TEMP: temporary, TMP: temporary, TMPDIR: temporary } } : {}),
++			allowNonZero: true,
++			allowAbort: true,
++			stderr: "full",
++		});
++		return {
++			stdout: result.stdout,
++			stderr: result.stderr,
++			code: result.exitCode ?? 0,
++			killed: Boolean(result.exitError?.aborted),
++		};
++	} finally {
++		if (temporary) await rm(temporary, { recursive: true, force: true });
++	}
++}
++
++/** Own only managed command work, never the potentially noncooperative handler promise. */
++export class ManagedExecScope {
++	#controller = new AbortController();
++	#signal: AbortSignal;
++	#pending = new Set<Promise<ExecResult>>();
++	#closing?: Promise<void>;
+ 
+-	return {
+-		stdout: result.stdout,
+-		stderr: result.stderr,
+-		code: result.exitCode ?? 0,
+-		killed: Boolean(result.exitError?.aborted),
++	constructor(
++		signal: AbortSignal,
++		private readonly cwd: string,
++	) {
++		this.#signal = AbortSignal.any([signal, this.#controller.signal]);
++	}
++
++	exec = (command: string, args: string[], options?: ExecOptions): Promise<ExecResult> => {
++		if (this.#closing) return Promise.reject(new Error("Managed edit check execution scope is closed"));
++		const signal = options?.signal ? AbortSignal.any([this.#signal, options.signal]) : this.#signal;
++		const work = execCommand(command, args, options?.cwd ?? this.cwd, { ...options, signal });
++		this.#pending.add(work);
++		void work.then(
++			() => this.#pending.delete(work),
++			() => this.#pending.delete(work),
++		);
++		return work;
+ 	};
++
++	close(): Promise<void> {
++		if (!this.#closing) {
++			// Install the closed state before abort listeners can attempt another launch.
++			const settled = Promise.withResolvers<void>();
++			this.#closing = settled.promise;
++			this.#controller.abort();
++			void Promise.allSettled([...this.#pending]).then(results => {
++				const errors = results.filter(result => result.status === "rejected").map(result => result.reason);
++				if (errors.length) settled.reject(new AggregateError(errors, "Managed edit check cleanup failed"));
++				else settled.resolve();
++			});
++		}
++		return this.#closing;
++	}
+ }
 diff --git a/packages/coding-agent/src/extensibility/extensions/loader.ts b/packages/coding-agent/src/extensibility/extensions/loader.ts
+index a94f67e..3b934bd 100644
 --- a/packages/coding-agent/src/extensibility/extensions/loader.ts
 +++ b/packages/coding-agent/src/extensibility/extensions/loader.ts
-@@ -16,6 +16,7 @@
+@@ -16,6 +16,7 @@ import type {
  	TextContent,
  	TSchema,
  } from "@oh-my-pi/pi-ai";
@@ -1161,7 +1308,7 @@ diff --git a/packages/coding-agent/src/extensibility/extensions/loader.ts b/pack
  import { isBuiltinComposerStyle, type KeyId } from "@oh-my-pi/pi-tui";
  import { hasFsCode, isEacces, isEnoent, logger } from "@oh-my-pi/pi-utils";
  import { type ExtensionModule, extensionModuleCapability } from "../../capability/extension-module";
-@@ -171,6 +172,10 @@
+@@ -171,6 +172,10 @@ class ConcreteExtensionAPI implements ExtensionAPI, IExtensionRuntime {
  		public readonly events: EventBus,
  	) {}
  
@@ -1173,9 +1320,18 @@ diff --git a/packages/coding-agent/src/extensibility/extensions/loader.ts b/pack
  		const list = this.extension.handlers.get(event) ?? [];
  		list.push(handler);
 diff --git a/packages/coding-agent/src/extensibility/extensions/runner.ts b/packages/coding-agent/src/extensibility/extensions/runner.ts
+index e2bbea8..4ab9092 100644
 --- a/packages/coding-agent/src/extensibility/extensions/runner.ts
 +++ b/packages/coding-agent/src/extensibility/extensions/runner.ts
-@@ -35,6 +35,8 @@
+@@ -14,6 +14,7 @@ import type { KeyId } from "@oh-my-pi/pi-tui";
+ import { logger } from "@oh-my-pi/pi-utils";
+ import type { ModelRegistry } from "../../config/model-registry";
+ import { type Settings, withActiveSettings } from "../../config/settings";
++import { ManagedExecScope } from "../../exec/exec";
+ import type { LocalProtocolOptions } from "../../internal-urls/local-protocol";
+ import type { MemoryRuntimeContext } from "../../memory-backend";
+ import { type Theme, theme } from "../../modes/theme/theme";
+@@ -35,6 +36,8 @@ import type {
  	ContextEvent,
  	ContextEventResult,
  	ContextUsage,
@@ -1184,7 +1340,104 @@ diff --git a/packages/coding-agent/src/extensibility/extensions/runner.ts b/pack
  	Extension,
  	ExtensionActions,
  	ExtensionCommandContext,
-@@ -1510,6 +1512,54 @@
+@@ -217,6 +220,7 @@ function createHandlerContext(
+ 	ctx: ExtensionContext,
+ 	handlerSignal: AbortSignal,
+ 	timeoutBudget?: HandlerTimeoutBudget,
++	execScope?: ManagedExecScope,
+ ): ExtensionContext {
+ 	const scoped: ExtensionContext = Object.create(ctx);
+ 	Object.defineProperty(scoped, "ui", {
+@@ -224,6 +228,7 @@ function createHandlerContext(
+ 		enumerable: true,
+ 		configurable: true,
+ 	});
++	if (execScope) Object.defineProperty(scoped, "exec", { value: execScope.exec, enumerable: true });
+ 	return scoped;
+ }
+ 
+@@ -395,6 +400,7 @@ export async function emitSessionShutdownEvent(extensionRunner: ExtensionRunner
+ 	} finally {
+ 		extensionRunner.disposeFileFallbacks();
+ 		extensionRunner.clearManagedTimers();
++		await extensionRunner.disposeManagedExec();
+ 	}
+ }
+ 
+@@ -458,6 +464,8 @@ export class ExtensionRunner {
+ 	#toolRegistrationScope = new AsyncLocalStorage<ToolRegistrationScope>();
+ 	#toolRegistrationBarrier: Promise<void> | undefined;
+ 	#initialized = false;
++	#managedExecScopes = new Set<ManagedExecScope>();
++	#managedExecClosed = false;
+ 	/**
+ 	 * Buffer for `credential_disabled` events received via {@link emitCredentialDisabled}
+ 	 * before {@link initialize} has run. Drained through {@link emit} once initialize sets
+@@ -1234,6 +1242,14 @@ export class ExtensionRunner {
+ 		for (const dispose of this.#fileFallbackDisposers.splice(0)) dispose();
+ 	}
+ 
++	/** Close only this runner's managed edit-check processes, including their temporary roots. */
++	async disposeManagedExec(): Promise<void> {
++		this.#managedExecClosed = true;
++		const results = await Promise.allSettled([...this.#managedExecScopes].map(scope => scope.close()));
++		const errors = results.filter(result => result.status === "rejected").map(result => result.reason);
++		if (errors.length) throw new AggregateError(errors, "Managed edit check shutdown failed");
++	}
++
+ 	createCommandContext(): ExtensionCommandContext {
+ 		return {
+ 			...this.createContext(),
+@@ -1279,20 +1295,33 @@ export class ExtensionRunner {
+ 		const signals = [outerSignal, sessionStopSignal].filter((s): s is AbortSignal => s !== undefined);
+ 		const signal = signals.length === 0 ? undefined : signals.length === 1 ? signals[0] : AbortSignal.any(signals);
+ 		if (signal?.aborted) return undefined;
++		if (event.type === "edit_prepared" && this.#managedExecClosed) {
++			return onFailure?.("error", "managed edit checking is shut down");
++		}
+ 		const registrationScope: ToolRegistrationScope = { pending: new Set(), closed: false };
+ 		let handlerResult: R | typeof EXTENSION_HANDLER_TIMEOUT | typeof EXTENSION_HANDLER_ABORTED | undefined;
+ 		let handlerFailure: { error: unknown } | undefined;
++		let execScope: ManagedExecScope | undefined;
+ 		try {
+ 			handlerResult = await withActiveSettings(this.settings, () =>
+ 				raceHandlerWithTimeout(
+ 					async (handlerSignal, budget) => {
+ 						registrationScope.signal = handlerSignal;
++						if (event.type === "edit_prepared") {
++							execScope = new ManagedExecScope(handlerSignal, ctx.cwd);
++							this.#managedExecScopes.add(execScope);
++						}
+ 						let result: R | undefined;
+ 						try {
+ 							result = await this.#toolRegistrationScope.run(registrationScope, () =>
+ 								handler(
+ 									event,
+-									createHandlerContext(ctx, handlerSignal, event.type === "tool_call" ? budget : undefined),
++									createHandlerContext(
++										ctx,
++										handlerSignal,
++										event.type === "tool_call" ? budget : undefined,
++										execScope,
++									),
+ 								),
+ 							);
+ 						} catch (error) {
+@@ -1315,6 +1344,13 @@ export class ExtensionRunner {
+ 			handlerFailure = { error };
+ 		} finally {
+ 			registrationScope.closed = true;
++			if (execScope) {
++				try {
++					await execScope.close();
++				} finally {
++					this.#managedExecScopes.delete(execScope);
++				}
++			}
+ 		}
+ 		if (handlerResult === EXTENSION_HANDLER_ABORTED) return undefined;
+ 		if (handlerResult === EXTENSION_HANDLER_TIMEOUT) {
+@@ -1510,6 +1546,54 @@ export class ExtensionRunner {
  		return result;
  	}
  
@@ -1240,9 +1493,10 @@ diff --git a/packages/coding-agent/src/extensibility/extensions/runner.ts b/pack
  		return this.emitUserEvent<UserBashEventResult>(event, "user_bash");
  	}
 diff --git a/packages/coding-agent/src/extensibility/extensions/types.ts b/packages/coding-agent/src/extensibility/extensions/types.ts
+index a4f7e75..0556b52 100644
 --- a/packages/coding-agent/src/extensibility/extensions/types.ts
 +++ b/packages/coding-agent/src/extensibility/extensions/types.ts
-@@ -20,6 +20,7 @@
+@@ -20,6 +20,7 @@ import type {
  	ToolLoadMode,
  } from "@oh-my-pi/pi-agent-core";
  import type { CompactionResult } from "@oh-my-pi/pi-agent-core/compaction";
@@ -1250,7 +1504,20 @@ diff --git a/packages/coding-agent/src/extensibility/extensions/types.ts b/packa
  import type {
  	Api,
  	AssistantMessageEvent,
-@@ -1028,6 +1029,20 @@
+@@ -467,6 +468,12 @@ export interface ExtensionContext {
+ 	hasUI: boolean;
+ 	/** Current working directory */
+ 	cwd: string;
++	/**
++	 * Present only for edit_prepared handlers. Commands inherit this handler's
++	 * timeout/abort and are drained, including isolated temporary roots, before
++	 * native edit completion. A closed scope rejects late launches.
++	 */
++	exec?: (command: string, args: string[], options?: ExecOptions) => Promise<ExecResult>;
+ 	/** Session manager (read-only) */
+ 	sessionManager: ReadonlySessionManager;
+ 	/** Model registry for API key resolution */
+@@ -1028,6 +1035,20 @@ export interface CustomToolResultEvent extends ToolResultEventBase {
  	details: unknown;
  }
  
@@ -1271,7 +1538,7 @@ diff --git a/packages/coding-agent/src/extensibility/extensions/types.ts b/packa
  /** Fired after a tool executes. Can modify result. */
  export type ToolResultEvent =
  	| BashToolResultEvent
-@@ -1106,6 +1121,7 @@
+@@ -1106,6 +1127,7 @@ export type ExtensionEvent =
  	| UserPythonEvent
  	| InputEvent
  	| ToolCallEvent
@@ -1279,7 +1546,7 @@ diff --git a/packages/coding-agent/src/extensibility/extensions/types.ts b/packa
  	| ToolResultEvent
  	| ToolApprovalRequestedEvent
  	| ToolApprovalResolvedEvent;
-@@ -1294,6 +1310,9 @@
+@@ -1294,6 +1316,9 @@ export interface ExtensionAPI {
  	on(event: "tool_approval_requested", handler: ExtensionHandler<ToolApprovalRequestedEvent>): void;
  	on(event: "tool_approval_resolved", handler: ExtensionHandler<ToolApprovalResolvedEvent>): void;
  	on(event: "tool_call", handler: ExtensionHandler<ToolCallEvent, ToolCallEventResult>): void;
@@ -1290,9 +1557,10 @@ diff --git a/packages/coding-agent/src/extensibility/extensions/types.ts b/packa
  	on(event: "user_bash", handler: ExtensionHandler<UserBashEvent, UserBashEventResult>): void;
  	on(event: "user_python", handler: ExtensionHandler<UserPythonEvent, UserPythonEventResult>): void;
 diff --git a/packages/coding-agent/src/lsp/writethrough.ts b/packages/coding-agent/src/lsp/writethrough.ts
+index eebdfe0..b324e48 100644
 --- a/packages/coding-agent/src/lsp/writethrough.ts
 +++ b/packages/coding-agent/src/lsp/writethrough.ts
-@@ -124,12 +124,15 @@
+@@ -124,12 +124,15 @@ export async function flushLspWritethroughBatch(
  	id: string,
  	cwd: string,
  	signal?: AbortSignal,
@@ -1309,9 +1577,10 @@ diff --git a/packages/coding-agent/src/lsp/writethrough.ts b/packages/coding-age
  		.diagnostics;
  }
 diff --git a/packages/coding-agent/src/sdk.ts b/packages/coding-agent/src/sdk.ts
+index 4353d35..d33e86d 100644
 --- a/packages/coding-agent/src/sdk.ts
 +++ b/packages/coding-agent/src/sdk.ts
-@@ -2810,6 +2810,10 @@
+@@ -2810,6 +2810,10 @@ async function createAgentSessionScoped(options: CreateAgentSessionOptions): Pro
  			localProtocolOptions,
  			() => (hasSession ? session.getAsyncJobSnapshot() : null),
  		);
@@ -1323,9 +1592,10 @@ diff --git a/packages/coding-agent/src/sdk.ts b/packages/coding-agent/src/sdk.ts
  		credentialDisabledTarget = extensionRunner;
  		for (const event of startupCredentialDisabledEvents.splice(0)) {
 diff --git a/packages/coding-agent/src/tools/index.ts b/packages/coding-agent/src/tools/index.ts
+index d52292e..806d15b 100644
 --- a/packages/coding-agent/src/tools/index.ts
 +++ b/packages/coding-agent/src/tools/index.ts
-@@ -11,7 +11,7 @@
+@@ -11,7 +11,7 @@ import type { Settings } from "../config/settings";
  import { EditTool } from "../edit";
  import { checkPythonKernelAvailability } from "../eval/py/kernel";
  import type { ToolPathWithSource } from "../extensibility/custom-tools";
@@ -1334,7 +1604,7 @@ diff --git a/packages/coding-agent/src/tools/index.ts b/packages/coding-agent/sr
  import type { Skill } from "../extensibility/skills";
  import type { GoalModeState, GoalRuntime } from "../goals";
  import { GoalTool } from "../goals/tools/goal-tool";
-@@ -223,6 +223,10 @@
+@@ -223,6 +223,10 @@ export interface ToolSession {
  	customToolPaths?: ToolPathWithSource[];
  	/** Whether LSP integrations are enabled */
  	enableLsp?: boolean;
@@ -1345,8 +1615,9 @@ diff --git a/packages/coding-agent/src/tools/index.ts b/packages/coding-agent/sr
  	/** Whether LSP is limited to navigation and diagnostics. */
  	lspReadOnly?: boolean;
  	/** Whether this invocation may expose IRC. `false` removes it even for subagents. */
-diff --git a/packages/coding-agent/test/edit-prepared.test.ts b/packages/coding-agent/test/edit-prepared.test.ts
+diff --git a/b/packages/coding-agent/test/edit-prepared.test.ts b/packages/coding-agent/test/edit-prepared.test.ts
 new file mode 100644
+index 0000000..6ecd49e
 --- /dev/null
 +++ b/packages/coding-agent/test/edit-prepared.test.ts
 @@ -0,0 +1,252 @@
@@ -1603,9 +1874,10 @@ new file mode 100644
 +	}
 +});
 diff --git a/packages/natives/native/index.d.ts b/packages/natives/native/index.d.ts
+index e7120cc..153752d 100644
 --- a/packages/natives/native/index.d.ts
 +++ b/packages/natives/native/index.d.ts
-@@ -100,6 +100,8 @@
+@@ -100,6 +100,8 @@ export declare class DiffStream {
  
  /** One edit tool call's streaming session. */
  export declare class EditSession {
@@ -1614,25 +1886,24 @@ diff --git a/packages/natives/native/index.d.ts b/packages/natives/native/index.
    /**
     * Open a session. `onPreview` (optional) receives every settled preview
     * batch; batches are delivered one at a time, in generation order.
-@@ -112,11 +114,12 @@
+@@ -112,11 +114,12 @@ export declare class EditSession {
    /** Arguments are complete; triggers the final untrimmed preview. */
    finish(): void
    /**
 -   * Stage and apply the finished edit through `writer`. Never rejects for
 -   * engine failures: those come back as `isError` outcomes carrying the
 -   * model-facing message.
--   */
--  apply(request: EditApplyRequest, writer: (error: Error | null, request: EditWriteRequest) => Promise<EditWriteResponse>): Promise<EditApplyOutcome>
 +   * Consume this session once: stage, optionally check the complete edit,
 +   * then write. Engine/guard failures return `isError` outcomes with the
 +   * model-facing reason. Close cancels an awaited guard, never rolls back
 +   * writes.
-+   */
+    */
+-  apply(request: EditApplyRequest, writer: (error: Error | null, request: EditWriteRequest) => Promise<EditWriteResponse>): Promise<EditApplyOutcome>
 +  apply(request: EditApplyRequest, writer: (error: Error | null, request: EditWriteRequest) => Promise<EditWriteResponse>, guard?: ((error: Error | null, operations: EditPreparedOperation[]) => Promise<EditGuardResult>) | undefined | null): Promise<EditApplyOutcome>
    /** Stop the preview pump and release buffers. */
    close(): void
  }
-@@ -1303,6 +1306,11 @@
+@@ -1303,6 +1306,11 @@ export interface EditFilePreview {
  /** Lark grammar for `mode`, when it has a custom wire format. */
  export declare function editGrammar(mode: string): string | null
  
@@ -1644,12 +1915,10 @@ diff --git a/packages/natives/native/index.d.ts b/packages/natives/native/index.
  /**
   * Inspect `argsJson` (the JSON-serialized, possibly partial tool args)
   * without touching the filesystem.
-@@ -1342,6 +1350,17 @@
-   homeDir: string
-   /** The payload is a verbatim custom-format string, not JSON. */
+@@ -1344,6 +1352,17 @@ export interface EditPolicy {
    rawInput: boolean
-+}
-+
+ }
+ 
 +/** Complete persisted operation with actual pre-call source/destination images. */
 +export interface EditPreparedOperation {
 +  op: string
@@ -1659,6 +1928,8 @@ diff --git a/packages/natives/native/index.d.ts b/packages/natives/native/index.
 +  before: string | null
 +  after: string | null
 +  moveBefore: string | null
- }
- 
++}
++
  /** A batch of previews for one session generation. */
+ export interface EditPreviewBatch {
+   /** Monotonically increasing per session. */

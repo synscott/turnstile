@@ -33,8 +33,23 @@
     "acceptance": "Director accepted the exact independently reviewed bounded native prerequisite; not original Sprint 4 model hold/feedback/repair integration."
   },
   "sprint-04": {
-    "status": "PREREQUISITES_ACCEPTED_READY_FOR_SPRINT_04",
+    "status": "ACCEPTED",
     "handoff": ".omp/handoffs/sprint-04.md",
+    "acceptance_owner": "Main",
+    "snapshot_id": "7c82e5f348a1a91172ed08bc6088b62849925ad2e87ecbf3b74b79ff5248a05f",
+    "reviewer": "sprint-four-gate-review",
+    "review_receipt": ".loopx/s4gate-review/review-7c82e5f.json",
+    "review_receipt_sha256": "c4dc85d4e523f7bce2aa4605771eac853b2bacd3abec140c514e833c689ac771",
+    "acceptance_receipt": ".loopx/materials/sprint04-acceptance.json",
+    "commit_receipt": ".loopx/materials/sprint04-commit.json",
+    "immutable_review": ".loopx/materials/sprint04-review.json",
+    "addon_sha256": "676bd3c3699e8a7c0f5ca350939d4340b32be64e7e6a38a873d7d2c259658b0f",
+    "cumulative_patch_sha256": "db3a5f54db14aea1ddb60915ad602622f5582c1f86523a1db04ed5362f67df8f",
+    "recovery": ".loopx/materials/sprint04-compaction-handoff.json",
+    "recovery_delivery": ".loopx/materials/sprint04-recovery-delivery.json",
+    "preserved_rejected_review": ".loopx/materials/sprint04-independent-review.json",
+    "preserved_dissent": ".loopx/materials/sprint04-review-blocker.json",
+    "session_fit": "Original worker crossed compaction and was retired; fresh bounded recovery completed remaining proof/package. Not one unbroken implementation session.",
     "approval": "The current user explicitly approved the patched project-local OMP runtime with no overbuilding; this supersedes the pending deployment decision.",
     "prerequisite_materials": ".loopx/materials/index.json",
     "accepted_baseline": ".omp/handoffs/omp-local-baseline.md",
@@ -63,12 +78,10 @@
         "Windows filesystem native-case-sensitivity behavior and original directory-flag drift remain scoped to the reviewed Python prerequisite contracts.",
         "Transient write-and-restore, post-return mutation, and non-local filesystem sandboxing remain out of scope."
       ],
-      "outstanding_dependencies": [
-        "Complete same-scope Sprint 4 native integration hold/feedback/repair proof"
-      ],
-      "next_action": "Return to original Sprint 4 under /vibe; all prerequisites are accepted."
+      "outstanding_dependencies": [],
+      "next_action": "Prerequisite consumed by accepted original Sprint 4; next product scope is Sprint 5."
     },
-    "next_action": "Notify the user that all three prerequisites are accepted and return to /vibe for original Sprint 4 native integration and real-model hold/feedback/repair proof.",
-    "acceptance": "PREREQUISITES_ACCEPTED_READY_FOR_SPRINT_04: pinned local baseline, Python staged Cargo context, and bounded native veto are director-accepted. Original Sprint 4 real model hold/feedback/repair is NOT implemented or accepted; all eleven deliverables, later sprint scopes, and acceptance criteria remain unchanged."
+    "next_action": "Under /vibe, start a fresh bounded Sprint 5 worker: gate OMP write creation/replacement; bad writes remain unapplied and acceptable writes execute. No later sprint is implemented by this acceptance.",
+    "acceptance": "Main accepted exact corrected snapshot 7c82e5f348a1a91172ed08bc6088b62849925ad2e87ecbf3b74b79ff5248a05f after full independent successor review: actual model bad hold/finding/repair, required-check failure hold, and managed-exec direct/delegated/concurrent lifecycle including genuine old-SDK refusal. Rejected2657 remains rejected. Sprints 1-3, all eleven deliverables, later scopes, and acceptance criteria remain unchanged."
   }
 }

@@ -523,6 +523,14 @@ def _analyze(context, prepare, cargo):
     except (OSError, ValueError, KeyError, TypeError, subprocess.TimeoutExpired) as error:
         result.update(outcome="checker_failure", error=f"{type(error).__name__}: {error}")
     finally:
+        if temporary is not None:
+            # Finish response preparation before the final original-context observation.
+            serialized = json.dumps(result)
+            for path, label in ((copied, "<candidate>"), (baseline_root, "<baseline>"),
+                                (Path(temporary), "<scratch>")):
+                for old in (str(path), path.as_posix()):
+                    serialized = serialized.replace(json.dumps(old)[1:-1], label)
+            result = json.loads(serialized)
         if before is not None:
             try:
                 after = _snapshot(root)
@@ -546,12 +554,44 @@ def _analyze(context, prepare, cargo):
             except (OSError, CandidateError) as error:
                 result.update(outcome="checker_failure", originals_unchanged=False,
                               error=f"original_context_unverifiable: {error}")
-    if temporary is not None:
-        # Redact disposable paths on failure exits as well as successful checks.
-        serialized = json.dumps(result)
-        for path, label in ((copied, "<candidate>"), (baseline_root, "<baseline>"),
-                            (Path(temporary), "<scratch>")):
-            for old in (str(path), path.as_posix()):
-                serialized = serialized.replace(json.dumps(old)[1:-1], label)
-        result = json.loads(serialized)
     return result
+
+
+def _staged_cli(request):
+    """JSON transport only; the existing staged owner makes every analysis decision."""
+    context = request["context"]
+    allowed = {"root", "manifest", "cwd", "features", "no_default_features",
+               "all_features", "package", "target"}
+    if not isinstance(context, dict) or set(context) - allowed:
+        raise ValueError("invalid Cargo context fields")
+    for name in ("root", "manifest"):
+        if not isinstance(context.get(name), str) or not context[name]:
+            raise ValueError(f"context.{name} must be a nonempty string")
+    for name in ("cwd", "package", "target"):
+        if name in context and (not isinstance(context[name], str) or not context[name]):
+            raise ValueError(f"context.{name} must be a nonempty string")
+    for name in ("no_default_features", "all_features"):
+        if name in context and not isinstance(context[name], bool):
+            raise ValueError(f"context.{name} must be boolean")
+    if "features" in context and (not isinstance(context["features"], list)
+            or any(not isinstance(f, str) or not f for f in context["features"])):
+        raise ValueError("context.features must be an array of nonempty strings")
+    root = Path(request["workspace"]) / _relative(context["root"])
+    if Path(tempfile.gettempdir()).resolve().is_relative_to(root.resolve()):
+        raise ValueError("checker temporary directory must be outside the selected Cargo root")
+    return analyze_staged(CargoContext(**{**context, "root": root}),
+                          request["operations"], cargo=request["cargo"])
+
+
+if __name__ == "__main__":
+    import argparse
+    import sys
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--staged", action="store_true", required=True, help="read UTF-8 JSON from stdin")
+    parser.parse_args()
+    try:
+        response = _staged_cli(json.loads(sys.stdin.buffer.read().decode("utf-8")))
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        response = {"outcome": "checker_failure", "findings": [],
+                    "error": f"{type(error).__name__}: {error}"}
+    print(json.dumps(response, ensure_ascii=True))
