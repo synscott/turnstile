@@ -65,11 +65,14 @@ def _spans(diagnostic):
         yield from _spans(child)
 
 
-def attribute(baseline, candidate, original_sources, candidate_sources, baseline_root, candidate_root):
+def attribute(baseline, candidate, original_sources, candidate_sources, baseline_root, candidate_root,
+              source_origins=None):
     """Return introduced, preexisting, ambiguous; preserve raw evidence separately.
 
     Source dictionaries contain captured context-relative bytes. A surviving
     subset of a known primary's related spans is existing debt, not expansion.
+    source_origins maps surviving candidate paths to their PRE-CALL source path
+    (or None for new sources), never to a replay-time destination occupant.
     """
     views = {}
     maps = {}
@@ -94,12 +97,14 @@ def attribute(baseline, candidate, original_sources, candidate_sources, baseline
             start, end = span["byte_start"], span["byte_end"]
             if not 0 <= start < end <= len(source):
                 return None, None, None
-            shape = (relative, source[start:end], span["is_primary"], span.get("label"))
+            origin = source_origins.get(relative, relative) if remap and source_origins is not None else relative
+            shape = (origin if origin is not None else relative, source[start:end],
+                     span["is_primary"], span.get("label"))
             context.append(shape)
             span_uncertain = False
-            if remap and original_sources.get(relative) != source:
+            if remap and original_sources.get(origin) != source:
                 if relative not in maps:
-                    original_view = view(original_sources, relative) if relative in original_sources else _source_view(b"")
+                    original_view = view(original_sources, origin) if origin in original_sources else _source_view(b"")
                     maps[relative] = _span_blocks(original_view, view(sources, relative))
                 blocks, starts = maps[relative]
                 block_index = bisect_right(starts, start) - 1
@@ -130,8 +135,9 @@ def attribute(baseline, candidate, original_sources, candidate_sources, baseline
             old_contexts.append(context)
     introduced, preexisting, ambiguous = [], [], []
     seen = set()
+    consumed = {}
     for diagnostic in candidate["findings"]:
-        raw_key, _, _ = identity(diagnostic, candidate_sources, candidate_root,
+        raw_key, _, raw_primary = identity(diagnostic, candidate_sources, candidate_root,
                                  candidate["diagnostic_root"], False)
         if raw_key is not None and raw_key in seen:
             continue
@@ -140,7 +146,12 @@ def attribute(baseline, candidate, original_sources, candidate_sources, baseline
         key, context, primary = identity(diagnostic, candidate_sources, candidate_root,
                                          candidate["diagnostic_root"], True)
         if key is not None and any(key[1] <= locations for locations in old_primaries.get(primary, ())):
-            preexisting.append(diagnostic)
+            # Lib/test cfg variants may describe the same physical occurrence.
+            # Another final path/byte range cannot reuse that baseline occurrence.
+            if consumed.setdefault(primary, raw_primary) != raw_primary:
+                introduced.append(diagnostic)
+            else:
+                preexisting.append(diagnostic)
         elif primary is not None and primary not in old_primaries:
             introduced.append(diagnostic)
         elif context is None or (key is None and any(context[0] == old[0] and context[1] <= old[1]

@@ -26,6 +26,32 @@
     "approval": "The current user explicitly approved the patched project-local OMP runtime with no overbuilding; this supersedes the pending deployment decision.",
     "prerequisite_materials": ".loopx/materials/index.json",
     "accepted_baseline": ".omp/handoffs/omp-local-baseline.md",
+    "prerequisite_python_acceptance": {
+      "status": "ACCEPTED",
+      "scope": "Completed Python staged Cargo-context prerequisite for Sprint 4",
+      "review_identity": "staged-context-review",
+      "review_author": "rust-staged-context",
+      "review_receipt": ".loopx/materials/rust-staged-context-freshness-independent-review.json",
+      "author_receipt": ".loopx/materials/rust-staged-context-freshness-proof.json",
+      "snapshot_id": "7fd744183c9cfb79504b1db6048bde374ed24e985c798e05f547d296fa65bf29",
+      "governing_contract_sha256": "d5e26103c79eea7af1b2288cf88f2facd7146a1c2eec9e9cff2d03773e9d3856",
+      "accepted_files": [
+        "tools/rust_candidates.py",
+        "tools/rust_attribution.py",
+        "tools/probe_rust_staged.py",
+        "docs/rust-staged-context-results.json"
+      ],
+      "limits": [
+        "No native OMP gate, model hold/feedback/repair proof, or native-edit veto implementation is accepted here.",
+        "Windows filesystem native-case-sensitivity behavior and original directory-flag drift remain scoped to the reviewed Python prerequisite contracts.",
+        "Transient write-and-restore, post-return mutation, and non-local filesystem sandboxing remain out of scope."
+      ],
+      "outstanding_dependencies": [
+        "Same-owner native-edit veto boundary",
+        "Complete same-scope Sprint 4 native integration hold/feedback/repair proof"
+      ],
+      "next_action": "Return to original Sprint 4 native integration once native prerequisites are finished and accepted."
+    },
     "next_action": "Complete the same-owner native-edit veto boundary and complete staged Cargo-context prerequisites, then return to original Sprint 4 integration and real-model hold/feedback/repair proof under /vibe.",
     "acceptance": "Director accepted the pinned unmodified project-local OMP baseline. Native veto and staged Cargo-context prerequisites remain outstanding. Sprint 4 is not implemented or accepted; all original eleven sprint deliverables and acceptance criteria remain unchanged."
   }

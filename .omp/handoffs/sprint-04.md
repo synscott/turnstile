@@ -2,7 +2,7 @@
 
 Status: **APPROVED_PREREQUISITES_IN_PROGRESS.** Sprints 1–3 are
 accepted; Sprint 3 was locally committed as
-`c19c6f1515d38e0fdb2ab708eed3f8937155b7ff`. Sprint 4 is not implemented or accepted.
+`c19c6f1515d38e0fdb2ab708eed3f8937155b7ff`. Sprint 4 Python staged-context prerequisite is director-accepted (`7fd744183c9cfb79504b1db6048bde374ed24e985c798e05f547d296fa65bf29`), native-veto prerequisite remains outstanding. Sprint 4 itself is not implemented or fully accepted.
 
 The current user explicitly approved maintaining and building a patched
 project-local OMP runtime: “no overbuilding, keep to our design principles.”
@@ -11,7 +11,7 @@ research-only restriction is historical, not a current prohibition. Project-loca
 runtime source acquisition, toolchain and dependency builds are now authorized.
 Leave global OMP, reference repositories, and global safety settings untouched;
 no publication. The director has accepted the unmodified local OMP baseline;
-native veto and complete staged Cargo-context prerequisites remain outstanding.
+complete staged Cargo-context prerequisite is director-accepted, native-veto prerequisite remains outstanding.
 
 ## Native boundary and evidence
 
@@ -74,7 +74,7 @@ The user's approval authorizes fresh bounded implementation scopes for:
    behavior. See the [baseline handoff](omp-local-baseline.md).
 2. Implementing a same-owner complete native-edit veto boundary before canonical
    mutation, preserving native reconstruction and execution semantics.
-3. Extending the existing Rust candidate owner to analyze one complete staged Cargo
+3. **Accepted:** Extending the existing Rust candidate owner to analyze one complete staged Cargo
    context, including jointly dependent updates, moves, deletes, creates, and
    relevant context changes. Preserve current APIs and meaningful probes;
    per-file analysis against unstaged siblings is not equivalent.
@@ -103,10 +103,10 @@ from scope.
 
 Write-tool integration and the remaining retry, disclosure, exception, commit,
 PR, and final installed-test work remain in their existing later sprints. This
-handoff records an accepted baseline with the native veto and complete staged
-Cargo-context prerequisites still outstanding, not Sprint 4 implementation or
-acceptance. The current user approval, accepted baseline, and three historical
-prerequisite receipts are reachable through the private material index; historical
-approval-pending restrictions are superseded while observations and hashes remain
-preserved. Notify the user when the remaining prerequisites are verified and
+handoff records a director-accepted Python prerequisite and accepted baseline; the
+native-veto prerequisite remains outstanding, and the native-model integration
+proof is not yet accepted. The current user approval, accepted baseline, and three
+historical prerequisite receipts are reachable through the private material index;
+historical approval-pending restrictions are superseded while observations and
+hashes remain preserved. Notify the user when the remaining prerequisites are verified and
 original Sprint 4 can resume under `/vibe`.

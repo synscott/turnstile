@@ -1,0 +1,3174 @@
+{
+  "status": "author_verified_awaiting_independent_review",
+  "observed_at_utc": "2026-09-11T00:03:21.235170+00:00",
+  "rule": "clippy::await_holding_lock",
+  "versions": {
+    "rustc": "rustc 1.96.1 (31fca3adb 2026-06-26)\nbinary: rustc\ncommit-hash: 31fca3adb283cc9dfd56b49cdee9a96eb9c96ffd\ncommit-date: 2026-06-26\nhost: x86_64-pc-windows-msvc\nrelease: 1.96.1\nLLVM version: 22.1.2",
+    "cargo": "cargo 1.96.1 (356927216 2026-06-26)",
+    "clippy": "clippy 0.1.96 (31fca3adb2 2026-06-26)"
+  },
+  "input_sha256": {
+    "tools/rust_candidates.py": "b6fd22e9a2afd4e6b25d7161755aec9adf365b93daa34e544d9ed2f3cb6ed5ae",
+    "tools/rust_attribution.py": "506abb6c1c143064af853681dfba6e9baa9b60da9e67cdc872b6ee0db05cc2f9",
+    "tools/rust_checker.py": "fd955f68290d0fa288fde9c22b0358123502cb22a17c1807ed747372b51a794c",
+    "tools/probe_rust_staged.py": "71545973342fccea2b4e9f33ea1233aee6407f54d511ea140253bc8bb7869a51",
+    "fixtures/await-holding-lock/bad.rs": "d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9",
+    "fixtures/await-holding-lock/good.rs": "3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa"
+  },
+  "commands": [
+    {
+      "command": "python tools/probe_rust_staged.py",
+      "exit_code": 0,
+      "expectations_passed": 63,
+      "expectations_total": 63,
+      "observed_at_utc": "2026-09-11T00:03:21.235170+00:00"
+    },
+    {
+      "command": "python tools/probe_rust_candidates.py",
+      "exit_code": 0,
+      "expectations_passed": 51,
+      "expectations_total": 51,
+      "observed_at_utc": "2026-09-11T00:03:21.235684+00:00"
+    },
+    {
+      "command": "python tools/probe_rust_attribution.py",
+      "exit_code": 0,
+      "expectations_passed": 46,
+      "expectations_total": 46,
+      "observed_at_utc": "2026-09-11T00:03:21.235684+00:00"
+    },
+    {
+      "command": "python tools/probe_rust_quality.py",
+      "exit_code": 0,
+      "expectations_passed": 4,
+      "expectations_total": 4,
+      "observed_at_utc": "2026-09-11T00:04:14.004250+00:00"
+    }
+  ],
+  "cases": {
+    "unstaged_sibling_fails": {
+      "outcome": "checker_failure",
+      "error": "unsuccessful_or_incomplete_check",
+      "coverage": {
+        "status": "checker_failure",
+        "rust_targets": [
+          "src/lib.rs"
+        ]
+      },
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "37445d48f5ab7e3b104213dc48228d86bde62ebed532100c389d589d087c1694",
+      "analyzed_sources_unchanged": true,
+      "directory_semantics": {
+        "before": {
+          ".": false,
+          "src": false
+        },
+        "after": {
+          ".": false,
+          "src": false
+        },
+        "unchanged": true
+      },
+      "partitions": {
+        "findings": 0,
+        "preexisting_findings": 0,
+        "ambiguous_findings": 0
+      },
+      "baseline": {
+        "status": "not_run",
+        "reason": "candidate_not_verified"
+      },
+      "candidate_check": {
+        "outcome": "checker_failure",
+        "command": [
+          "cargo",
+          "clippy",
+          "--offline",
+          "--manifest-path",
+          "<candidate>\\Cargo.toml",
+          "--target-dir",
+          "<scratch>\\t",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "-A",
+          "clippy::all",
+          "--force-warn",
+          "clippy::await_holding_lock"
+        ],
+        "exit_code": 101,
+        "error": "unsuccessful_or_incomplete_check",
+        "build_finished": [
+          false
+        ],
+        "diagnostic_causes": [
+          "E0308: mismatched types"
+        ]
+      }
+    },
+    "jointly_necessary": {
+      "outcome": "no_findings",
+      "coverage": {
+        "status": "written_rust_checked",
+        "rust_targets": [
+          "src/lib.rs",
+          "src/value.rs"
+        ]
+      },
+      "candidate_compiled": true,
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "37445d48f5ab7e3b104213dc48228d86bde62ebed532100c389d589d087c1694",
+      "analyzed_sources_unchanged": true,
+      "directory_semantics": {
+        "before": {
+          ".": false,
+          "src": false
+        },
+        "after": {
+          ".": false,
+          "src": false
+        },
+        "unchanged": true
+      },
+      "partitions": {
+        "findings": 0,
+        "preexisting_findings": 0,
+        "ambiguous_findings": 0
+      },
+      "baseline": {
+        "status": "not_required",
+        "reason": "candidate_has_no_findings"
+      },
+      "candidate_check": {
+        "outcome": "no_findings",
+        "command": [
+          "cargo",
+          "clippy",
+          "--offline",
+          "--manifest-path",
+          "<candidate>\\Cargo.toml",
+          "--target-dir",
+          "<scratch>\\t",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "-A",
+          "clippy::all",
+          "--force-warn",
+          "clippy::await_holding_lock"
+        ],
+        "exit_code": 0,
+        "build_finished": [
+          true
+        ],
+        "diagnostic_causes": []
+      },
+      "reachability": {
+        "src/lib.rs": {
+          "reached_as_rust": true,
+          "check": {
+            "outcome": "checker_failure",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<candidate>\\Cargo.toml",
+              "--target-dir",
+              "<scratch>\\t\\reachability",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 101,
+            "error": "unsuccessful_or_incomplete_check",
+            "build_finished": [
+              false
+            ],
+            "diagnostic_causes": [
+              "None: turnstile_candidate_reachability_9d8a508ffb8ada2d57371f292e5c368e1b5589e923f2ba625ffb6cb1812ad9f1"
+            ]
+          }
+        },
+        "src/value.rs": {
+          "reached_as_rust": true,
+          "check": {
+            "outcome": "checker_failure",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<candidate>\\Cargo.toml",
+              "--target-dir",
+              "<scratch>\\t\\reachability",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 101,
+            "error": "unsuccessful_or_incomplete_check",
+            "build_finished": [
+              false
+            ],
+            "diagnostic_causes": [
+              "None: turnstile_candidate_reachability_438bcc71d87dca0bda3192bb2006b9c107fdd71d228ccf5f39a3853020de60c3"
+            ]
+          }
+        }
+      }
+    },
+    "move_existing": {
+      "outcome": "no_findings",
+      "coverage": {
+        "status": "written_rust_checked",
+        "rust_targets": [
+          "src/new.rs",
+          "src/lib.rs"
+        ]
+      },
+      "candidate_compiled": true,
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "df5dd01b16a1f449ff45f54cac0e8e853f64aaa71cabab0f06120a5328bade79",
+      "analyzed_sources_unchanged": true,
+      "directory_semantics": {
+        "before": {
+          ".": false,
+          "src": false
+        },
+        "after": {
+          ".": false,
+          "src": false
+        },
+        "unchanged": true
+      },
+      "partitions": {
+        "findings": 0,
+        "preexisting_findings": 1,
+        "ambiguous_findings": 0
+      },
+      "baseline": {
+        "status": "required",
+        "check": {
+          "outcome": "findings",
+          "command": [
+            "cargo",
+            "clippy",
+            "--offline",
+            "--manifest-path",
+            "<baseline>\\Cargo.toml",
+            "--target-dir",
+            "<baseline>t",
+            "--all-targets",
+            "--message-format=json",
+            "--",
+            "-A",
+            "clippy::all",
+            "--force-warn",
+            "clippy::await_holding_lock"
+          ],
+          "exit_code": 0,
+          "build_finished": [
+            true
+          ],
+          "diagnostic_causes": []
+        }
+      },
+      "candidate_check": {
+        "outcome": "findings",
+        "command": [
+          "cargo",
+          "clippy",
+          "--offline",
+          "--manifest-path",
+          "<candidate>\\Cargo.toml",
+          "--target-dir",
+          "<scratch>\\t",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "-A",
+          "clippy::all",
+          "--force-warn",
+          "clippy::await_holding_lock"
+        ],
+        "exit_code": 0,
+        "build_finished": [
+          true
+        ],
+        "diagnostic_causes": []
+      },
+      "reachability": {
+        "src/new.rs": {
+          "reached_as_rust": true,
+          "check": {
+            "outcome": "checker_failure",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<candidate>\\Cargo.toml",
+              "--target-dir",
+              "<scratch>\\t\\reachability",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 101,
+            "error": "unsuccessful_or_incomplete_check",
+            "build_finished": [
+              false
+            ],
+            "diagnostic_causes": [
+              "None: turnstile_candidate_reachability_d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9"
+            ]
+          }
+        },
+        "src/lib.rs": {
+          "reached_as_rust": true,
+          "check": {
+            "outcome": "checker_failure",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<candidate>\\Cargo.toml",
+              "--target-dir",
+              "<scratch>\\t\\reachability",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 101,
+            "error": "unsuccessful_or_incomplete_check",
+            "build_finished": [
+              false
+            ],
+            "diagnostic_causes": [
+              "None: turnstile_candidate_reachability_ff0e785d6225214a945e5ca260cbf1ed6258451c5aec789f1d7dfa918e6358b8"
+            ]
+          }
+        }
+      }
+    },
+    "move_expanded": {
+      "outcome": "findings",
+      "coverage": {
+        "status": "written_rust_checked",
+        "rust_targets": [
+          "src/new.rs",
+          "src/lib.rs"
+        ]
+      },
+      "candidate_compiled": true,
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "df5dd01b16a1f449ff45f54cac0e8e853f64aaa71cabab0f06120a5328bade79",
+      "analyzed_sources_unchanged": true,
+      "directory_semantics": {
+        "before": {
+          ".": false,
+          "src": false
+        },
+        "after": {
+          ".": false,
+          "src": false
+        },
+        "unchanged": true
+      },
+      "partitions": {
+        "findings": 1,
+        "preexisting_findings": 0,
+        "ambiguous_findings": 0
+      },
+      "baseline": {
+        "status": "required",
+        "check": {
+          "outcome": "findings",
+          "command": [
+            "cargo",
+            "clippy",
+            "--offline",
+            "--manifest-path",
+            "<baseline>\\Cargo.toml",
+            "--target-dir",
+            "<baseline>t",
+            "--all-targets",
+            "--message-format=json",
+            "--",
+            "-A",
+            "clippy::all",
+            "--force-warn",
+            "clippy::await_holding_lock"
+          ],
+          "exit_code": 0,
+          "build_finished": [
+            true
+          ],
+          "diagnostic_causes": []
+        }
+      },
+      "candidate_check": {
+        "outcome": "findings",
+        "command": [
+          "cargo",
+          "clippy",
+          "--offline",
+          "--manifest-path",
+          "<candidate>\\Cargo.toml",
+          "--target-dir",
+          "<scratch>\\t",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "-A",
+          "clippy::all",
+          "--force-warn",
+          "clippy::await_holding_lock"
+        ],
+        "exit_code": 0,
+        "build_finished": [
+          true
+        ],
+        "diagnostic_causes": []
+      },
+      "reachability": {
+        "src/new.rs": {
+          "reached_as_rust": true,
+          "check": {
+            "outcome": "checker_failure",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<candidate>\\Cargo.toml",
+              "--target-dir",
+              "<scratch>\\t\\reachability",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 101,
+            "error": "unsuccessful_or_incomplete_check",
+            "build_finished": [
+              false
+            ],
+            "diagnostic_causes": [
+              "None: turnstile_candidate_reachability_4eebfa53c600c0a2f5cfa61a8bdd6905caf64b8abd0ed3819388f78b0a2e9952"
+            ]
+          }
+        },
+        "src/lib.rs": {
+          "reached_as_rust": true,
+          "check": {
+            "outcome": "checker_failure",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<candidate>\\Cargo.toml",
+              "--target-dir",
+              "<scratch>\\t\\reachability",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 101,
+            "error": "unsuccessful_or_incomplete_check",
+            "build_finished": [
+              false
+            ],
+            "diagnostic_causes": [
+              "None: turnstile_candidate_reachability_ff0e785d6225214a945e5ca260cbf1ed6258451c5aec789f1d7dfa918e6358b8"
+            ]
+          }
+        }
+      }
+    },
+    "move_and_recreate_source": {
+      "outcome": "findings",
+      "coverage": {
+        "status": "written_rust_checked",
+        "rust_targets": [
+          "src/new.rs",
+          "src/old.rs",
+          "src/lib.rs"
+        ]
+      },
+      "candidate_compiled": true,
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "df5dd01b16a1f449ff45f54cac0e8e853f64aaa71cabab0f06120a5328bade79",
+      "analyzed_sources_unchanged": true,
+      "directory_semantics": {
+        "before": {
+          ".": false,
+          "src": false
+        },
+        "after": {
+          ".": false,
+          "src": false
+        },
+        "unchanged": true
+      },
+      "partitions": {
+        "findings": 1,
+        "preexisting_findings": 1,
+        "ambiguous_findings": 0
+      },
+      "baseline": {
+        "status": "required",
+        "check": {
+          "outcome": "findings",
+          "command": [
+            "cargo",
+            "clippy",
+            "--offline",
+            "--manifest-path",
+            "<baseline>\\Cargo.toml",
+            "--target-dir",
+            "<baseline>t",
+            "--all-targets",
+            "--message-format=json",
+            "--",
+            "-A",
+            "clippy::all",
+            "--force-warn",
+            "clippy::await_holding_lock"
+          ],
+          "exit_code": 0,
+          "build_finished": [
+            true
+          ],
+          "diagnostic_causes": []
+        }
+      },
+      "candidate_check": {
+        "outcome": "findings",
+        "command": [
+          "cargo",
+          "clippy",
+          "--offline",
+          "--manifest-path",
+          "<candidate>\\Cargo.toml",
+          "--target-dir",
+          "<scratch>\\t",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "-A",
+          "clippy::all",
+          "--force-warn",
+          "clippy::await_holding_lock"
+        ],
+        "exit_code": 0,
+        "build_finished": [
+          true
+        ],
+        "diagnostic_causes": []
+      },
+      "reachability": {
+        "src/new.rs": {
+          "reached_as_rust": true,
+          "check": {
+            "outcome": "checker_failure",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<candidate>\\Cargo.toml",
+              "--target-dir",
+              "<scratch>\\t\\reachability",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 101,
+            "error": "unsuccessful_or_incomplete_check",
+            "build_finished": [
+              false
+            ],
+            "diagnostic_causes": [
+              "None: turnstile_candidate_reachability_d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9"
+            ]
+          }
+        },
+        "src/old.rs": {
+          "reached_as_rust": true,
+          "check": {
+            "outcome": "checker_failure",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<candidate>\\Cargo.toml",
+              "--target-dir",
+              "<scratch>\\t\\reachability",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 101,
+            "error": "unsuccessful_or_incomplete_check",
+            "build_finished": [
+              false
+            ],
+            "diagnostic_causes": [
+              "None: turnstile_candidate_reachability_d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9"
+            ]
+          }
+        },
+        "src/lib.rs": {
+          "reached_as_rust": true,
+          "check": {
+            "outcome": "checker_failure",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<candidate>\\Cargo.toml",
+              "--target-dir",
+              "<scratch>\\t\\reachability",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 101,
+            "error": "unsuccessful_or_incomplete_check",
+            "build_finished": [
+              false
+            ],
+            "diagnostic_causes": [
+              "None: turnstile_candidate_reachability_3b2218b8cc99aeeb20d9358210c8faf2a75e8b9ca958a4802e8800b1c08f60b0"
+            ]
+          }
+        }
+      }
+    },
+    "variant_empty": {
+      "outcome": "no_findings",
+      "coverage": {
+        "status": "context_checked",
+        "rust_targets": []
+      },
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "f0c179bcf75fc6956a807a17cba0b717ba293c834c98033fdb6139f6fe82a3e7",
+      "analyzed_sources_unchanged": true,
+      "directory_semantics": {
+        "before": {
+          ".": false,
+          "src": false
+        },
+        "after": {
+          ".": false,
+          "src": false
+        },
+        "unchanged": true
+      },
+      "partitions": {
+        "findings": 0,
+        "preexisting_findings": 2,
+        "ambiguous_findings": 0
+      },
+      "baseline": {
+        "status": "required",
+        "check": {
+          "outcome": "findings",
+          "command": [
+            "cargo",
+            "clippy",
+            "--offline",
+            "--manifest-path",
+            "<baseline>\\Cargo.toml",
+            "--target-dir",
+            "<baseline>t",
+            "--all-targets",
+            "--message-format=json",
+            "--",
+            "-A",
+            "clippy::all",
+            "--force-warn",
+            "clippy::await_holding_lock"
+          ],
+          "exit_code": 0,
+          "build_finished": [
+            true
+          ],
+          "diagnostic_causes": []
+        }
+      },
+      "candidate_check": {
+        "outcome": "findings",
+        "command": [
+          "cargo",
+          "clippy",
+          "--offline",
+          "--manifest-path",
+          "<candidate>\\Cargo.toml",
+          "--target-dir",
+          "<scratch>\\t",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "-A",
+          "clippy::all",
+          "--force-warn",
+          "clippy::await_holding_lock"
+        ],
+        "exit_code": 0,
+        "build_finished": [
+          true
+        ],
+        "diagnostic_causes": []
+      },
+      "reachability": {}
+    },
+    "variant_noop": {
+      "outcome": "no_findings",
+      "coverage": {
+        "status": "context_checked",
+        "rust_targets": []
+      },
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "f0c179bcf75fc6956a807a17cba0b717ba293c834c98033fdb6139f6fe82a3e7",
+      "analyzed_sources_unchanged": true,
+      "directory_semantics": {
+        "before": {
+          ".": false,
+          "src": false
+        },
+        "after": {
+          ".": false,
+          "src": false
+        },
+        "unchanged": true
+      },
+      "partitions": {
+        "findings": 0,
+        "preexisting_findings": 2,
+        "ambiguous_findings": 0
+      },
+      "baseline": {
+        "status": "required",
+        "check": {
+          "outcome": "findings",
+          "command": [
+            "cargo",
+            "clippy",
+            "--offline",
+            "--manifest-path",
+            "<baseline>\\Cargo.toml",
+            "--target-dir",
+            "<baseline>t",
+            "--all-targets",
+            "--message-format=json",
+            "--",
+            "-A",
+            "clippy::all",
+            "--force-warn",
+            "clippy::await_holding_lock"
+          ],
+          "exit_code": 0,
+          "build_finished": [
+            true
+          ],
+          "diagnostic_causes": []
+        }
+      },
+      "candidate_check": {
+        "outcome": "findings",
+        "command": [
+          "cargo",
+          "clippy",
+          "--offline",
+          "--manifest-path",
+          "<candidate>\\Cargo.toml",
+          "--target-dir",
+          "<scratch>\\t",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "-A",
+          "clippy::all",
+          "--force-warn",
+          "clippy::await_holding_lock"
+        ],
+        "exit_code": 0,
+        "build_finished": [
+          true
+        ],
+        "diagnostic_causes": []
+      },
+      "reachability": {}
+    },
+    "variant_move": {
+      "outcome": "no_findings",
+      "coverage": {
+        "status": "written_rust_checked",
+        "rust_targets": [
+          "src/new.rs",
+          "src/lib.rs"
+        ]
+      },
+      "candidate_compiled": true,
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "f0c179bcf75fc6956a807a17cba0b717ba293c834c98033fdb6139f6fe82a3e7",
+      "analyzed_sources_unchanged": true,
+      "directory_semantics": {
+        "before": {
+          ".": false,
+          "src": false
+        },
+        "after": {
+          ".": false,
+          "src": false
+        },
+        "unchanged": true
+      },
+      "partitions": {
+        "findings": 0,
+        "preexisting_findings": 2,
+        "ambiguous_findings": 0
+      },
+      "baseline": {
+        "status": "required",
+        "check": {
+          "outcome": "findings",
+          "command": [
+            "cargo",
+            "clippy",
+            "--offline",
+            "--manifest-path",
+            "<baseline>\\Cargo.toml",
+            "--target-dir",
+            "<baseline>t",
+            "--all-targets",
+            "--message-format=json",
+            "--",
+            "-A",
+            "clippy::all",
+            "--force-warn",
+            "clippy::await_holding_lock"
+          ],
+          "exit_code": 0,
+          "build_finished": [
+            true
+          ],
+          "diagnostic_causes": []
+        }
+      },
+      "candidate_check": {
+        "outcome": "findings",
+        "command": [
+          "cargo",
+          "clippy",
+          "--offline",
+          "--manifest-path",
+          "<candidate>\\Cargo.toml",
+          "--target-dir",
+          "<scratch>\\t",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "-A",
+          "clippy::all",
+          "--force-warn",
+          "clippy::await_holding_lock"
+        ],
+        "exit_code": 0,
+        "build_finished": [
+          true
+        ],
+        "diagnostic_causes": []
+      },
+      "reachability": {
+        "src/new.rs": {
+          "reached_as_rust": true,
+          "check": {
+            "outcome": "checker_failure",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<candidate>\\Cargo.toml",
+              "--target-dir",
+              "<scratch>\\t\\reachability",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 101,
+            "error": "unsuccessful_or_incomplete_check",
+            "build_finished": [
+              false
+            ],
+            "diagnostic_causes": [
+              "None: turnstile_candidate_reachability_95027ae2de189dbe9902e4b6774212896c121dbe6e543f134b7e2a2552332376"
+            ]
+          }
+        },
+        "src/lib.rs": {
+          "reached_as_rust": true,
+          "check": {
+            "outcome": "checker_failure",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<candidate>\\Cargo.toml",
+              "--target-dir",
+              "<scratch>\\t\\reachability",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 101,
+            "error": "unsuccessful_or_incomplete_check",
+            "build_finished": [
+              false
+            ],
+            "diagnostic_causes": [
+              "None: turnstile_candidate_reachability_ff0e785d6225214a945e5ca260cbf1ed6258451c5aec789f1d7dfa918e6358b8"
+            ]
+          }
+        }
+      }
+    },
+    "variant_move_recreate": {
+      "outcome": "findings",
+      "coverage": {
+        "status": "written_rust_checked",
+        "rust_targets": [
+          "src/new.rs",
+          "src/lib.rs",
+          "src/old.rs"
+        ]
+      },
+      "candidate_compiled": true,
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "f0c179bcf75fc6956a807a17cba0b717ba293c834c98033fdb6139f6fe82a3e7",
+      "analyzed_sources_unchanged": true,
+      "directory_semantics": {
+        "before": {
+          ".": false,
+          "src": false
+        },
+        "after": {
+          ".": false,
+          "src": false
+        },
+        "unchanged": true
+      },
+      "partitions": {
+        "findings": 2,
+        "preexisting_findings": 2,
+        "ambiguous_findings": 0
+      },
+      "baseline": {
+        "status": "required",
+        "check": {
+          "outcome": "findings",
+          "command": [
+            "cargo",
+            "clippy",
+            "--offline",
+            "--manifest-path",
+            "<baseline>\\Cargo.toml",
+            "--target-dir",
+            "<baseline>t",
+            "--all-targets",
+            "--message-format=json",
+            "--",
+            "-A",
+            "clippy::all",
+            "--force-warn",
+            "clippy::await_holding_lock"
+          ],
+          "exit_code": 0,
+          "build_finished": [
+            true
+          ],
+          "diagnostic_causes": []
+        }
+      },
+      "candidate_check": {
+        "outcome": "findings",
+        "command": [
+          "cargo",
+          "clippy",
+          "--offline",
+          "--manifest-path",
+          "<candidate>\\Cargo.toml",
+          "--target-dir",
+          "<scratch>\\t",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "-A",
+          "clippy::all",
+          "--force-warn",
+          "clippy::await_holding_lock"
+        ],
+        "exit_code": 0,
+        "build_finished": [
+          true
+        ],
+        "diagnostic_causes": []
+      },
+      "reachability": {
+        "src/new.rs": {
+          "reached_as_rust": true,
+          "check": {
+            "outcome": "checker_failure",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<candidate>\\Cargo.toml",
+              "--target-dir",
+              "<scratch>\\t\\reachability",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 101,
+            "error": "unsuccessful_or_incomplete_check",
+            "build_finished": [
+              false
+            ],
+            "diagnostic_causes": [
+              "None: turnstile_candidate_reachability_95027ae2de189dbe9902e4b6774212896c121dbe6e543f134b7e2a2552332376"
+            ]
+          }
+        },
+        "src/lib.rs": {
+          "reached_as_rust": true,
+          "check": {
+            "outcome": "checker_failure",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<candidate>\\Cargo.toml",
+              "--target-dir",
+              "<scratch>\\t\\reachability",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 101,
+            "error": "unsuccessful_or_incomplete_check",
+            "build_finished": [
+              false
+            ],
+            "diagnostic_causes": [
+              "None: turnstile_candidate_reachability_3b2218b8cc99aeeb20d9358210c8faf2a75e8b9ca958a4802e8800b1c08f60b0"
+            ]
+          }
+        },
+        "src/old.rs": {
+          "reached_as_rust": true,
+          "check": {
+            "outcome": "checker_failure",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<candidate>\\Cargo.toml",
+              "--target-dir",
+              "<scratch>\\t\\reachability",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 101,
+            "error": "unsuccessful_or_incomplete_check",
+            "build_finished": [
+              false
+            ],
+            "diagnostic_causes": [
+              "None: turnstile_candidate_reachability_95027ae2de189dbe9902e4b6774212896c121dbe6e543f134b7e2a2552332376"
+            ]
+          }
+        }
+      }
+    },
+    "overlapping_move_sources": {
+      "outcome": "no_findings",
+      "coverage": {
+        "status": "written_rust_checked",
+        "rust_targets": [
+          "src/c.rs",
+          "src/lib.rs"
+        ]
+      },
+      "candidate_compiled": true,
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "4891339bba5a4f1e203192ae6ff2dd6d63f2692aee94b0effa735dd2250ae58c",
+      "analyzed_sources_unchanged": true,
+      "directory_semantics": {
+        "before": {
+          ".": false,
+          "src": false
+        },
+        "after": {
+          ".": false,
+          "src": false
+        },
+        "unchanged": true
+      },
+      "partitions": {
+        "findings": 0,
+        "preexisting_findings": 1,
+        "ambiguous_findings": 0
+      },
+      "baseline": {
+        "status": "required",
+        "check": {
+          "outcome": "findings",
+          "command": [
+            "cargo",
+            "clippy",
+            "--offline",
+            "--manifest-path",
+            "<baseline>\\Cargo.toml",
+            "--target-dir",
+            "<baseline>t",
+            "--all-targets",
+            "--message-format=json",
+            "--",
+            "-A",
+            "clippy::all",
+            "--force-warn",
+            "clippy::await_holding_lock"
+          ],
+          "exit_code": 0,
+          "build_finished": [
+            true
+          ],
+          "diagnostic_causes": []
+        }
+      },
+      "candidate_check": {
+        "outcome": "findings",
+        "command": [
+          "cargo",
+          "clippy",
+          "--offline",
+          "--manifest-path",
+          "<candidate>\\Cargo.toml",
+          "--target-dir",
+          "<scratch>\\t",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "-A",
+          "clippy::all",
+          "--force-warn",
+          "clippy::await_holding_lock"
+        ],
+        "exit_code": 0,
+        "build_finished": [
+          true
+        ],
+        "diagnostic_causes": []
+      },
+      "reachability": {
+        "src/c.rs": {
+          "reached_as_rust": true,
+          "check": {
+            "outcome": "checker_failure",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<candidate>\\Cargo.toml",
+              "--target-dir",
+              "<scratch>\\t\\reachability",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 101,
+            "error": "unsuccessful_or_incomplete_check",
+            "build_finished": [
+              false
+            ],
+            "diagnostic_causes": [
+              "None: turnstile_candidate_reachability_5eeefe1b4e0595e5bef55bc9c863f2340aef1a69f508008fbf007955c0a3fa12"
+            ]
+          }
+        },
+        "src/lib.rs": {
+          "reached_as_rust": true,
+          "check": {
+            "outcome": "checker_failure",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<candidate>\\Cargo.toml",
+              "--target-dir",
+              "<scratch>\\t\\reachability",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 101,
+            "error": "unsuccessful_or_incomplete_check",
+            "build_finished": [
+              false
+            ],
+            "diagnostic_causes": [
+              "None: turnstile_candidate_reachability_4df717aaf6b6b03a15f1767a1aeb4b5789c097524d72744a2db8cc70175cc8e7"
+            ]
+          }
+        }
+      }
+    },
+    "last_destination_wins": {
+      "outcome": "no_findings",
+      "coverage": {
+        "status": "written_rust_checked",
+        "rust_targets": [
+          "src/c.rs",
+          "src/lib.rs"
+        ]
+      },
+      "candidate_compiled": true,
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "f8e74cecd96fc6abcc166da89e0a942827cf6dfc9e8f224dd9ce418fd12f79d2",
+      "analyzed_sources_unchanged": true,
+      "directory_semantics": {
+        "before": {
+          ".": false,
+          "src": false
+        },
+        "after": {
+          ".": false,
+          "src": false
+        },
+        "unchanged": true
+      },
+      "partitions": {
+        "findings": 0,
+        "preexisting_findings": 0,
+        "ambiguous_findings": 0
+      },
+      "baseline": {
+        "status": "not_required",
+        "reason": "candidate_has_no_findings"
+      },
+      "candidate_check": {
+        "outcome": "no_findings",
+        "command": [
+          "cargo",
+          "clippy",
+          "--offline",
+          "--manifest-path",
+          "<candidate>\\Cargo.toml",
+          "--target-dir",
+          "<scratch>\\t",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "-A",
+          "clippy::all",
+          "--force-warn",
+          "clippy::await_holding_lock"
+        ],
+        "exit_code": 0,
+        "build_finished": [
+          true
+        ],
+        "diagnostic_causes": []
+      },
+      "reachability": {
+        "src/c.rs": {
+          "reached_as_rust": true,
+          "check": {
+            "outcome": "checker_failure",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<candidate>\\Cargo.toml",
+              "--target-dir",
+              "<scratch>\\t\\reachability",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 101,
+            "error": "unsuccessful_or_incomplete_check",
+            "build_finished": [
+              false
+            ],
+            "diagnostic_causes": [
+              "None: turnstile_candidate_reachability_3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa"
+            ]
+          }
+        },
+        "src/lib.rs": {
+          "reached_as_rust": true,
+          "check": {
+            "outcome": "checker_failure",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<candidate>\\Cargo.toml",
+              "--target-dir",
+              "<scratch>\\t\\reachability",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 101,
+            "error": "unsuccessful_or_incomplete_check",
+            "build_finished": [
+              false
+            ],
+            "diagnostic_causes": [
+              "None: turnstile_candidate_reachability_4df717aaf6b6b03a15f1767a1aeb4b5789c097524d72744a2db8cc70175cc8e7"
+            ]
+          }
+        }
+      }
+    },
+    "alias_last_good": {
+      "outcome": "no_findings",
+      "coverage": {
+        "status": "written_rust_checked",
+        "rust_targets": [
+          "src/fresh.rs"
+        ]
+      },
+      "candidate_compiled": true,
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "f75230dadac4f4436c64236d8bb1d3ad44e92b4175e105a939a57ec5cb729d2a",
+      "analyzed_sources_unchanged": true,
+      "directory_semantics": {
+        "before": {
+          ".": false,
+          "src": false
+        },
+        "after": {
+          ".": false,
+          "src": false
+        },
+        "unchanged": true
+      },
+      "partitions": {
+        "findings": 0,
+        "preexisting_findings": 0,
+        "ambiguous_findings": 0
+      },
+      "baseline": {
+        "status": "not_required",
+        "reason": "candidate_has_no_findings"
+      },
+      "candidate_check": {
+        "outcome": "no_findings",
+        "command": [
+          "cargo",
+          "clippy",
+          "--offline",
+          "--manifest-path",
+          "<candidate>\\Cargo.toml",
+          "--target-dir",
+          "<scratch>\\t",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "-A",
+          "clippy::all",
+          "--force-warn",
+          "clippy::await_holding_lock"
+        ],
+        "exit_code": 0,
+        "build_finished": [
+          true
+        ],
+        "diagnostic_causes": []
+      },
+      "reachability": {
+        "src/fresh.rs": {
+          "reached_as_rust": true,
+          "check": {
+            "outcome": "checker_failure",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<candidate>\\Cargo.toml",
+              "--target-dir",
+              "<scratch>\\t\\reachability",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 101,
+            "error": "unsuccessful_or_incomplete_check",
+            "build_finished": [
+              false
+            ],
+            "diagnostic_causes": [
+              "None: turnstile_candidate_reachability_3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa"
+            ]
+          }
+        }
+      }
+    },
+    "alias_last_bad": {
+      "outcome": "findings",
+      "coverage": {
+        "status": "written_rust_checked",
+        "rust_targets": [
+          "src/fresh.rs"
+        ]
+      },
+      "candidate_compiled": true,
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "f75230dadac4f4436c64236d8bb1d3ad44e92b4175e105a939a57ec5cb729d2a",
+      "analyzed_sources_unchanged": true,
+      "directory_semantics": {
+        "before": {
+          ".": false,
+          "src": false
+        },
+        "after": {
+          ".": false,
+          "src": false
+        },
+        "unchanged": true
+      },
+      "partitions": {
+        "findings": 1,
+        "preexisting_findings": 0,
+        "ambiguous_findings": 0
+      },
+      "baseline": {
+        "status": "not_required",
+        "reason": "findings_wholly_in_new_file"
+      },
+      "candidate_check": {
+        "outcome": "findings",
+        "command": [
+          "cargo",
+          "clippy",
+          "--offline",
+          "--manifest-path",
+          "<candidate>\\Cargo.toml",
+          "--target-dir",
+          "<scratch>\\t",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "-A",
+          "clippy::all",
+          "--force-warn",
+          "clippy::await_holding_lock"
+        ],
+        "exit_code": 0,
+        "build_finished": [
+          true
+        ],
+        "diagnostic_causes": []
+      },
+      "reachability": {
+        "src/fresh.rs": {
+          "reached_as_rust": true,
+          "check": {
+            "outcome": "checker_failure",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<candidate>\\Cargo.toml",
+              "--target-dir",
+              "<scratch>\\t\\reachability",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 101,
+            "error": "unsuccessful_or_incomplete_check",
+            "build_finished": [
+              false
+            ],
+            "diagnostic_causes": [
+              "None: turnstile_candidate_reachability_d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9"
+            ]
+          }
+        }
+      }
+    },
+    "alias_move_origin": {
+      "outcome": "no_findings",
+      "coverage": {
+        "status": "written_rust_checked",
+        "rust_targets": [
+          "src/fresh.rs",
+          "src/lib.rs"
+        ]
+      },
+      "candidate_compiled": true,
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "adac84b061af7b2fef2baf6745ec55ac35f4f274b6637ad9ea9848e68538f350",
+      "analyzed_sources_unchanged": true,
+      "directory_semantics": {
+        "before": {
+          ".": false,
+          "src": false
+        },
+        "after": {
+          ".": false,
+          "src": false
+        },
+        "unchanged": true
+      },
+      "partitions": {
+        "findings": 0,
+        "preexisting_findings": 1,
+        "ambiguous_findings": 0
+      },
+      "baseline": {
+        "status": "required",
+        "check": {
+          "outcome": "findings",
+          "command": [
+            "cargo",
+            "clippy",
+            "--offline",
+            "--manifest-path",
+            "<baseline>\\Cargo.toml",
+            "--target-dir",
+            "<baseline>t",
+            "--all-targets",
+            "--message-format=json",
+            "--",
+            "-A",
+            "clippy::all",
+            "--force-warn",
+            "clippy::await_holding_lock"
+          ],
+          "exit_code": 0,
+          "build_finished": [
+            true
+          ],
+          "diagnostic_causes": []
+        }
+      },
+      "candidate_check": {
+        "outcome": "findings",
+        "command": [
+          "cargo",
+          "clippy",
+          "--offline",
+          "--manifest-path",
+          "<candidate>\\Cargo.toml",
+          "--target-dir",
+          "<scratch>\\t",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "-A",
+          "clippy::all",
+          "--force-warn",
+          "clippy::await_holding_lock"
+        ],
+        "exit_code": 0,
+        "build_finished": [
+          true
+        ],
+        "diagnostic_causes": []
+      },
+      "reachability": {
+        "src/fresh.rs": {
+          "reached_as_rust": true,
+          "check": {
+            "outcome": "checker_failure",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<candidate>\\Cargo.toml",
+              "--target-dir",
+              "<scratch>\\t\\reachability",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 101,
+            "error": "unsuccessful_or_incomplete_check",
+            "build_finished": [
+              false
+            ],
+            "diagnostic_causes": [
+              "None: turnstile_candidate_reachability_d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9"
+            ]
+          }
+        },
+        "src/lib.rs": {
+          "reached_as_rust": true,
+          "check": {
+            "outcome": "checker_failure",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<candidate>\\Cargo.toml",
+              "--target-dir",
+              "<scratch>\\t\\reachability",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 101,
+            "error": "unsuccessful_or_incomplete_check",
+            "build_finished": [
+              false
+            ],
+            "diagnostic_causes": [
+              "None: turnstile_candidate_reachability_b29a3c6d48c8f7fe79d1b06a2531ba97f1654e59be794ea87652964af8f5e1c3"
+            ]
+          }
+        }
+      }
+    },
+    "create_overwrite": {
+      "outcome": "findings",
+      "coverage": {
+        "status": "written_rust_checked",
+        "rust_targets": [
+          "src/lib.rs"
+        ]
+      },
+      "candidate_compiled": true,
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "7cc669a96a64cb8f6b718174ace2fe8c5b1d05c5d9de8b2edc7052cdca361b31",
+      "analyzed_sources_unchanged": true,
+      "directory_semantics": {
+        "before": {
+          ".": false,
+          "src": false
+        },
+        "after": {
+          ".": false,
+          "src": false
+        },
+        "unchanged": true
+      },
+      "partitions": {
+        "findings": 1,
+        "preexisting_findings": 0,
+        "ambiguous_findings": 0
+      },
+      "baseline": {
+        "status": "required",
+        "check": {
+          "outcome": "no_findings",
+          "command": [
+            "cargo",
+            "clippy",
+            "--offline",
+            "--manifest-path",
+            "<baseline>\\Cargo.toml",
+            "--target-dir",
+            "<baseline>t",
+            "--all-targets",
+            "--message-format=json",
+            "--",
+            "-A",
+            "clippy::all",
+            "--force-warn",
+            "clippy::await_holding_lock"
+          ],
+          "exit_code": 0,
+          "build_finished": [
+            true
+          ],
+          "diagnostic_causes": []
+        }
+      },
+      "candidate_check": {
+        "outcome": "findings",
+        "command": [
+          "cargo",
+          "clippy",
+          "--offline",
+          "--manifest-path",
+          "<candidate>\\Cargo.toml",
+          "--target-dir",
+          "<scratch>\\t",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "-A",
+          "clippy::all",
+          "--force-warn",
+          "clippy::await_holding_lock"
+        ],
+        "exit_code": 0,
+        "build_finished": [
+          true
+        ],
+        "diagnostic_causes": []
+      },
+      "reachability": {
+        "src/lib.rs": {
+          "reached_as_rust": true,
+          "check": {
+            "outcome": "checker_failure",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<candidate>\\Cargo.toml",
+              "--target-dir",
+              "<scratch>\\t\\reachability",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 101,
+            "error": "unsuccessful_or_incomplete_check",
+            "build_finished": [
+              false
+            ],
+            "diagnostic_causes": [
+              "None: turnstile_candidate_reachability_d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9"
+            ]
+          }
+        }
+      }
+    },
+    "noop_after_update": {
+      "outcome": "findings",
+      "coverage": {
+        "status": "written_rust_checked",
+        "rust_targets": [
+          "src/lib.rs"
+        ]
+      },
+      "candidate_compiled": true,
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "7cc669a96a64cb8f6b718174ace2fe8c5b1d05c5d9de8b2edc7052cdca361b31",
+      "analyzed_sources_unchanged": true,
+      "directory_semantics": {
+        "before": {
+          ".": false,
+          "src": false
+        },
+        "after": {
+          ".": false,
+          "src": false
+        },
+        "unchanged": true
+      },
+      "partitions": {
+        "findings": 1,
+        "preexisting_findings": 0,
+        "ambiguous_findings": 0
+      },
+      "baseline": {
+        "status": "required",
+        "check": {
+          "outcome": "no_findings",
+          "command": [
+            "cargo",
+            "clippy",
+            "--offline",
+            "--manifest-path",
+            "<baseline>\\Cargo.toml",
+            "--target-dir",
+            "<baseline>t",
+            "--all-targets",
+            "--message-format=json",
+            "--",
+            "-A",
+            "clippy::all",
+            "--force-warn",
+            "clippy::await_holding_lock"
+          ],
+          "exit_code": 0,
+          "build_finished": [
+            true
+          ],
+          "diagnostic_causes": []
+        }
+      },
+      "candidate_check": {
+        "outcome": "findings",
+        "command": [
+          "cargo",
+          "clippy",
+          "--offline",
+          "--manifest-path",
+          "<candidate>\\Cargo.toml",
+          "--target-dir",
+          "<scratch>\\t",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "-A",
+          "clippy::all",
+          "--force-warn",
+          "clippy::await_holding_lock"
+        ],
+        "exit_code": 0,
+        "build_finished": [
+          true
+        ],
+        "diagnostic_causes": []
+      },
+      "reachability": {
+        "src/lib.rs": {
+          "reached_as_rust": true,
+          "check": {
+            "outcome": "checker_failure",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<candidate>\\Cargo.toml",
+              "--target-dir",
+              "<scratch>\\t\\reachability",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 101,
+            "error": "unsuccessful_or_incomplete_check",
+            "build_finished": [
+              false
+            ],
+            "diagnostic_causes": [
+              "None: turnstile_candidate_reachability_d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9"
+            ]
+          }
+        }
+      }
+    },
+    "noop_only": {
+      "outcome": "no_findings",
+      "coverage": {
+        "status": "context_checked",
+        "rust_targets": []
+      },
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "a469e5a38e5f9e9ce5add0f220032c1016e91c7e4c8871c6dfac85c25e3922bd",
+      "analyzed_sources_unchanged": true,
+      "directory_semantics": {
+        "before": {
+          ".": false,
+          "src": false
+        },
+        "after": {
+          ".": false,
+          "src": false
+        },
+        "unchanged": true
+      },
+      "partitions": {
+        "findings": 0,
+        "preexisting_findings": 0,
+        "ambiguous_findings": 0
+      },
+      "baseline": {
+        "status": "not_required",
+        "reason": "candidate_has_no_findings"
+      },
+      "candidate_check": {
+        "outcome": "no_findings",
+        "command": [
+          "cargo",
+          "clippy",
+          "--offline",
+          "--manifest-path",
+          "<candidate>\\Cargo.toml",
+          "--target-dir",
+          "<scratch>\\t",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "-A",
+          "clippy::all",
+          "--force-warn",
+          "clippy::await_holding_lock"
+        ],
+        "exit_code": 0,
+        "build_finished": [
+          true
+        ],
+        "diagnostic_causes": []
+      },
+      "reachability": {}
+    },
+    "delete_only": {
+      "outcome": "no_findings",
+      "coverage": {
+        "status": "context_checked",
+        "rust_targets": []
+      },
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "a469e5a38e5f9e9ce5add0f220032c1016e91c7e4c8871c6dfac85c25e3922bd",
+      "analyzed_sources_unchanged": true,
+      "directory_semantics": {
+        "before": {
+          ".": false,
+          "src": false
+        },
+        "after": {
+          ".": false,
+          "src": false
+        },
+        "unchanged": true
+      },
+      "partitions": {
+        "findings": 0,
+        "preexisting_findings": 0,
+        "ambiguous_findings": 0
+      },
+      "baseline": {
+        "status": "not_required",
+        "reason": "candidate_has_no_findings"
+      },
+      "candidate_check": {
+        "outcome": "no_findings",
+        "command": [
+          "cargo",
+          "clippy",
+          "--offline",
+          "--manifest-path",
+          "<candidate>\\Cargo.toml",
+          "--target-dir",
+          "<scratch>\\t",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "-A",
+          "clippy::all",
+          "--force-warn",
+          "clippy::await_holding_lock"
+        ],
+        "exit_code": 0,
+        "build_finished": [
+          true
+        ],
+        "diagnostic_causes": []
+      },
+      "reachability": {}
+    },
+    "empty_vector": {
+      "outcome": "no_findings",
+      "coverage": {
+        "status": "context_checked",
+        "rust_targets": []
+      },
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "a469e5a38e5f9e9ce5add0f220032c1016e91c7e4c8871c6dfac85c25e3922bd",
+      "analyzed_sources_unchanged": true,
+      "directory_semantics": {
+        "before": {
+          ".": false,
+          "src": false
+        },
+        "after": {
+          ".": false,
+          "src": false
+        },
+        "unchanged": true
+      },
+      "partitions": {
+        "findings": 0,
+        "preexisting_findings": 0,
+        "ambiguous_findings": 0
+      },
+      "baseline": {
+        "status": "not_required",
+        "reason": "candidate_has_no_findings"
+      },
+      "candidate_check": {
+        "outcome": "no_findings",
+        "command": [
+          "cargo",
+          "clippy",
+          "--offline",
+          "--manifest-path",
+          "<candidate>\\Cargo.toml",
+          "--target-dir",
+          "<scratch>\\t",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "-A",
+          "clippy::all",
+          "--force-warn",
+          "clippy::await_holding_lock"
+        ],
+        "exit_code": 0,
+        "build_finished": [
+          true
+        ],
+        "diagnostic_causes": []
+      },
+      "reachability": {}
+    },
+    "delete_with_module_change": {
+      "outcome": "no_findings",
+      "coverage": {
+        "status": "written_rust_checked",
+        "rust_targets": [
+          "src/lib.rs"
+        ]
+      },
+      "candidate_compiled": true,
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "df5dd01b16a1f449ff45f54cac0e8e853f64aaa71cabab0f06120a5328bade79",
+      "analyzed_sources_unchanged": true,
+      "directory_semantics": {
+        "before": {
+          ".": false,
+          "src": false
+        },
+        "after": {
+          ".": false,
+          "src": false
+        },
+        "unchanged": true
+      },
+      "partitions": {
+        "findings": 0,
+        "preexisting_findings": 0,
+        "ambiguous_findings": 0
+      },
+      "baseline": {
+        "status": "not_required",
+        "reason": "candidate_has_no_findings"
+      },
+      "candidate_check": {
+        "outcome": "no_findings",
+        "command": [
+          "cargo",
+          "clippy",
+          "--offline",
+          "--manifest-path",
+          "<candidate>\\Cargo.toml",
+          "--target-dir",
+          "<scratch>\\t",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "-A",
+          "clippy::all",
+          "--force-warn",
+          "clippy::await_holding_lock"
+        ],
+        "exit_code": 0,
+        "build_finished": [
+          true
+        ],
+        "diagnostic_causes": []
+      },
+      "reachability": {
+        "src/lib.rs": {
+          "reached_as_rust": true,
+          "check": {
+            "outcome": "checker_failure",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<candidate>\\Cargo.toml",
+              "--target-dir",
+              "<scratch>\\t\\reachability",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 101,
+            "error": "unsuccessful_or_incomplete_check",
+            "build_finished": [
+              false
+            ],
+            "diagnostic_causes": [
+              "None: turnstile_candidate_reachability_3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa"
+            ]
+          }
+        }
+      }
+    },
+    "manifest_enables_debt": {
+      "outcome": "findings",
+      "coverage": {
+        "status": "context_checked",
+        "rust_targets": []
+      },
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "18502ad65f386c6291fc4d9a1c49ab4786bc4b85a1199e6022e65033e6836e52",
+      "analyzed_sources_unchanged": true,
+      "directory_semantics": {
+        "before": {
+          ".": false,
+          "src": false
+        },
+        "after": {
+          ".": false,
+          "src": false
+        },
+        "unchanged": true
+      },
+      "partitions": {
+        "findings": 1,
+        "preexisting_findings": 0,
+        "ambiguous_findings": 0
+      },
+      "baseline": {
+        "status": "required",
+        "check": {
+          "outcome": "no_findings",
+          "command": [
+            "cargo",
+            "clippy",
+            "--offline",
+            "--manifest-path",
+            "<baseline>\\Cargo.toml",
+            "--target-dir",
+            "<baseline>t",
+            "--all-targets",
+            "--message-format=json",
+            "--",
+            "-A",
+            "clippy::all",
+            "--force-warn",
+            "clippy::await_holding_lock"
+          ],
+          "exit_code": 0,
+          "build_finished": [
+            true
+          ],
+          "diagnostic_causes": []
+        }
+      },
+      "candidate_check": {
+        "outcome": "findings",
+        "command": [
+          "cargo",
+          "clippy",
+          "--offline",
+          "--manifest-path",
+          "<candidate>\\Cargo.toml",
+          "--target-dir",
+          "<scratch>\\t",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "-A",
+          "clippy::all",
+          "--force-warn",
+          "clippy::await_holding_lock"
+        ],
+        "exit_code": 0,
+        "build_finished": [
+          true
+        ],
+        "diagnostic_causes": []
+      },
+      "reachability": {}
+    },
+    "written_file_excluded": {
+      "outcome": "checker_failure",
+      "error": "candidate_not_compiled",
+      "coverage": {
+        "status": "unreached_rust",
+        "rust_targets": [
+          "src/old.rs"
+        ]
+      },
+      "candidate_compiled": false,
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "825fac6d828e63c2bd9c6d2edf46a691a3ecc07f1907e434ecb55d8c583cfd88",
+      "analyzed_sources_unchanged": true,
+      "directory_semantics": {
+        "before": {
+          ".": false,
+          "src": false
+        },
+        "after": {
+          ".": false,
+          "src": false
+        },
+        "unchanged": true
+      },
+      "partitions": {
+        "findings": 0,
+        "preexisting_findings": 0,
+        "ambiguous_findings": 0
+      },
+      "baseline": {
+        "status": "not_run",
+        "reason": "candidate_not_verified"
+      },
+      "candidate_check": {
+        "outcome": "no_findings",
+        "command": [
+          "cargo",
+          "clippy",
+          "--offline",
+          "--manifest-path",
+          "<candidate>\\Cargo.toml",
+          "--target-dir",
+          "<scratch>\\t",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "-A",
+          "clippy::all",
+          "--force-warn",
+          "clippy::await_holding_lock"
+        ],
+        "exit_code": 0,
+        "build_finished": [
+          true
+        ],
+        "diagnostic_causes": []
+      },
+      "reachability": {
+        "src/old.rs": {
+          "reached_as_rust": false,
+          "check": {
+            "outcome": "no_findings",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<candidate>\\Cargo.toml",
+              "--target-dir",
+              "<scratch>\\t\\reachability",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 0,
+            "build_finished": [
+              true
+            ],
+            "diagnostic_causes": []
+          }
+        }
+      }
+    },
+    "new_finding_and_required_failure": {
+      "outcome": "checker_failure",
+      "error": "required_baseline_failed",
+      "coverage": {
+        "status": "unreached_rust",
+        "rust_targets": [
+          "src/new.rs",
+          "src/orphan.rs"
+        ]
+      },
+      "candidate_compiled": false,
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "9c91aa2f8ad87513d944c9320f79e0bca527844f3b671947849569befb062e5a",
+      "analyzed_sources_unchanged": true,
+      "directory_semantics": {
+        "before": {
+          ".": false,
+          "src": false
+        },
+        "after": {
+          ".": false,
+          "src": false
+        },
+        "unchanged": true
+      },
+      "partitions": {
+        "findings": 1,
+        "preexisting_findings": 0,
+        "ambiguous_findings": 0
+      },
+      "baseline": {
+        "status": "required",
+        "check": {
+          "outcome": "checker_failure",
+          "command": [
+            "cargo",
+            "clippy",
+            "--offline",
+            "--manifest-path",
+            "<baseline>\\Cargo.toml",
+            "--target-dir",
+            "<baseline>t",
+            "--all-targets",
+            "--message-format=json",
+            "--",
+            "-A",
+            "clippy::all",
+            "--force-warn",
+            "clippy::await_holding_lock"
+          ],
+          "exit_code": 101,
+          "error": "unsuccessful_or_incomplete_check",
+          "build_finished": [
+            false
+          ],
+          "diagnostic_causes": [
+            "E0583: file not found for module `new`"
+          ]
+        }
+      },
+      "candidate_check": {
+        "outcome": "findings",
+        "command": [
+          "cargo",
+          "clippy",
+          "--offline",
+          "--manifest-path",
+          "<candidate>\\Cargo.toml",
+          "--target-dir",
+          "<scratch>\\t",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "-A",
+          "clippy::all",
+          "--force-warn",
+          "clippy::await_holding_lock"
+        ],
+        "exit_code": 0,
+        "build_finished": [
+          true
+        ],
+        "diagnostic_causes": []
+      },
+      "reachability": {
+        "src/new.rs": {
+          "reached_as_rust": true,
+          "check": {
+            "outcome": "checker_failure",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<candidate>\\Cargo.toml",
+              "--target-dir",
+              "<scratch>\\t\\reachability",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 101,
+            "error": "unsuccessful_or_incomplete_check",
+            "build_finished": [
+              false
+            ],
+            "diagnostic_causes": [
+              "None: turnstile_candidate_reachability_d6079cc1f35c671b371190e11e397372cb1af8753b961ecea9f9e0f3e80f8fd9"
+            ]
+          }
+        },
+        "src/orphan.rs": {
+          "reached_as_rust": false,
+          "check": {
+            "outcome": "findings",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<candidate>\\Cargo.toml",
+              "--target-dir",
+              "<scratch>\\t\\reachability",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 0,
+            "build_finished": [
+              true
+            ],
+            "diagnostic_causes": []
+          }
+        }
+      }
+    },
+    "wrong_create_preimage": {
+      "outcome": "checker_failure",
+      "error": "CandidateError: stale native preimage: src/lib.rs",
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "7377ee5acb952fcc8ba56997fefa0c455b19d8a79db9473a91d059d47d677d83",
+      "directory_semantics": {
+        "before": {
+          ".": false,
+          "src": false
+        },
+        "after": {
+          ".": false,
+          "src": false
+        },
+        "unchanged": true
+      },
+      "partitions": {
+        "findings": 0,
+        "preexisting_findings": 0,
+        "ambiguous_findings": 0
+      },
+      "baseline": {
+        "status": "not_run",
+        "reason": "candidate_not_verified"
+      }
+    },
+    "wrong_move_destination": {
+      "outcome": "checker_failure",
+      "error": "CandidateError: stale native preimage: src/dest.rs",
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "7377ee5acb952fcc8ba56997fefa0c455b19d8a79db9473a91d059d47d677d83",
+      "directory_semantics": {
+        "before": {
+          ".": false,
+          "src": false
+        },
+        "after": {
+          ".": false,
+          "src": false
+        },
+        "unchanged": true
+      },
+      "partitions": {
+        "findings": 0,
+        "preexisting_findings": 0,
+        "ambiguous_findings": 0
+      },
+      "baseline": {
+        "status": "not_run",
+        "reason": "candidate_not_verified"
+      }
+    },
+    "sequential_not_precall_image": {
+      "outcome": "checker_failure",
+      "error": "CandidateError: stale native preimage: src/lib.rs",
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "7377ee5acb952fcc8ba56997fefa0c455b19d8a79db9473a91d059d47d677d83",
+      "directory_semantics": {
+        "before": {
+          ".": false,
+          "src": false
+        },
+        "after": {
+          ".": false,
+          "src": false
+        },
+        "unchanged": true
+      },
+      "partitions": {
+        "findings": 0,
+        "preexisting_findings": 0,
+        "ambiguous_findings": 0
+      },
+      "baseline": {
+        "status": "not_run",
+        "reason": "candidate_not_verified"
+      }
+    },
+    "staged_manifest_escape": {
+      "outcome": "checker_failure",
+      "error": "CandidateError: Cargo path escapes context: Cargo.toml",
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "7cc669a96a64cb8f6b718174ace2fe8c5b1d05c5d9de8b2edc7052cdca361b31",
+      "directory_semantics": {
+        "before": {
+          ".": false,
+          "src": false
+        },
+        "after": {
+          ".": false,
+          "src": false
+        },
+        "unchanged": true
+      },
+      "partitions": {
+        "findings": 0,
+        "preexisting_findings": 0,
+        "ambiguous_findings": 0
+      },
+      "baseline": {
+        "status": "not_run",
+        "reason": "candidate_not_verified"
+      }
+    },
+    "staged_config_escape": {
+      "outcome": "checker_failure",
+      "error": "CandidateError: custom compiler wrappers in Cargo configuration are unsupported",
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "7cc669a96a64cb8f6b718174ace2fe8c5b1d05c5d9de8b2edc7052cdca361b31",
+      "directory_semantics": {
+        "before": {
+          ".": false,
+          "src": false,
+          ".cargo": null
+        },
+        "after": {
+          ".": false,
+          "src": false,
+          ".cargo": null
+        },
+        "unchanged": true
+      },
+      "partitions": {
+        "findings": 0,
+        "preexisting_findings": 0,
+        "ambiguous_findings": 0
+      },
+      "baseline": {
+        "status": "not_run",
+        "reason": "candidate_not_verified"
+      }
+    },
+    "staged_lockfile_refresh": {
+      "outcome": "checker_failure",
+      "error": "CandidateError: Cargo changed captured source bytes: Cargo.lock",
+      "coverage": {
+        "status": "not_run",
+        "rust_targets": []
+      },
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "7cc669a96a64cb8f6b718174ace2fe8c5b1d05c5d9de8b2edc7052cdca361b31",
+      "directory_semantics": {
+        "before": {
+          ".": false,
+          "src": false
+        },
+        "after": {
+          ".": false,
+          "src": false
+        },
+        "unchanged": true
+      },
+      "partitions": {
+        "findings": 0,
+        "preexisting_findings": 0,
+        "ambiguous_findings": 0
+      },
+      "baseline": {
+        "status": "not_run",
+        "reason": "candidate_not_verified"
+      },
+      "candidate_check": {
+        "outcome": "no_findings",
+        "command": [
+          "cargo",
+          "clippy",
+          "--offline",
+          "--manifest-path",
+          "<candidate>\\Cargo.toml",
+          "--target-dir",
+          "<scratch>\\t",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "-A",
+          "clippy::all",
+          "--force-warn",
+          "clippy::await_holding_lock"
+        ],
+        "exit_code": 0,
+        "build_finished": [
+          true
+        ],
+        "diagnostic_causes": []
+      }
+    },
+    "cross_file_build_mutation": {
+      "outcome": "checker_failure",
+      "error": "CandidateError: Cargo changed captured source bytes: src/sibling.rs",
+      "coverage": {
+        "status": "not_run",
+        "rust_targets": [
+          "src/lib.rs"
+        ]
+      },
+      "originals_unchanged": true,
+      "original_snapshot_sha256": "db416b28bb8befe60488bcd239397309f1982ff2127935d567b3a550b170f5e3",
+      "directory_semantics": {
+        "before": {
+          ".": false,
+          "src": false
+        },
+        "after": {
+          ".": false,
+          "src": false
+        },
+        "unchanged": true
+      },
+      "partitions": {
+        "findings": 0,
+        "preexisting_findings": 0,
+        "ambiguous_findings": 0
+      },
+      "baseline": {
+        "status": "not_run",
+        "reason": "candidate_not_verified"
+      },
+      "candidate_check": {
+        "outcome": "no_findings",
+        "command": [
+          "cargo",
+          "clippy",
+          "--offline",
+          "--manifest-path",
+          "<candidate>\\Cargo.toml",
+          "--target-dir",
+          "<scratch>\\t",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "-A",
+          "clippy::all",
+          "--force-warn",
+          "clippy::await_holding_lock"
+        ],
+        "exit_code": 0,
+        "build_finished": [
+          true
+        ],
+        "diagnostic_causes": []
+      }
+    },
+    "directory_semantic_drift": {
+      "outcome": "checker_failure",
+      "error": "original_directory_semantics_changed",
+      "coverage": {
+        "status": "written_rust_checked",
+        "rust_targets": [
+          "out/fresh.rs"
+        ]
+      },
+      "candidate_compiled": true,
+      "originals_unchanged": false,
+      "original_snapshot_sha256": "2fbafac5186ae21575c21e1b92a7a879a03315bf3a80dc65382168660c837bd9",
+      "analyzed_sources_unchanged": true,
+      "directory_semantics": {
+        "before": {
+          ".": false,
+          "src": false,
+          "out": false
+        },
+        "after": {
+          ".": false,
+          "src": false,
+          "out": true
+        },
+        "unchanged": false
+      },
+      "partitions": {
+        "findings": 0,
+        "preexisting_findings": 0,
+        "ambiguous_findings": 0
+      },
+      "baseline": {
+        "status": "not_required",
+        "reason": "candidate_has_no_findings"
+      },
+      "candidate_check": {
+        "outcome": "no_findings",
+        "command": [
+          "cargo",
+          "clippy",
+          "--offline",
+          "--manifest-path",
+          "<candidate>\\Cargo.toml",
+          "--target-dir",
+          "<scratch>\\t",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "-A",
+          "clippy::all",
+          "--force-warn",
+          "clippy::await_holding_lock"
+        ],
+        "exit_code": 0,
+        "build_finished": [
+          true
+        ],
+        "diagnostic_causes": []
+      },
+      "reachability": {
+        "out/fresh.rs": {
+          "reached_as_rust": true,
+          "check": {
+            "outcome": "checker_failure",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<candidate>\\Cargo.toml",
+              "--target-dir",
+              "<scratch>\\t\\reachability",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 101,
+            "error": "unsuccessful_or_incomplete_check",
+            "build_finished": [
+              false
+            ],
+            "diagnostic_causes": [
+              "None: turnstile_candidate_reachability_3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa"
+            ]
+          }
+        }
+      }
+    },
+    "new_parent_semantic_drift": {
+      "outcome": "checker_failure",
+      "error": "original_directory_semantics_changed",
+      "coverage": {
+        "status": "written_rust_checked",
+        "rust_targets": [
+          "out/fresh.rs"
+        ]
+      },
+      "candidate_compiled": true,
+      "originals_unchanged": false,
+      "original_snapshot_sha256": "9891f88517b71d0c63ba1e511b323ac8206784e7ea5cd421fbc870aaaf9c1e02",
+      "analyzed_sources_unchanged": true,
+      "directory_semantics": {
+        "before": {
+          ".": false,
+          "src": false,
+          "out": null
+        },
+        "after": {
+          ".": false,
+          "src": false,
+          "out": true
+        },
+        "unchanged": false
+      },
+      "partitions": {
+        "findings": 0,
+        "preexisting_findings": 0,
+        "ambiguous_findings": 0
+      },
+      "baseline": {
+        "status": "not_required",
+        "reason": "candidate_has_no_findings"
+      },
+      "candidate_check": {
+        "outcome": "no_findings",
+        "command": [
+          "cargo",
+          "clippy",
+          "--offline",
+          "--manifest-path",
+          "<candidate>\\Cargo.toml",
+          "--target-dir",
+          "<scratch>\\t",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "-A",
+          "clippy::all",
+          "--force-warn",
+          "clippy::await_holding_lock"
+        ],
+        "exit_code": 0,
+        "build_finished": [
+          true
+        ],
+        "diagnostic_causes": []
+      },
+      "reachability": {
+        "out/fresh.rs": {
+          "reached_as_rust": true,
+          "check": {
+            "outcome": "checker_failure",
+            "command": [
+              "cargo",
+              "clippy",
+              "--offline",
+              "--manifest-path",
+              "<candidate>\\Cargo.toml",
+              "--target-dir",
+              "<scratch>\\t\\reachability",
+              "--all-targets",
+              "--message-format=json",
+              "--",
+              "-A",
+              "clippy::all",
+              "--force-warn",
+              "clippy::await_holding_lock"
+            ],
+            "exit_code": 101,
+            "error": "unsuccessful_or_incomplete_check",
+            "build_finished": [
+              false
+            ],
+            "diagnostic_causes": [
+              "None: turnstile_candidate_reachability_3cbf1109d6289afba941d4feeced27d180c23eba2cf064140afb13eb4adf3bfa"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "expectations": {
+    "unstaged_sibling_fails_immutable": true,
+    "jointly_necessary_immutable": true,
+    "combined_context_not_independent_files": true,
+    "move_existing_immutable": true,
+    "move_existing_attribution": true,
+    "move_expanded_immutable": true,
+    "move_expanded_attribution": true,
+    "move_and_recreate_source_immutable": true,
+    "duplicated_old_occurrence_is_new": true,
+    "variant_empty_immutable": true,
+    "variant_empty_same_occurrence_stays_preexisting": true,
+    "variant_noop_immutable": true,
+    "variant_noop_same_occurrence_stays_preexisting": true,
+    "variant_move_immutable": true,
+    "variant_move_same_occurrence_stays_preexisting": true,
+    "variant_move_recreate_immutable": true,
+    "variant_contexts_cannot_excuse_copied_occurrence": true,
+    "overlapping_move_sources_immutable": true,
+    "second_move_uses_original_source": true,
+    "last_destination_wins_immutable": true,
+    "overwritten_bad_intermediate_not_analyzed": true,
+    "alias_last_good_immutable": true,
+    "alias_last_good_follows_actual_alias_order": true,
+    "alias_last_bad_immutable": true,
+    "alias_last_bad_follows_actual_alias_order": true,
+    "alias_move_origin_immutable": true,
+    "aliased_last_move_keeps_original_debt": true,
+    "create_overwrite_immutable": true,
+    "create_overwrite_retains_baseline": true,
+    "noop_after_update_immutable": true,
+    "noop_does_not_restore_original_bytes": true,
+    "noop_only_immutable": true,
+    "noop_only_honest_context_coverage": true,
+    "delete_only_immutable": true,
+    "delete_only_honest_context_coverage": true,
+    "empty_vector_immutable": true,
+    "empty_vector_honest_context_coverage": true,
+    "delete_with_module_change_immutable": true,
+    "deleted_source_not_reachability_target": true,
+    "manifest_enables_debt_immutable": true,
+    "manifest_change_introduces_existing_source_debt": true,
+    "written_file_excluded_immutable": true,
+    "remaining_rust_requires_reachability": true,
+    "new_finding_and_required_failure_immutable": true,
+    "known_new_finding_survives_other_failures": true,
+    "wrong_create_preimage_immutable": true,
+    "wrong_create_preimage_rejected_before_cargo": true,
+    "wrong_move_destination_immutable": true,
+    "wrong_move_destination_rejected_before_cargo": true,
+    "sequential_not_precall_image_immutable": true,
+    "sequential_not_precall_image_rejected_before_cargo": true,
+    "staged_manifest_escape_immutable": true,
+    "post_replay_manifest_validated": true,
+    "staged_config_escape_immutable": true,
+    "post_replay_config_validated": true,
+    "staged_lockfile_refresh_immutable": true,
+    "staged_lockfile_bytes_are_not_exempt": true,
+    "cross_file_build_mutation_immutable": true,
+    "unreported_sibling_mutation_is_not_clean": true,
+    "directory_semantic_drift_held_despite_clean_copied_cargo": true,
+    "directory_semantic_drift_actual_semantics_changed": true,
+    "new_parent_semantic_drift_held_despite_clean_copied_cargo": true,
+    "new_parent_semantic_drift_actual_semantics_changed": true
+  },
+  "throwaway_smoke": {
+    "exact_bom_crlf": {
+      "outcome": "no_findings",
+      "originals_unchanged": true,
+      "candidate_compiled": true,
+      "analyzed_sources_unchanged": true
+    },
+    "lasting_original_mutation": {
+      "outcome": "checker_failure",
+      "error": "original_context_changed",
+      "originals_unchanged": false
+    }
+  },
+  "mutation_experiment": {
+    "setup_correction": "Initial write_text fixture used Windows CRLF and was correctly rejected for mismatching LF preimages; corrected fixture uses write_bytes.",
+    "intact": {
+      "error": null,
+      "outcome": "no_findings",
+      "introduced": 0,
+      "preexisting": 1,
+      "originals_unchanged": true
+    },
+    "removed_move_origin": {
+      "error": null,
+      "outcome": "findings",
+      "introduced": 1,
+      "preexisting": 0,
+      "originals_unchanged": true
+    }
+  },
+  "development_observations": [
+    "Ordinary preexisting Cargo.lock normalization must remain supported. Final owner permits unstaged lockfile refreshes but rejects modification of explicitly staged lockfiles; the retained staged lockfile regression exercises that distinction."
+  ],
+  "limitations": [
+    "Python complete-context API only; no real OMP integration claim.",
+    "Trusted local Cargo/build scripts/proc macros, not a hermetic sandbox. Freshness hashing detects lasting changes, not transient write-and-restore or mutations after return.",
+    "Only surviving written .rs files receive individual reachability controls. Context-only operations run the combined Cargo selection without claiming per-file compilation.",
+    "Generated/external diagnostic source identity remains ambiguous; unchanged lockfiles may be refreshed by Cargo.",
+    "The selected Clippy rule is not a global code-correctness or safety claim.",
+    "Windows directory case sensitivity must match the disposable copy. Unavailable FileCaseSensitiveInfo queries or mismatches fail visibly; case-sensitive-directory emulation is not implemented."
+  ],
+  "independent_review_correction": {
+    "rejected_snapshot": "60859cc3be94adbec154013d1634489fe5e6c0df950e5e6c0018145043be1086",
+    "finding": "Distinct lib/test diagnostic variants at one physical occurrence were falsely budgeted as multiple final occurrences.",
+    "repair": "Bind each consumed baseline primary to its candidate raw primary; share only at that same final occurrence.",
+    "exact_reviewer_fixture_author_recheck": {
+      "variants_empty": {
+        "outcome": "no_findings",
+        "introduced": 0,
+        "preexisting": 2,
+        "candidate_raw": 2,
+        "baseline_raw": 2,
+        "originals_unchanged": true
+      },
+      "variants_noop": {
+        "outcome": "no_findings",
+        "introduced": 0,
+        "preexisting": 2,
+        "candidate_raw": 2,
+        "baseline_raw": 2,
+        "originals_unchanged": true
+      },
+      "variants_move": {
+        "outcome": "no_findings",
+        "introduced": 0,
+        "preexisting": 2,
+        "candidate_raw": 2,
+        "baseline_raw": 2,
+        "originals_unchanged": true
+      },
+      "duplicate_move_recreate": {
+        "outcome": "findings",
+        "introduced": 1,
+        "preexisting": 1,
+        "candidate_raw": 4,
+        "baseline_raw": 2,
+        "originals_unchanged": true
+      }
+    },
+    "independent_acceptance": false
+  },
+  "prior_smoke_and_mutation_provenance": "The throwaway_smoke and mutation_experiment sections describe the preceding 60859cc3 snapshot proof; revised real-Cargo regression and exact reviewer-fixture checks above validate the correction.",
+  "native_alias_correction": {
+    "native_reachability_provenance": "Director relayed native owner compiled-addon oracle: two creates src/fresh.rs then src/FRESH.rs, both preimages absent; actual filesystem retains one entry and last writer bytes. Author did not run native addon.",
+    "repair": "Canonicalize materialized filesystem paths for final replay bookkeeping, never universal casefold; retain last writer original-source identity.",
+    "populated_case_sensitive_original": {
+      "case_sensitive_fixture": "proved distinct physical files",
+      "outcome": "checker_failure",
+      "error": "CandidateError: original/copied directory case sensitivity differs",
+      "originals_unchanged": true,
+      "candidate_check_ran": false
+    },
+    "empty_case_sensitive_original": {
+      "case_sensitive_fixture": "proved distinct physical files",
+      "outcome": "checker_failure",
+      "error": "CandidateError: original/copied directory case sensitivity differs",
+      "originals_unchanged": true,
+      "candidate_check_ran": false
+    },
+    "observed_support": "Default case-insensitive Windows source/copy contexts support native aliases; mismatched original/copy FileCaseSensitiveInfo rejects before Cargo. No directory flag emulation or broad new portability claim."
+  },
+  "semantic_freshness_correction": {
+    "rejected_snapshot": "e05ae54c08d9abb1e58659294b28cd399d474bfac80acccadda0727902539d4b",
+    "reviewer_evidence": ".loopx/scw/review-revision-results.json",
+    "finding": "Setup-only source/copy flag equality falsely permitted an original output-directory flag change during Cargo while file bytes stayed identical.",
+    "repair": "Retain and requery original directory observations consumed by copying/replay, including absence of every proposed-parent segment and the existing ancestor flags. Bind WinAPI functions once.",
+    "observed_results": {
+      "directory_semantic_drift": {
+        "outcome": "checker_failure",
+        "error": "original_directory_semantics_changed",
+        "candidate_compiled": true,
+        "originals_unchanged": false,
+        "directory_semantics": {
+          "before": {
+            ".": false,
+            "src": false,
+            "out": false
+          },
+          "after": {
+            ".": false,
+            "src": false,
+            "out": true
+          },
+          "unchanged": false
+        }
+      },
+      "new_parent_semantic_drift": {
+        "outcome": "checker_failure",
+        "error": "original_directory_semantics_changed",
+        "candidate_compiled": true,
+        "originals_unchanged": false,
+        "directory_semantics": {
+          "before": {
+            ".": false,
+            "src": false,
+            "out": null
+          },
+          "after": {
+            ".": false,
+            "src": false,
+            "out": true
+          },
+          "unchanged": false
+        }
+      }
+    },
+    "fixture_cleanup": "Both retained real-build-script cases reset the private output-directory flag before temporary workspace removal. No reviewer path was executed or modified.",
+    "independent_acceptance": false
+  }
+}

@@ -1,4 +1,4 @@
-"""Prepare one Rust candidate in a copied, trusted local Cargo context.
+"""Analyze final staged bytes in a copied, trusted local Cargo context.
 
 This is a Python preparation API, not OMP's edit grammar or an execution gate.
 Cargo/build scripts/proc macros are trusted code: the copy is not an OS sandbox.
@@ -17,6 +17,20 @@ import tomllib
 
 from rust_checker import RULE, check, run
 from rust_attribution import attribute, _spans
+
+
+if os.name == "nt":
+    import ctypes
+    _kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    _create_directory_handle = _kernel32.CreateFileW
+    _create_directory_handle.argtypes = [
+        ctypes.c_wchar_p, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_void_p,
+        ctypes.c_uint32, ctypes.c_uint32, ctypes.c_void_p]
+    _create_directory_handle.restype = ctypes.c_void_p
+    _query_file_info = _kernel32.GetFileInformationByHandleEx
+    _query_file_info.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_uint32]
+    _close_handle = _kernel32.CloseHandle
+    _close_handle.argtypes = [ctypes.c_void_p]
 
 
 class CandidateError(ValueError):
@@ -58,6 +72,8 @@ def _linked(path):
 
 
 def _files(root):
+    if _linked(root):
+        raise CandidateError("context root cannot be a link/reparse point")
     def fail(error):
         raise error
 
@@ -128,9 +144,12 @@ def _compiled(candidate, candidate_bytes, command, environment, cwd, target_dir,
     control[control.index("--target-dir") + 1] = str(target_dir / "reachability")
     control_environment = environment.copy()
     control_environment["CARGO_BUILD_BUILD_DIR"] = str(target_dir / "reachability-build")
+    control_bytes = candidate_bytes + f'\ncompile_error!("{marker}");\n'.encode()
     try:
-        candidate.write_bytes(candidate_bytes + f'\ncompile_error!("{marker}");\n'.encode())
+        candidate.write_bytes(control_bytes)
         observed = check(control, control_environment, cwd=cwd)
+        if candidate.read_bytes() != control_bytes:
+            raise CandidateError("Cargo changed reachability control bytes")
         reached = any(
             diagnostic["level"] == "error" and diagnostic["message"] == marker
             and any(span["is_primary"] and (
@@ -138,11 +157,8 @@ def _compiled(candidate, candidate_bytes, command, environment, cwd, target_dir,
             ) for span in diagnostic["spans"])
             for diagnostic in observed.get("diagnostics", [])
         )
-        return reached, {
-            "reached_as_rust": reached,
-            "exit_code": observed.get("exit_code"),
-            "error": observed.get("error"),
-        }
+        return reached, {"reached_as_rust": reached, "check": observed,
+                         "exit_code": observed.get("exit_code"), "error": observed.get("error")}
     finally:
         candidate.write_bytes(candidate_bytes)
 
@@ -201,38 +217,150 @@ def _sources(observed, copied, expected):
     return sources
 
 
-def analyze_candidate(context, target, *, edits=None, content=None, cargo="cargo"):
-    """Identify introduced findings for unique-text edits OR a full UTF-8 write.
-
-    Paths are relative to context.root. The caller encloses the workspace and
-    relative local dependencies, and selects the original Cargo invocation cwd.
-    Once inputs are snapshotted, returns unchanged-input evidence. Preflight
-    failures before that point do not claim verified immutability. No release exists.
-    """
-    result = {"outcome": "checker_failure", "findings": [], "preexisting_findings": [],
-              "ambiguous_findings": [], "baseline": {"status": "not_run", "reason": "candidate_not_verified"}}
-    root = Path(context.root).absolute()
-    before = None
+def _directory_case_sensitive(directory):
+    """Query one Windows directory; None records a not-yet-existing parent."""
+    if not directory.exists():
+        return None
+    handle = _create_directory_handle(str(directory), 0x80, 7, None, 3, 0x02000000, None)
+    if handle == ctypes.c_void_p(-1).value:
+        raise ctypes.WinError(ctypes.get_last_error())
     try:
-        if _linked(root):
-            raise CandidateError("context root cannot be a link/reparse point")
-        root = root.resolve(strict=True)
-        target_relative = _relative(target)
-        _relative(context.manifest)
-        cwd_relative = _relative(context.cwd)
-        if target_relative.suffix != ".rs":
+        info = ctypes.c_uint32()
+        # FileCaseSensitiveInfo / FILE_CS_FLAG_CASE_SENSITIVE_DIR.
+        if not _query_file_info(handle, 23, ctypes.byref(info), ctypes.sizeof(info)):
+            raise ctypes.WinError(ctypes.get_last_error())
+        return bool(info.value & 1)
+    finally:
+        _close_handle(handle)
+
+
+def _check_case_semantics(original, copied, observed):
+    """Retain original observations, not merely source/copy equality at setup."""
+    if os.name != "nt":
+        return
+    sensitive = _directory_case_sensitive(original)
+    if observed.setdefault(original.as_posix(), sensitive) != sensitive:
+        raise CandidateError("original directory case sensitivity changed")
+    if sensitive != _directory_case_sensitive(copied):
+        raise CandidateError("original/copied directory case sensitivity differs")
+
+
+def _copy_context(root, copied, expected, directory_semantics):
+    copied.mkdir()
+    directories = {Path(".")}
+    for source in _files(root):
+        directories.update(source.relative_to(root).parents)
+        destination = copied / source.relative_to(root)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, destination)
+    if _snapshot(copied) != expected:
+        raise CandidateError("context changed while copying")
+    for relative in directories:
+        _check_case_semantics(root / relative, copied / relative, directory_semantics)
+
+
+def _validate_context(copied):
+    for path in _files(copied):
+        if path.name == "Cargo.toml" or path.relative_to(copied).as_posix().endswith(
+                (".cargo/config", ".cargo/config.toml")):
+            _validate_toml(path, copied)
+
+
+def _verify_sources(copied, expected, absent=(), written=()):
+    # Cargo owns ordinary lockfile refreshes; explicitly staged lockfile bytes,
+    # like every captured source/config input, must still be checked exactly.
+    for relative, digest in expected.items():
+        if Path(relative).name == "Cargo.lock" and relative not in written:
+            continue
+        if _digest((copied / relative).read_bytes()) != digest:
+            raise CandidateError(f"Cargo changed captured source bytes: {relative}")
+    if any((copied / relative).exists() for relative in absent):
+        raise CandidateError("Cargo recreated a staged deletion")
+
+
+def _staged_operations(root, copied, operations, directory_semantics):
+    """Validate every image against the untouched copy before any replay."""
+    def relative(value):
+        if not isinstance(value, str) or not Path(value).is_absolute():
+            raise CandidateError("native path must be absolute")
+        path = Path(value)
+        if ".." in path.parts or not path.is_relative_to(root):
+            raise CandidateError("native path escapes context")
+        resolved = path.resolve()
+        if not resolved.is_relative_to(root):
+            raise CandidateError("native resolved path escapes context")
+        parent = resolved.parent
+        while not parent.exists():
+            _check_case_semantics(parent, copied / parent.relative_to(root), directory_semantics)
+            parent = parent.parent
+        copied_parent = copied / parent.relative_to(root)
+        if not copied_parent.exists():
+            # Empty original directories are not copied; check the semantics
+            # inherited when the candidate materializes a path beneath them.
+            while not copied_parent.exists():
+                copied_parent = copied_parent.parent
+            _check_case_semantics(parent, copied_parent, directory_semantics)
+        return _relative(resolved.relative_to(root).as_posix()).as_posix()
+
+    def image(path, text):
+        if text is not None and not isinstance(text, str):
+            raise CandidateError("native preimage must be UTF-8 text or null")
+        expected = None if text is None else text.encode("utf-8")
+        source = copied / path
+        actual = source.read_bytes() if source.is_file() else None
+        if source.is_dir() or actual != expected:
+            raise CandidateError(f"stale native preimage: {path}")
+        return expected
+
+    prepared = []
+    for operation in operations:
+        op = operation["op"]
+        if op not in ("create", "update", "delete", "move", "noop"):
+            raise CandidateError("unsupported native operation")
+        path = relative(operation["path"])
+        if not isinstance(operation["displayPath"], str):
+            raise CandidateError("native displayPath must be text")
+        before = image(path, operation["before"])
+        after = operation["after"]
+        if op == "delete":
+            if after is not None:
+                raise CandidateError("delete after must be null")
+        elif not isinstance(after, str) and not (op == "noop" and after is None):
+            raise CandidateError("native after must be exact UTF-8 text")
+        after = after.encode("utf-8") if after is not None else None
+        if op == "noop" and after != before:
+            raise CandidateError("noop after must equal original")
+        destination = None
+        if op == "move":
+            destination = relative(operation["moveTo"])
+            image(destination, operation["moveBefore"])
+        elif operation["moveTo"] is not None or operation["moveBefore"] is not None:
+            raise CandidateError("non-move destination must be null")
+        prepared.append((op, path, destination, before, after))
+    return prepared
+
+
+def analyze_staged(context, operations, *, cargo="cargo"):
+    """Analyze a complete native staged vector, in order, without real mutation.
+
+    Paths are absolute under explicit CargoContext.root. before/moveBefore are
+    exact PRE-CALL UTF-8 images; after is already native-persisted text. No grammar
+    parsing or collision policy belongs here. Context-only operations still run
+    Cargo; only surviving written .rs files require individual compiler controls.
+    """
+    return _analyze(context, lambda root, copied, result: operations, cargo)
+
+
+def analyze_candidate(context, target, *, edits=None, content=None, cargo="cargo"):
+    """Prepare unique-text edits OR a full UTF-8 Rust write through the same owner."""
+    def prepare(root, copied, result):
+        relative = _relative(target)
+        if relative.suffix != ".rs":
             raise CandidateError("candidate must be a Rust file")
         if (edits is None) == (content is None):
             raise CandidateError("provide exactly one of edits or content")
-        # Relocation cannot silently drop configuration above the supplied root.
-        for parent in root.parents:
-            if any((parent / name).is_file() for name in (
-                ".cargo/config", ".cargo/config.toml", "rust-toolchain", "rust-toolchain.toml"
-            )):
-                raise CandidateError("context root excludes ancestor Cargo/toolchain configuration")
-        before = _snapshot(root)
-        original_path = root / target_relative
-        original = original_path.read_bytes() if original_path.is_file() else None
+        source = copied / relative
+        original = source.read_bytes() if source.is_file() else None
         if edits is not None:
             if original is None:
                 raise CandidateError("edit target does not exist")
@@ -247,108 +375,151 @@ def analyze_candidate(context, target, *, edits=None, content=None, cargo="cargo
             if not isinstance(content, str):
                 raise CandidateError("write content must be UTF-8 text")
             text = content
-        candidate_bytes = text.encode("utf-8")
-        result.update(
-            target=target_relative.as_posix(),
-            operation="edit" if edits is not None else "write",
-            original_sha256=_digest(original) if original is not None else None,
-            candidate_sha256=_digest(candidate_bytes),
-        )
+        result.update(target=relative.as_posix(), operation="edit" if edits is not None else "write",
+                      original_sha256=_digest(original) if original is not None else None,
+                      candidate_sha256=_digest(text.encode("utf-8")))
+        return [{"op": "update" if original is not None else "create",
+                 "path": str(root / relative), "displayPath": relative.as_posix(),
+                 "moveTo": None, "before": original.decode("utf-8") if original is not None else None,
+                 "after": text, "moveBefore": None}]
+    return _analyze(context, prepare, cargo)
+
+
+def _analyze(context, prepare, cargo):
+    temporary = None
+    result = {"outcome": "checker_failure", "findings": [], "preexisting_findings": [],
+              "ambiguous_findings": [], "baseline": {"status": "not_run", "reason": "candidate_not_verified"}}
+    root = Path(context.root).absolute()
+    before = None
+    directory_semantics = {}
+    try:
+        if _linked(root):
+            raise CandidateError("context root cannot be a link/reparse point")
+        root = root.resolve(strict=True)
+        _relative(context.manifest)
+        cwd_relative = _relative(context.cwd)
+        for parent in root.parents:
+            if any((parent / name).is_file() for name in (
+                ".cargo/config", ".cargo/config.toml", "rust-toolchain", "rust-toolchain.toml"
+            )):
+                raise CandidateError("context root excludes ancestor Cargo/toolchain configuration")
+        before = _snapshot(root)
         environment = os.environ.copy()
         if any(environment.get(name) for name in ("RUSTC_WRAPPER", "RUSTC_WORKSPACE_WRAPPER", "CLIPPY_ARGS")):
             raise CandidateError("custom compiler wrappers/CLIPPY_ARGS are unsupported")
-        with tempfile.TemporaryDirectory(prefix="turnstile-candidate-") as temporary:
-            copied = Path(temporary) / "context"
-            copied.mkdir()
-            for source in _files(root):
-                destination = copied / source.relative_to(root)
-                destination.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(source, destination)
-            if _snapshot(copied) != before:
-                raise CandidateError("context changed while copying")
-            for path in _files(copied):
-                if path.name == "Cargo.toml" or path.relative_to(copied).as_posix().endswith((".cargo/config", ".cargo/config.toml")):
-                    _validate_toml(path, copied)
-            candidate = copied / target_relative
-            candidate.parent.mkdir(parents=True, exist_ok=True)
-            candidate.write_bytes(candidate_bytes)
+        # Short components keep ordinary Windows linker outputs below MAX_PATH.
+        with tempfile.TemporaryDirectory(prefix="ts-") as temporary:
+            copied = Path(temporary) / "c"
+            baseline_root = Path(temporary) / "b"
+            _copy_context(root, copied, before, directory_semantics)
+            _validate_context(copied)
+            operations = _staged_operations(root, copied, prepare(root, copied, result), directory_semantics)
+            expected = before.copy()
+            origins = {relative: relative for relative in before}
+            written = {}
+            absent = set()
+            for op, path, destination, original, after in operations:
+                if op == "noop":
+                    continue
+                if op != "delete":
+                    output = destination if op == "move" else path
+                    candidate = copied / output
+                    candidate.parent.mkdir(parents=True, exist_ok=True)
+                    candidate.write_bytes(after)
+                    # Canonicalize only after materialization: initially absent
+                    # native names can alias on this filesystem, without casefolding.
+                    output = candidate.resolve(strict=True).relative_to(copied).as_posix()
+                    expected[output] = _digest(after)
+                    # Frozen original identity, NOT the occupant left by prior ops.
+                    origins[output] = path if original is not None else None
+                    written[output] = after
+                    absent.discard(output)
+                if op in ("delete", "move"):
+                    removed = (copied / path).resolve().relative_to(copied).as_posix()
+                    (copied / path).unlink(missing_ok=True)
+                    expected.pop(removed, None)
+                    origins.pop(removed, None)
+                    written.pop(removed, None)
+                    absent.add(removed)
+            absent = {p for p in absent if not (copied / p).exists()}
+            _validate_context(copied)
+            rust_targets = {p: data for p, data in written.items() if Path(p).suffix == ".rs"}
+            result["staged_sources"] = {
+                p: {"sha256": expected[p], "original_path": origins[p]} for p in written}
+            result["coverage"] = {"status": "not_run", "rust_targets": list(rust_targets)}
             cwd = copied / cwd_relative
-            target_dir = Path(temporary) / "build"
+            target_dir = Path(temporary) / "t"
             candidate_check = _check_context(context, copied, target_dir, environment, cargo)
             result.update(candidate_check)
             result["candidate_check"] = candidate_check
             result["findings"] = []
-            if candidate.read_bytes() != candidate_bytes:
-                raise CandidateError("Cargo changed candidate bytes during analysis")
+            _verify_sources(copied, expected, absent, written)
+            result["coverage"]["status"] = (
+                "checker_failure" if candidate_check["outcome"] == "checker_failure" else "context_checked")
             if candidate_check["outcome"] != "checker_failure":
-                reached, control = _compiled(
-                    candidate, candidate_bytes, candidate_check["command"], environment, cwd, target_dir,
-                    Path(candidate_check["diagnostic_root"]),
-                )
-                result["candidate_compiled"] = reached
-                result["reachability_control"] = control
-                if not reached:
-                    result.update(outcome="checker_failure", error="candidate_not_compiled")
-                elif not candidate_check["findings"]:
-                    result["baseline"] = {"status": "not_required", "reason": "candidate_has_no_findings"}
-                else:
-                    expected = {**before, target_relative.as_posix(): _digest(candidate_bytes)}
-                    candidate_sources = _sources(candidate_check, copied, expected)
-                    intrinsic, remaining = [], []
-                    for diagnostic in candidate_check["findings"]:
-                        spans = list(_spans(diagnostic))
-                        wholly_new = original is None and spans and all(
-                            (Path(candidate_check["diagnostic_root"]) / s["file_name"]).resolve() == candidate
-                            for s in spans)
-                        (intrinsic if wholly_new else remaining).append(diagnostic)
-                    empty = {"findings": [], "diagnostic_root": str(copied)}
-                    introduced, _, ambiguous = attribute(
-                        empty, {**candidate_check, "findings": intrinsic}, {}, candidate_sources, copied, copied)
-                    preexisting = []
-                    if remaining:
-                        baseline_root = Path(temporary) / "baseline"
-                        baseline_root.mkdir()
-                        for source in _files(root):
-                            destination = baseline_root / source.relative_to(root)
-                            destination.parent.mkdir(parents=True, exist_ok=True)
-                            shutil.copy2(source, destination)
-                        if _snapshot(baseline_root) != before:
-                            raise CandidateError("original context changed before baseline capture")
-                        baseline = _check_context(context, baseline_root, Path(temporary) / "baseline-build", environment, cargo)
-                        result["baseline"] = {"status": "required", "check": baseline}
-                        if baseline["outcome"] == "checker_failure":
-                            result.update(outcome="checker_failure", error="required_baseline_failed")
-                        else:
-                            original_sources = _sources(baseline, baseline_root, before)
-                            # The baseline may have no finding in a newly diagnosed
-                            # file. Its original bytes still establish occurrence identity.
-                            for relative in candidate_sources:
-                                if relative in before and relative not in original_sources:
-                                    data = (baseline_root / relative).read_bytes()
-                                    if _digest(data) != before[relative]:
-                                        raise CandidateError("Cargo changed baseline source bytes")
-                                    original_sources[relative] = data
-                            new, preexisting, uncertain = attribute(
-                                baseline, {**candidate_check, "findings": remaining},
-                                original_sources, candidate_sources, baseline_root, copied)
-                            introduced.extend(new)
-                            ambiguous.extend(uncertain)
+                controls = {}
+                for relative, data in rust_targets.items():
+                    reached, control = _compiled(
+                        copied / relative, data, candidate_check["command"], environment, cwd, target_dir,
+                        Path(candidate_check["diagnostic_root"]))
+                    controls[relative] = control
+                    _verify_sources(copied, expected, absent, written)
+                result["reachability"] = controls
+                if rust_targets:
+                    result["candidate_compiled"] = all(c["reached_as_rust"] for c in controls.values())
+                    result["coverage"]["status"] = (
+                        "written_rust_checked" if result["candidate_compiled"] else "unreached_rust")
+                    if "target" in result:
+                        result["reachability_control"] = next(iter(controls.values()))
+                    if not result["candidate_compiled"]:
+                        result.update(outcome="checker_failure", error="candidate_not_compiled")
+            if candidate_check["findings"]:
+                candidate_sources = _sources(candidate_check, copied, expected)
+                intrinsic, remaining = [], []
+                for diagnostic in candidate_check["findings"]:
+                    spans = list(_spans(diagnostic))
+                    paths = [(Path(candidate_check["diagnostic_root"]) / s["file_name"]).resolve() for s in spans]
+                    wholly_new = paths and all(
+                        p.is_relative_to(copied) and p.relative_to(copied).as_posix() in candidate_sources
+                        and origins.get(p.relative_to(copied).as_posix(), p.relative_to(copied).as_posix()) is None
+                        for p in paths)
+                    (intrinsic if wholly_new else remaining).append(diagnostic)
+                empty = {"findings": [], "diagnostic_root": str(copied)}
+                introduced, _, ambiguous = attribute(
+                    empty, {**candidate_check, "findings": intrinsic}, {}, candidate_sources, copied, copied)
+                result.update(findings=introduced, ambiguous_findings=ambiguous)
+                preexisting = []
+                if remaining:
+                    result["baseline"] = {"status": "required"}
+                    _copy_context(root, baseline_root, before, directory_semantics)
+                    baseline = _check_context(context, baseline_root, Path(temporary) / "bt", environment, cargo)
+                    result["baseline"] = {"status": "required", "check": baseline}
+                    _verify_sources(baseline_root, before)
+                    if baseline["outcome"] == "checker_failure":
+                        result.update(outcome="checker_failure", error="required_baseline_failed")
                     else:
-                        result["baseline"] = {"status": "not_required", "reason": "findings_wholly_in_new_file"}
-                    result.update(findings=introduced, preexisting_findings=preexisting, ambiguous_findings=ambiguous)
-                    if result["outcome"] != "checker_failure":
-                        if ambiguous:
-                            result.update(outcome="checker_failure", error="attribution_ambiguous")
-                        else:
-                            result["outcome"] = "findings" if introduced else "no_findings"
-            # Returned diagnostics refer to stable context-relative locations.
-            serialized = json.dumps(result)
-            for old, new in ((str(copied), "<candidate>"), (copied.as_posix(), "<candidate>"),
-                             (str(Path(temporary) / "baseline"), "<baseline>"),
-                             ((Path(temporary) / "baseline").as_posix(), "<baseline>"),
-                             (str(Path(temporary)), "<scratch>"), (Path(temporary).as_posix(), "<scratch>")):
-                serialized = serialized.replace(json.dumps(old)[1:-1], new)
-            result = json.loads(serialized)
+                        original_sources = _sources(baseline, baseline_root, before)
+                        for relative in candidate_sources:
+                            origin = origins.get(relative, relative)
+                            if origin in before and origin not in original_sources:
+                                original_sources[origin] = (baseline_root / origin).read_bytes()
+                        new, preexisting, uncertain = attribute(
+                            baseline, {**candidate_check, "findings": remaining}, original_sources,
+                            candidate_sources, baseline_root, copied, origins)
+                        introduced.extend(new)
+                        ambiguous.extend(uncertain)
+                else:
+                    result["baseline"] = {"status": "not_required", "reason": "findings_wholly_in_new_file"}
+                result.update(findings=introduced, preexisting_findings=preexisting, ambiguous_findings=ambiguous)
+                if result["outcome"] != "checker_failure":
+                    if ambiguous:
+                        result.update(outcome="checker_failure", error="attribution_ambiguous")
+                    else:
+                        result["outcome"] = "findings" if introduced else "no_findings"
+            elif result["outcome"] != "checker_failure":
+                result["baseline"] = {"status": "not_required", "reason": "candidate_has_no_findings"}
+            _verify_sources(copied, expected, absent, written)
+            result["analyzed_sources_unchanged"] = True
     except (OSError, ValueError, KeyError, TypeError, subprocess.TimeoutExpired) as error:
         result.update(outcome="checker_failure", error=f"{type(error).__name__}: {error}")
     finally:
@@ -357,9 +528,30 @@ def analyze_candidate(context, target, *, edits=None, content=None, cargo="cargo
                 after = _snapshot(root)
                 result["originals_unchanged"] = after == before
                 result["original_snapshot_sha256"] = _digest(json.dumps(before, sort_keys=True).encode())
+                if directory_semantics:
+                    result["directory_semantics"] = {
+                        "before": {Path(p).relative_to(root).as_posix(): value
+                                   for p, value in directory_semantics.items()}}
+                    current_semantics = {p: _directory_case_sensitive(Path(p)) for p in directory_semantics}
+                    semantics_unchanged = current_semantics == directory_semantics
+                    result["directory_semantics"].update(
+                        after={Path(p).relative_to(root).as_posix(): value
+                               for p, value in current_semantics.items()},
+                        unchanged=semantics_unchanged)
+                    if not semantics_unchanged:
+                        result.update(outcome="checker_failure", originals_unchanged=False,
+                                      error="original_directory_semantics_changed")
                 if after != before:
                     result.update(outcome="checker_failure", error="original_context_changed")
             except (OSError, CandidateError) as error:
                 result.update(outcome="checker_failure", originals_unchanged=False,
                               error=f"original_context_unverifiable: {error}")
+    if temporary is not None:
+        # Redact disposable paths on failure exits as well as successful checks.
+        serialized = json.dumps(result)
+        for path, label in ((copied, "<candidate>"), (baseline_root, "<baseline>"),
+                            (Path(temporary), "<scratch>")):
+            for old in (str(path), path.as_posix()):
+                serialized = serialized.replace(json.dumps(old)[1:-1], label)
+        result = json.loads(serialized)
     return result

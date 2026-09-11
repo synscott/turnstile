@@ -75,6 +75,12 @@ a retained test pinning implementation call counts.
 or `analyze_candidate(context, target, content="...")` retain their calling shape.
 This is still a unique-text preparation primitive, not OMP's edit grammar.
 
+The [complete staged-context extension](rust-staged-context.md) adds
+`analyze_staged(context, operations, *, cargo="cargo")` in this same owner.
+Its native pre-call images, ordered replay, move-origin attribution, and explicit
+context-only coverage extend this API without replacing the useful single-file
+preparation calls below. The Sprint 3 evidence remains a dated accepted snapshot.
+
 The exact candidate is checked first and must pass the existing compilation
 reachability control. The original workspace is never changed or autofixed.
 Result semantics now distinguish attributed findings from the whole Cargo check:
