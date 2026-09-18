@@ -236,7 +236,8 @@ no_rly({
 
 This tool does not mutate a file or approve an arbitrary row. It arms only the
 **immediately next native call of the held tool**. Repeat the original tool's
-arguments unchanged, without an intervening tool. The rationale must be nonempty;
+argument values, without an intervening tool; caller key order is normalized
+before comparison, so it need not be reproduced. The rationale must be nonempty;
 its semantic sufficiency is an explicit author judgment, not machine-proven
 exhaustion of alternatives. No extra co-signer or human-only stage is required.
 Do not put raw source, secrets or private paths in the explanation.
@@ -246,8 +247,12 @@ comes from an actual prepared check, never a caller's prior-hold boolean or a
 persisted disclosure. The next attempt must match the native final effective
 input, edit mode, complete ordered operation vector (including preimages, move
 destinations and destination preimages), the original Cargo-context snapshot,
-and the freshly rechecked selected diagnostic. Even different path spelling or
-arguments that happen to produce the same bytes invalidate the exception.
+and the freshly rechecked selected diagnostic. Caller argument key order is a
+serialization artifact: it is normalized before the attempt identity is
+computed, so identical values in any key order match. That normalization does
+not relax anything else — path spelling and argument values must still match
+exactly, and even different path spelling or arguments that happen to produce
+the same bytes invalidate the exception.
 
 All analysis runs again. Only the same sole introduced finding can be excepted;
 other findings, ambiguous attribution, missing/failed checks and compilation

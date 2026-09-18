@@ -17,6 +17,25 @@ const rule = "clippy::await_holding_lock";
 const sha256 = (value: string) => createHash("sha256").update(value).digest("hex");
 const imageHash = (value: string | null) => (value === null ? null : sha256(value));
 
+/**
+ * Deterministic re-serialization of the caller's parsed argument object: object
+ * keys sorted recursively, arrays and scalars untouched. Caller key order is a
+ * serialization artifact, not a property of the native final effective input, so
+ * it is normalized before the attempt identity is computed. Values are never
+ * merged or rewritten: different path spelling, different argument values, and
+ * arguments that happen to produce the same bytes still change the digest.
+ */
+function canonicalizeKeys(value: unknown): unknown {
+	if (Array.isArray(value)) return value.map(canonicalizeKeys);
+	if (value && typeof value === "object" && !Array.isArray(value)) {
+		const record = value as Record<string, unknown>;
+		const out: Record<string, unknown> = {};
+		for (const key of Object.keys(record).sort()) out[key] = canonicalizeKeys(record[key]);
+		return out;
+	}
+	return value;
+}
+
 function workspacePath(workspace: string, path: string): string {
 	const name = relative(workspace, path).split(sep).join("/");
 	if (!name || isAbsolute(name) || name.split("/").includes("..") || name.includes(":"))
@@ -49,7 +68,7 @@ function attemptIdentity(event: Prepared, workspace: string): DisclosureInput["a
 			JSON.stringify({
 				type: event.type,
 				mode: "mode" in event ? event.mode : null,
-				input: event.input,
+				input: canonicalizeKeys(event.input),
 				operations: event.operations,
 			}),
 		),
@@ -226,6 +245,9 @@ export default async function turnstile(api: ExtensionAPI) {
 	let exhausted = false;
 	let live: HeldAttempt | undefined;
 	let arm: { held: HeldAttempt; reason: string; owner?: string } | undefined;
+	// Why the previous arm is no longer armed, surfaced once to the next refusal so
+	// a destroyed/consumed arm is distinguishable from a first-time refusal.
+	let lastArm: { destroyed: string } | undefined;
 	// Only observed calls can own the next exception attempt. Prepared IDs differ
 	// for same-tool invokeTool, so they are deliberately not treated as outer IDs.
 	const active = new Map<string, string>();
@@ -233,6 +255,7 @@ export default async function turnstile(api: ExtensionAPI) {
 	const invalidate = () => {
 		generation++;
 		live = undefined;
+		if (arm) lastArm = { destroyed: "cleared by a session state reset" };
 		arm = undefined;
 	};
 	const finishCall = (id: string) => {
@@ -240,6 +263,7 @@ export default async function turnstile(api: ExtensionAPI) {
 		if (arm?.owner === id) {
 			arm = undefined;
 			generation++;
+			lastArm = { destroyed: "consumed: the armed call already completed (one-use arm)" };
 		}
 	};
 	api.on("tool_result", event => finishCall(event.toolCallId));
@@ -255,6 +279,7 @@ export default async function turnstile(api: ExtensionAPI) {
 	api.on("session_shutdown", resetLive);
 	api.on("agent_end", () => {
 		active.clear();
+		if (arm) lastArm = { destroyed: "cleared at agent turn end" };
 		arm = undefined;
 		generation++;
 	});
@@ -289,7 +314,10 @@ export default async function turnstile(api: ExtensionAPI) {
 		active.set(event.toolCallId, event.toolName);
 		if (arm) {
 			if (!arm.owner && active.size === 1 && event.toolName === arm.held.attempt.tool) arm.owner = event.toolCallId;
-			else arm = undefined;
+			else {
+				arm = undefined;
+				lastArm = { destroyed: "destroyed by an intervening or non-matching tool call" };
+			}
 		}
 		if (event.toolName !== "no_rly") live = undefined;
 		if ((failure || exhausted) && (event.toolName === "edit" || event.toolName === "write")) return stop(ctx);
@@ -339,11 +367,12 @@ export default async function turnstile(api: ExtensionAPI) {
 					isError: true,
 				};
 			arm = { held: selected, reason: params.reason.trim() };
+			lastArm = undefined;
 			return {
 				content: [
 					{
 						type: "text",
-						text: `no_rly armed for exactly the next ${selected.attempt.tool} call. Repeat its original arguments unchanged, with no intervening tool. A fresh full check and durable disclosure must succeed before native release. This is not an application receipt.`,
+						text: `no_rly armed for exactly the next ${selected.attempt.tool} call. Repeat its original argument values with no intervening tool call. Caller key order is normalized before comparison, so it need not be reproduced. A fresh full check and durable disclosure must succeed before native release. This is not an application receipt.`,
 					},
 				],
 			};
@@ -364,7 +393,7 @@ export default async function turnstile(api: ExtensionAPI) {
 		const outer = active.size === 1 ? [...active.entries()][0] : undefined;
 		const owner = outer?.[1] === (event.type === "edit_prepared" ? "edit" : "write") ? outer[0] : undefined;
 		const exclusive = () => generation === version && active.size === 1 && owner !== undefined && active.has(owner);
-		const exception = requested?.owner === owner && exclusive() ? requested : undefined;
+		const exception = requested;
 		if (exhausted) return stop(ctx);
 		if (rejections + pending >= enabled.maxRejections)
 			return held("remaining rejection slots are reserved by in-flight checks; wait for those checks to finish");
@@ -409,15 +438,21 @@ export default async function turnstile(api: ExtensionAPI) {
 				if (!permitted) selected = selectedFinding(result, attemptIdentity(event, workspace), root, workspace);
 				if (exception) {
 					permitted = false;
-					if (
-						!exclusive() ||
-						!selected ||
-						selected.attempt.sha256 !== exception.held.attempt.sha256 ||
-						selected.context !== exception.held.context ||
-						selected.finding.sha256 !== exception.held.finding.sha256
-					) {
-						reason =
-							"no_rly invalidated: ownership, exact native arguments/vector, originals, or selected finding changed";
+					let invalidated: string | undefined;
+					if (!exclusive())
+						invalidated =
+							"exclusivity: another call is active, or the armed call is not the sole observed outer call";
+					else if (!selected)
+						invalidated = "selected finding: the fresh check produced no matching single introduced finding";
+					else if (selected.attempt.sha256 !== exception.held.attempt.sha256)
+						invalidated =
+							"attempt identity: the native final effective input (argument values, path spelling or vector) no longer matches the held attempt";
+					else if (selected.context !== exception.held.context)
+						invalidated = "Cargo context: the original snapshot no longer matches the held attempt";
+					else if (selected.finding.sha256 !== exception.held.finding.sha256)
+						invalidated = "selected finding: the freshly rechecked diagnostic no longer matches the held finding";
+					if (invalidated) {
+						reason = `no_rly invalidated: ${invalidated}`;
 					} else {
 						// Synchronous SQLite commit/readback must finish before returning native permission.
 						// The record describes attempted authorization, not successful native application.
@@ -426,6 +461,7 @@ export default async function turnstile(api: ExtensionAPI) {
 							finding: selected.finding,
 							reason: exception.reason,
 						});
+						lastArm = { destroyed: "consumed: the one-use arm was spent by the preceding release" };
 						permitted = true;
 					}
 				}
@@ -446,6 +482,10 @@ export default async function turnstile(api: ExtensionAPI) {
 			invalidate();
 			exhaustionReason = `Turnstile revision limit exhausted (${rejections}/${enabled.maxRejections}). Native edits and writes remain held; no permission was issued. The retry turn is stopped. Read-only work remains available. Restart/reload explicitly begins a new gate budget; session events and successful calls do not reset it.\nLast rejection: ${reason}`;
 			return stop(ctx);
+		}
+		if (!permitted && !requested && lastArm) {
+			reason = `no armed exception: ${lastArm.destroyed}. Re-arm from a fresh hold.\n${reason}`;
+			lastArm = undefined;
 		}
 		if (selected && exclusive() && !requested) {
 			live = selected;
