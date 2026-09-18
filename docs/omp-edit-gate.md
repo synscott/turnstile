@@ -399,8 +399,10 @@ messages and acknowledges only verified successful full-message publication with
 complete canonical coverage. It is not a PR check or a special commit tool.
 Native quality gating and `no_rly` remain unchanged.
 
-The installer is qualified for native **Windows Git for Windows and Bun**, with
-Windows PowerShell available. The exercised Git version is `2.44.0.windows.1`.
+The installer is qualified for native **Windows Git for Windows and Bun** (with
+Windows PowerShell available; exercised Git version `2.44.0.windows.1`) and native
+**Linux Git and Bun** (process identity via `/proc/sys/kernel/random/boot_id` plus
+`/proc/<pid>/stat` starttime).
 Direct Bun hook interpreters must have whitespace-free executable paths; shell
 wrappers are not equivalent because their parent identity differs. Linked
 worktrees, bare repositories and other platforms are visibly refused rather
@@ -470,8 +472,9 @@ case-sensitive directories; paths are never silently equated by case-folding.
 
 `prepare-commit-msg` reads validated storage and effective index, injects missing
 relevant records before an existing scissors tail, and writes a private
-per-Git-process preparation witness. Native parent PID **and** Windows process
-creation time scope that witness. Subsequent preparation removes ended/reused
+per-Git-process preparation witness. Native parent PID **and** process creation
+identity scope that witness (Windows `StartTime`; Linux `boot_id` plus `/proc`
+starttime, distinguishing PID reuse). Subsequent preparation removes ended/reused
 process witnesses; live concurrent invocations have separate files. A witness
 never proves commit success or authorizes deleting rows.
 
@@ -593,8 +596,8 @@ with the validated event's `pull_request.head.sha`. The sole write permission is
 `checks: write`; `contents: read` and `pull-requests: read` supply Git objects and
 fresh PR identity. No other secrets, fork URLs, head programs, hooks, submodules,
 dependency installation from the PR, or private disclosure databases are used.
-The workflow uses hosted Linux and Bun; Windows-only local hook installation does
-not restrict this read-only server consumer.
+The workflow uses hosted Linux and Bun; the local hook installation (Windows or
+Linux) does not restrict this read-only server consumer.
 
 The selected range is exactly **`base.sha..head.sha`**: all commits reachable from
 the selected head but not from the selected base, following every parent.
