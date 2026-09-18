@@ -41,7 +41,7 @@ type Witness = {
 	committed: string | null;
 };
 
-function hookContent(hook: (typeof hooks)[number]): string {
+export function hookContent(hook: (typeof hooks)[number]): string {
 	const module = fileURLToPath(import.meta.url)
 		.split(sep)
 		.join("/");
@@ -216,6 +216,7 @@ function canonicalImages(root: string, paths: string[], clean = true) {
 				throw new Error("canonical effect path casing is ambiguous");
 			const candidate = join(location, parts[i]);
 			if (!names.includes(parts[i])) {
+				if (process.platform !== "win32") return { path, identities, raw: null, blob: null };
 				// Bun's exact-name lookup can miss aliases accepted by ordinary Windows callers.
 				const lookup = execFileSync(
 					"powershell.exe",
@@ -352,23 +353,45 @@ function requireEntries(message: string, required: CommitDisclosure[]): void {
 	}
 }
 
-function processStarted(pid: number): string | undefined {
-	if (process.platform !== "win32")
-		throw new Error("this installation requires verified Windows native Git/Bun hook process identity");
+export function processStarted(pid: number): string | undefined {
 	if (!Number.isSafeInteger(pid) || pid <= 1) throw new Error("native Git parent process is unavailable");
-	const started = execFileSync(
-		"powershell.exe",
-		[
-			"-NoProfile",
-			"-NonInteractive",
-			"-Command",
-			`try { [System.Diagnostics.Process]::GetProcessById(${pid}).StartTime.ToUniversalTime().Ticks } catch [System.ArgumentException] { 'absent' }`,
-		],
-		{ encoding: "utf8", windowsHide: true, stdio: ["ignore", "pipe", "pipe"] },
-	).trim();
-	if (started === "absent") return undefined;
-	if (!/^\d{18}$/.test(started)) throw new Error("native Git process creation identity is unavailable");
-	return started;
+	if (process.platform === "win32") {
+		const started = execFileSync(
+			"powershell.exe",
+			[
+				"-NoProfile",
+				"-NonInteractive",
+				"-Command",
+				`try { [System.Diagnostics.Process]::GetProcessById(${pid}).StartTime.ToUniversalTime().Ticks } catch [System.ArgumentException] { 'absent' }`,
+			],
+			{ encoding: "utf8", windowsHide: true, stdio: ["ignore", "pipe", "pipe"] },
+		).trim();
+		if (started === "absent") return undefined;
+		if (!/^\d{18}$/.test(started)) throw new Error("native Git process creation identity is unavailable");
+		return started;
+	}
+	if (process.platform === "linux") {
+		// POSIX-native instance identity: boot_id + process starttime (clock ticks since boot).
+		// Stronger than a bare PID: a fresh process reusing the same PID has a different starttime,
+		// and boot_id distinguishes across reboots. The check fails closed on any unreadable state.
+		const bootId = readFileSync("/proc/sys/kernel/random/boot_id", "utf8").trim();
+		if (!/^[0-9a-f-]{36}$/.test(bootId)) throw new Error("native Git process creation identity is unavailable");
+		let stat: string;
+		try {
+			stat = readFileSync(`/proc/${pid}/stat`, "utf8");
+		} catch (error) {
+			if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") return undefined;
+			throw error;
+		}
+		// comm (field 2) may contain spaces/parens; parse from the last ')' so field 22 (starttime)
+		// is index 19 of the post-comm array (fields restart at field 3 = state).
+		const close = stat.lastIndexOf(")");
+		const fields = stat.slice(close + 2).split(" ");
+		const starttime = fields[19];
+		if (!/^\d+$/.test(starttime)) throw new Error("native Git process creation identity is unavailable");
+		return `${bootId}:${starttime}`;
+	}
+	throw new Error("this installation requires verified native Git/Bun hook process identity");
 }
 function witness(path: string): Witness | undefined {
 	if (!existsSync(path)) return undefined;
@@ -380,7 +403,7 @@ function witness(path: string): Witness | undefined {
 		) ||
 		!Number.isSafeInteger(value.pid) ||
 		value.pid <= 1 ||
-		!/^\d{18}$/.test(value.started)
+		!/^(?:\d{18}|[0-9a-f-]{36}:\d+)$/.test(value.started)
 	)
 		throw new Error("invalid local commit witness; pending records are unchanged");
 	return {
@@ -423,7 +446,18 @@ export async function runHook(hook: string, args: string[]): Promise<void> {
 				.split("\n")
 				.filter(Boolean)
 				.map(line => line.trim().split(" "));
-			transition = rows.find(row => row.length === 3 && row[2] === "HEAD" && !/^0+$/.test(row[1]));
+			let headRef = "";
+			try {
+				headRef = text(root, "symbolic-ref", "HEAD");
+			} catch {
+				// Detached HEAD: fall back to any non-housekeeping ref update.
+			}
+			transition = rows.find(
+				row =>
+					row.length === 3 &&
+					(headRef ? row[2] === headRef : row[2] !== "AUTO_MERGE") &&
+					!/^0+$/.test(row[1]),
+			);
 			if (!transition) return;
 			const preparePath = join(dir, "hooks", "prepare-commit-msg");
 			if (!existsSync(preparePath) || readFileSync(preparePath, "utf8") !== hookContent("prepare-commit-msg"))
@@ -566,8 +600,12 @@ export async function runHook(hook: string, args: string[]): Promise<void> {
 }
 
 export function installCommitHooks(workspace: string): void {
-	if (process.platform !== "win32" || !text(process.cwd(), "--version").includes(".windows."))
-		throw new Error("installer supports the verified native Windows Git/Bun hook boundary only");
+	if (process.platform === "win32") {
+		if (!text(process.cwd(), "--version").includes(".windows."))
+			throw new Error("installer supports the verified native Windows Git/Bun hook boundary only");
+	} else if (process.platform !== "linux") {
+		throw new Error("installer supports the verified native Linux Git/Bun hook boundary only");
+	}
 	const { root, dir } = repository();
 	workspace = realpathSync(workspace);
 	const workspacePrefix = prefix(relative(root, workspace).split(sep).join("/"));
@@ -621,6 +659,7 @@ export function installCommitHooks(workspace: string): void {
 			writeFileSync(excludePath, exclude);
 		throw new Error("hook installation failed; exclusively created owned files were rolled back", { cause: error });
 	}
+	git(root, ["config", "core.hooksPath", join(dir, "hooks")]);
 	console.log(
 		`Turnstile ordinary Git hooks installed for workspacePrefix=${JSON.stringify(workspacePrefix)}; only verified successful full-message and complete canonical coverage acknowledges pending records.`,
 	);
